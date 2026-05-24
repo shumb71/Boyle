@@ -1086,41 +1086,6 @@ function closeMoVar(){
   document.getElementById('mo-var').classList.remove('open');
 }
 
-const EJS_DEF={
-  A:['Dead bug','Bird-dog','Plancha frontal','Plancha lateral','Sentadilla goblet','Step-up','Peso muerto rumano','Hip thrust'],
-  B:['Face pull','Retraccion escapular','Remo mancuerna','Press hombro','Flexiones','Dominada asistida','Press banca mancuernas'],
-  C:['Clamshell','Abduccion cadera','Equilibrio unipodal','Zancada','Step-up','Sentadilla bulgara','Sentadilla lateral'],
-  Cc:['Clamshell','Equilibrio unipodal','Zancada','Step-up'],
-  Descanso:[],Mov:['Cat-cow suave','Posicion fetal + respiracion','Rodilla al pecho','Estiramiento psoas'],
-};
-const EJ_INFO={
-  'Dead bug':{tipo:'fijo',series:'3',reps:'8 por lado',tecnica:'Lumbar PEGADA al suelo. Exhala al bajar el brazo.'},
-  'Bird-dog':{tipo:'fijo',series:'3',reps:'8 por lado',tecnica:'Cadera neutra. No rotar la pelvis. Muy lento.'},
-  'Plancha frontal':{tipo:'fijo',series:'3',reps:'20-40 seg',tecnica:'Cuerpo recto. Activa el vientre. Respira.'},
-  'Plancha lateral':{tipo:'fijo',series:'3',reps:'20-30 seg/lado',tecnica:'Cadera elevada. No dejar caer la pelvis.'},
-  'Sentadilla goblet':{tipo:'prog',tecnica:'Espalda neutra. Talones en suelo. Bajada 4 seg.'},
-  'Step-up':{tipo:'prog',reps:'c/lado',tecnica:'Tronco erguido. Bajada controlada 3 seg.'},
-  'Peso muerto rumano':{tipo:'prog',tecnica:'Cadera atras. PARA si la lumbar se redondea.'},
-  'Peso muerto hex-bar':{tipo:'prog',tecnica:'Peso centrado en el cuerpo. Espalda neutra. Disponible desde Bloque 2.'},
-  'Hip thrust':{tipo:'fijo',series:'3',reps:'B1:12 · B2:10 · B3:8',tecnica:'Pelvis neutra arriba. No hiperextender la lumbar.'},
-  'Face pull':{tipo:'fijo',series:'3',reps:'15',tecnica:'Codos altos. Manos a la altura de las orejas.'},
-  'Retraccion escapular':{tipo:'fijo',series:'3',reps:'15 seg',tecnica:'Juntar omoplatos y mantener. Sin subir los hombros.'},
-  'Remo mancuerna':{tipo:'prog',reps:'c/lado',tecnica:'No torcer el tronco. Codo cerca del cuerpo.'},
-  'Press hombro':{tipo:'prog',tecnica:'Respaldo recto 90 grados. No arquear la lumbar.'},
-  'Flexiones':{tipo:'prog',tecnica:'Cuerpo recto. Bajada 3 seg. Manos elevadas si es necesario.'},
-  'Dominada asistida':{tipo:'prog',tecnica:'Activa el core antes de tirar.'},
-  'Press banca mancuernas':{tipo:'prog',tecnica:'Pies en el suelo. No arquear la espalda baja.'},
-  'Clamshell':{tipo:'fijo',series:'3',reps:'15 por lado',tecnica:'Separar la rodilla superior despacio.'},
-  'Abduccion cadera':{tipo:'fijo',series:'3',reps:'12 por lado',tecnica:'Subir la pierna recta y controlada.'},
-  'Equilibrio unipodal':{tipo:'fijo',series:'3',reps:'30 seg/pierna',tecnica:'Pelvis nivelada. No dejar caer la cadera libre.'},
-  'Zancada':{tipo:'prog',reps:'c/lado',tecnica:'Tronco erguido. No inclinar hacia la pierna delantera.'},
-  'Sentadilla bulgara':{tipo:'prog',reps:'c/lado',tecnica:'Solo desde Bloque 2. Core muy activo.'},
-  'Sentadilla lateral':{tipo:'prog',reps:'c/lado',tecnica:'Bajar sobre el talon. Rodilla al frente del pie.'},
-  'Cat-cow suave':{tipo:'fijo',series:'1',reps:'2 min',tecnica:'MUY suave. Sin dolor en ningun punto.'},
-  'Posicion fetal + respiracion':{tipo:'fijo',series:'1',reps:'3-5 min',tecnica:'Rodillas al pecho. Respira lento y profundo.'},
-  'Rodilla al pecho':{tipo:'fijo',series:'3',reps:'30 seg/lado',tecnica:'Tumbado boca arriba. Suavemente.'},
-  'Estiramiento psoas':{tipo:'fijo',series:'3',reps:'40 seg/lado',tecnica:'Rodilla en suelo. Cadera adelante. Columna recta.'},
-};
 const ENF={
   A:[{n:'Posicion fetal + respiracion',t:'2 min. Siempre al final. Descomprime el disco.',tm:'2 min'},{n:'Psoas en caballero',t:'40 seg por lado. Rodilla en suelo, cadera adelante.',tm:'40 seg'},{n:'Isquiotibiales tumbado',t:'40 seg por lado. Sin forzar.',tm:'40 seg'},{n:'Gluteo figura 4',t:'40 seg por lado. Tobillo sobre la rodilla contraria.',tm:'40 seg'}],
   B:[{n:'Posicion fetal + respiracion',t:'2 min. Siempre al final.',tm:'2 min'},{n:'Pecho en marco de puerta',t:'40 seg. Brazo en L, rota el cuerpo hacia afuera.',tm:'40 seg'},{n:'Trapecio y cervicales',t:'30 seg por lado. Inclina la cabeza, mano sobre la sien.',tm:'30 seg'},{n:'Foam roller toracica',t:'2 min. Apoyar en zona dorsal, extender suavemente.',tm:'2 min'}],

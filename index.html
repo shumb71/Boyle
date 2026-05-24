@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno PRO — José v27</title>
+<title>Entreno Boyle v29</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1641,6 +1641,7 @@ const renders={
         const lbl=st?`${st.p}×${st.r} R${st.rpe}`:`S${i+1}`;
         return`<span class="pill${st?' done':''}" onclick="openMo('${ej.replace(/'/g,"\\'")}',${i})">${lbl}</span>`;
       }).join('');
+      const ejSafe=ej.replace(/'/g,'&#39;');
       return`<div style="padding:.6rem 0;border-bottom:.5px solid var(--border)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:${ult||info.tecnica?'4px':'0'}">
           <div onclick="toggleEjCheck('${ej.replace(/'/g,"\\'")}') " title="${checkTitle}" style="width:22px;height:22px;border-radius:50%;background:${ejDone?'var(--green-bg)':'var(--bg3)'};border:.5px solid ${ejDone?'rgba(99,153,34,.35)':'var(--border2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:${checkCursor};transition:all .15s">
@@ -1658,6 +1659,15 @@ const renders={
         ${ult?`<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:4px;display:inline-block"><span style="color:var(--text3);margin-right:4px">${ultFechaStr}</span>${ult.peso}kg × ${ult.reps} · R${ult.rpe}</div>`:''}
         ${info.tecnica?`<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">${info.tecnica}</div>`:''}
         <div style="margin-top:4px"><div class="pills">${pills}</div></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
+          <span style="font-size:11px;color:var(--text3)">&#9203; Descanso:</span>
+          <input type="number" value="${getRestTime(ejSafe)}" min="10" max="600" step="5"
+            style="width:52px;border:none;background:var(--bg3);color:var(--text);border-radius:8px;padding:2px 6px;font-size:12px;font-weight:600;text-align:center"
+            onchange="setRestTime(this.dataset.ej,this.value)" data-ej="${ejSafe}"
+            inputmode="numeric">
+          <span style="font-size:11px;color:var(--text3)">seg</span>
+          <button onclick="startRestTimer(this.dataset.ej)" data-ej="${ejSafe}" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:12px;padding:2px 10px;font-size:11px;cursor:pointer;font-weight:600">&#9654; Iniciar</button>
+        </div>
       </div>`;
     }).join('');
     document.getElementById('e-vol').textContent=Math.round(vol);
@@ -2199,23 +2209,28 @@ var _restTimerInterval = null;
 var _restTimerEl = null;
 
 function getRestTime(ej) {
+  // ej puede venir con &#39; en lugar de '
+  var ejClean = ej.replace(/&#39;/g, "'");
+  if (ST.restTimes && ST.restTimes[ejClean] !== undefined) return ST.restTimes[ejClean];
   if (ST.restTimes && ST.restTimes[ej] !== undefined) return ST.restTimes[ej];
-  return REST_DEFAULTS[ej] || 90;
+  return REST_DEFAULTS[ejClean] || REST_DEFAULTS[ej] || 90;
 }
 
 function setRestTime(ej, val) {
   if (!ST.restTimes) ST.restTimes = {};
-  ST.restTimes[ej] = parseInt(val) || 90;
+  var ejClean = ej.replace(/&#39;/g, "'");
+  ST.restTimes[ejClean] = parseInt(val) || 90;
   save();
 }
 
 function startRestTimer(ej) {
-  var secs = getRestTime(ej);
+  var ejClean = ej.replace(/&#39;/g, "'");
+  var secs = getRestTime(ejClean);
   // Crear o reutilizar el toast de descanso
-  var toast = document.getElementById('rest-toast');
+  var toast = document.getElementById("rest-toast");
   if (!toast) {
     toast = document.createElement('div');
-    toast.id = 'rest-toast';
+    toast.id = "rest-toast";
     toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;border-radius:20px;padding:10px 24px;font-size:15px;font-weight:700;z-index:999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-width:200px;justify-content:center';
     document.body.appendChild(toast);
   }
@@ -2232,8 +2247,8 @@ function startRestTimer(ej) {
     var m = Math.floor(remaining / 60);
     var s = remaining % 60;
     toast.style.background = remaining <= 10 ? 'var(--orange)' : 'var(--blue)';
-    toast.innerHTML = '⏱ Descanso: ' + (m > 0 ? m + ':' + (s < 10 ? '0' : '') + s : s + 's') +
-      ' <button onclick="clearInterval(_restTimerInterval);document.getElementById('rest-toast').style.display='none'" style="border:none;background:rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;cursor:pointer;margin-left:8px">✕</button>';
+    var closeBtn = '<button onclick="clearInterval(_restTimerInterval);this.parentNode.style.display=\'none\'" style="border:none;background:rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;cursor:pointer;margin-left:8px">✕</button>';
+    toast.innerHTML = '⏱ Descanso: ' + (m > 0 ? m + ':' + (s < 10 ? '0' : '') + s : s + 's') + ' ' + closeBtn;
     remaining--;
   }
   toast.style.display = 'flex';

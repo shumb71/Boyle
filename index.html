@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v28"
+      version: "v29"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -661,7 +661,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div class="drawer" id="drawer">
     <div class="drawer-header">
       <div class="drawer-logo">💪 Entreno PRO</div>
-      <div class="drawer-sub">José · 54 años · Semana <span id="drawer-sem">1</span></div>
+      <div class="drawer-sub">Semana <span id="drawer-sem">1</span></div>
     </div>
     <nav class="drawer-nav">
       <button class="dnav-item active" id="dnav-hoy" onclick="navTo('hoy','Hoy')">
@@ -670,9 +670,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="dnav-item" id="dnav-entreno" onclick="navTo('entreno','Entreno')">
         <i class="ti ti-barbell dnav-icon" aria-hidden="true"></i><span class="dnav-label">Entreno</span>
       </button>
-      <button class="dnav-item" id="dnav-historial" onclick="navTo('historial','Historial')"><i class="ti ti-chart-line dnav-icon"></i><span class="dnav-label">Historial</span></button>
       <button class="dnav-item" id="dnav-ciclo" onclick="navTo('ciclo','Programa')">
-        <i class="ti ti-calendar dnav-icon" aria-hidden="true"></i><span class="dnav-label">Ciclo de turnos</span>
+        <i class="ti ti-calendar dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa</span>
       </button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-nut" onclick="navTo('nut','Nutricion')">
@@ -689,6 +688,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="dnav-item" id="dnav-eval" onclick="navTo('eval','Evaluacion')">
         <i class="ti ti-clipboard-check dnav-icon" aria-hidden="true"></i><span class="dnav-label">Evaluacion</span>
       </button>
+      <button class="dnav-item" id="dnav-historial" onclick="navTo('historial','Historial')"><i class="ti ti-chart-line dnav-icon"></i><span class="dnav-label">Historial</span></button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-config" onclick="navTo('config','Config')">
         <i class="ti ti-settings dnav-icon" aria-hidden="true"></i><span class="dnav-label">Configuracion</span>
@@ -1322,10 +1322,10 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{}};
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};}}catch(e){}}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};}}catch(e){}}
 function save(){try{ST._localSaveTime=Date.now();localStorage.setItem('jose_v9',JSON.stringify(ST));saveFirebase();}catch(e){}}
 load();
 
@@ -2178,11 +2178,74 @@ function resetearSesion(){
   save();renders.entreno();
 }
 
+
+// ══════════════════════════════════════
+// TIEMPOS DE DESCANSO POR EJERCICIO
+// ══════════════════════════════════════
+const REST_DEFAULTS = {
+  'Hang Clean': 120, 'DB Snatch / KB Swing': 120,
+  'Trap Bar Deadlift': 180, 'Single-leg RDL (Straight-leg DL)': 90,
+  'Split Squat (Bottoms-up KB)': 90, 'Split Squat / RFESS': 90,
+  'Chin-up / Pull-up': 120, 'DB Row / TRX Row': 90,
+  'Press banca (Bench Press)': 120, 'Incline Bench / Close Grip Bench': 120,
+  'Push-up variante (TRX/lastrada)': 60,
+  'Press hombro KB (half-kneeling)': 90,
+  'Plancha antirotacion (Chop)': 60, 'Chop/Lift (standing)': 60,
+  'Side Plank / Suitcase Carry': 60, 'Farmer Walk / Side Plank Row': 60,
+  'Ab Wheel / Body Saw': 60, 'AB Wheel / Valslide Rollout': 60,
+  'Slide Board Lunge / Ham ISO': 90, 'Trineo (empujes)': 120,
+};
+var _restTimerInterval = null;
+var _restTimerEl = null;
+
+function getRestTime(ej) {
+  if (ST.restTimes && ST.restTimes[ej] !== undefined) return ST.restTimes[ej];
+  return REST_DEFAULTS[ej] || 90;
+}
+
+function setRestTime(ej, val) {
+  if (!ST.restTimes) ST.restTimes = {};
+  ST.restTimes[ej] = parseInt(val) || 90;
+  save();
+}
+
+function startRestTimer(ej) {
+  var secs = getRestTime(ej);
+  // Crear o reutilizar el toast de descanso
+  var toast = document.getElementById('rest-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'rest-toast';
+    toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;border-radius:20px;padding:10px 24px;font-size:15px;font-weight:700;z-index:999;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-width:200px;justify-content:center';
+    document.body.appendChild(toast);
+  }
+  if (_restTimerInterval) clearInterval(_restTimerInterval);
+  var remaining = secs;
+  function tick() {
+    if (remaining <= 0) {
+      clearInterval(_restTimerInterval);
+      toast.style.background = 'var(--green)';
+      toast.innerHTML = '✅ Descanso completado';
+      setTimeout(function() { toast.style.display = 'none'; }, 2000);
+      return;
+    }
+    var m = Math.floor(remaining / 60);
+    var s = remaining % 60;
+    toast.style.background = remaining <= 10 ? 'var(--orange)' : 'var(--blue)';
+    toast.innerHTML = '⏱ Descanso: ' + (m > 0 ? m + ':' + (s < 10 ? '0' : '') + s : s + 's') +
+      ' <button onclick="clearInterval(_restTimerInterval);document.getElementById('rest-toast').style.display='none'" style="border:none;background:rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:2px 8px;font-size:12px;cursor:pointer;margin-left:8px">✕</button>';
+    remaining--;
+  }
+  toast.style.display = 'flex';
+  tick();
+  _restTimerInterval = setInterval(tick, 1000);
+}
+
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v28';
+const APP_VERSION='v29';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -2887,7 +2950,7 @@ function cargarDesdeDrive(token,fileId,fechaStr){
   .then(function(r){return r.json();})
   .then(function(data){
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};
     if(!ST.eval)ST.eval=[];
     save();
     renders.hoy();
@@ -3243,7 +3306,7 @@ function leerDesdeD(token,syncEl){
   .then(function(data){
     if(!data) return;
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};
     if(!ST.eval)ST.eval=[];
     save();renders.hoy();checkBackupReminder();
     syncEl.style.background='var(--green-bg)';syncEl.style.color='var(--green-text)';

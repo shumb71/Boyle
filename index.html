@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v29</title>
+<title>Entreno Boyle v30</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v29"
+      version: "v30"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -493,6 +493,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- NUTRICION -->
   <div class="screen" id="s-nut">
     <div class="ph"><h1>Nutricion</h1><span id="n-ttag" class="tag tb">—</span></div>
+    <div class="card" style="margin-bottom:.75rem">
+      <div class="card-lbl" style="margin-bottom:.5rem">Tipo de dia</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="n-tipo-btns">
+        <button onclick="setNutTipo('auto')"   id="ntb-auto"   style="border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff">Auto</button>
+        <button onclick="setNutTipo('Manana')" id="ntb-Manana" style="border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">Mañana</button>
+        <button onclick="setNutTipo('Tarde')"  id="ntb-Tarde"  style="border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">Tarde</button>
+        <button onclick="setNutTipo('Noche')"  id="ntb-Noche"  style="border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">Noche</button>
+        <button onclick="setNutTipo('Libre')"  id="ntb-Libre"  style="border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">Libre</button>
+      </div>
+    </div>
     <div class="mgrid">
       <div class="mbox"><div class="mval" style="color:var(--blue)" id="n-k">0</div><div class="mlbl">kcal</div><div class="msub" id="n-kobj">/ 2100</div></div>
       <div class="mbox"><div class="mval" style="color:var(--green)" id="n-p">0g</div><div class="mlbl">proteina</div><div class="msub">/ 170g</div></div>
@@ -1322,10 +1332,10 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto"};
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};}}catch(e){}}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";}}catch(e){}}
 function save(){try{ST._localSaveTime=Date.now();localStorage.setItem('jose_v9',JSON.stringify(ST));saveFirebase();}catch(e){}}
 load();
 
@@ -1694,10 +1704,17 @@ const renders={
   },
   nut(){
     const c=CICLO[(ST.dia-1)%12];
-    let t=c.t;if(!COMIDAS[t])t='Libre';
+    let t=ST.nutTipo&&ST.nutTipo!=='auto'?ST.nutTipo:c.t;
+    if(!COMIDAS[t])t='Libre';
     const cms=COMIDAS[t];
     document.getElementById('n-ttag').textContent=tnom(t);
     document.getElementById('n-tnom').textContent=tnom(t);
+    // Actualizar botones selector
+    const activo=ST.nutTipo||'auto';
+    ['auto','Manana','Tarde','Noche','Libre'].forEach(function(k){
+      const btn=document.getElementById('ntb-'+k);
+      if(btn){btn.style.background=k===activo?'var(--blue)':'var(--bg3)';btn.style.color=k===activo?'#fff':'var(--text2)';}
+    });
     const key='n_'+ST.dia+'_'+t;
     const done=ST.nut[key]||{};
     const esE=!['Descanso','Mov'].includes(c.s);
@@ -2256,11 +2273,17 @@ function startRestTimer(ej) {
   _restTimerInterval = setInterval(tick, 1000);
 }
 
+function setNutTipo(tipo){
+  ST.nutTipo=tipo;
+  save();
+  renders.nut();
+}
+
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v29';
+const APP_VERSION='v30';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -2592,8 +2615,11 @@ function calSelDia(fecha){
           <span style="font-size:11px">${setsStr}</span>
         </div>`;
       }).filter(Boolean).join('');
+      // Buscar qué dia Boyle fue ese día
+      var dBoyle=ST.diaBoyle&&ST.diaBoyle[diaNum]?ST.diaBoyle[diaNum]:CICLO[(parseInt(diaNum)-1)%12].b;
+      var nomBoyle=dBoyle?(SES_NOM[dBoyle]||dBoyle):'';
       if(ejsHTML) htmlE=`<div>
-        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:6px">🏋️ ENTRENO DÍA ${diaNum}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${nomBoyle?' · <span style="color:var(--blue-text);background:var(--blue-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+nomBoyle+'</span>':''}</div>
         ${ejsHTML}
       </div>`;
     }
@@ -2965,7 +2991,7 @@ function cargarDesdeDrive(token,fileId,fechaStr){
   .then(function(r){return r.json();})
   .then(function(data){
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";
     if(!ST.eval)ST.eval=[];
     save();
     renders.hoy();
@@ -3321,7 +3347,7 @@ function leerDesdeD(token,syncEl){
   .then(function(data){
     if(!data) return;
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";
     if(!ST.eval)ST.eval=[];
     save();renders.hoy();checkBackupReminder();
     syncEl.style.background='var(--green-bg)';syncEl.style.color='var(--green-text)';

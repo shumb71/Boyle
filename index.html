@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v32</title>
+<title>Entreno Boyle v33</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v32"
+      version: "v33"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -2332,57 +2332,57 @@ function toggleSection(id){
 
 function renderWarmupBody(){
   var dB=getDiaBoyle();
-  var body=document.getElementById('warmup-body');
+  var body=document.getElementById("warmup-body");
   if(!body||!dB) return;
   var cal=CAL_BOYLE[dB];
-  if(!cal||!cal.length){body.innerHTML='<div style="color:var(--text3);font-size:13px">No hay calentamiento para este dia.</div>';return;}
-  var html='';
+  if(!cal||!cal.length){body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay calentamiento para este dia.</div>";return;}
+  var out=[];
   cal.forEach(function(fase){
-    html+='<div style="margin-bottom:.75rem">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">';
-    html+='<span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span>';
-    html+='<span style="font-size:11px;color:var(--text3)">'+fase.tiempo+'</span>';
-    html+='</div>';
+    var faseDiv=["<div style=\"margin-bottom:.75rem\">"];
+    faseDiv.push("<div style=\"display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem\">");
+    faseDiv.push("<span style=\"font-size:12px;font-weight:700;color:var(--orange)\">"+fase.fase+"</span>");
+    faseDiv.push("<span style=\"font-size:11px;color:var(--text3)\">"+fase.tiempo+"</span></div>");
     fase.items.forEach(function(item){
       var ejImgs=getEjImgs(item.n);
-      html+='<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">';
-      html+='<div style="display:flex;align-items:flex-start;gap:8px">';
+      faseDiv.push("<div style=\"padding:.4rem 0;border-bottom:.5px solid var(--border)\">");
+      faseDiv.push("<div style=\"display:flex;align-items:flex-start;gap:8px\">");
       if(ejImgs.length){
-        html+='<img src="'+ejImgs[0]+'" alt="'+item.n+'" style="width:56px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">';
+        faseDiv.push("<img src=\""+ejImgs[0]+"\" style=\"width:56px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0\" onerror=\"this.style.display='none'\">");
       }
-      html+='<div style="flex:1">';
-      html+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+item.n+'</div>';
-      if(item.d) html+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+item.d+'</div>';
-      if(item.t) html+='<span style="font-size:10px;background:var(--orange-bg,var(--bg3));color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+item.t+'</span>';
-      html+='</div></div></div>';
+      faseDiv.push("<div style=\"flex:1\">");
+      faseDiv.push("<div style=\"font-size:13px;font-weight:600;color:var(--text)\">"+item.n+"</div>");
+      if(item.d) faseDiv.push("<div style=\"font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px\">"+item.d+"</div>");
+      if(item.t) faseDiv.push("<span style=\"font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block\">"+item.t+"</span>");
+      faseDiv.push("</div></div></div>");
     });
-    html+='</div>';
+    faseDiv.push("</div>");
+    out.push(faseDiv.join(""));
   });
-  body.innerHTML=html;
+  body.innerHTML=out.join("");
 }
 
 function renderEnfBody(){
   var dB=getDiaBoyle();
-  var body=document.getElementById('e-enf');
+  var body=document.getElementById("e-enf");
   if(!body) return;
-  var enf=ENF[dB||'Mov']||ENF['Mov']||[];
-  if(!enf.length){body.innerHTML='<div style="color:var(--text3);font-size:13px">Sin enfriamiento definido.</div>';return;}
-  var html='';
+  var enf=ENF[dB||"Mov"]||ENF["Mov"]||[];
+  if(!enf.length){body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">Sin enfriamiento definido.</div>";return;}
+  var out=[];
   enf.forEach(function(item){
-    html+='<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">';
-    html+='<div style="display:flex;align-items:center;justify-content:space-between">';
-    html+='<span style="font-size:13px;font-weight:600;color:var(--text)">'+item.n+'</span>';
-    html+='<span style="font-size:11px;color:var(--text3)">'+item.t+'</span>';
-    html+='</div></div>';
+    out.push("<div style=\"padding:.4rem 0;border-bottom:.5px solid var(--border)\">");
+    out.push("<div style=\"display:flex;align-items:center;justify-content:space-between\">");
+    out.push("<span style=\"font-size:13px;font-weight:600;color:var(--text)\">"+item.n+"</span>");
+    out.push("<span style=\"font-size:11px;color:var(--text3)\">"+item.t+"</span>");
+    out.push("</div></div>");
   });
-  body.innerHTML=html;
+  body.innerHTML=out.join("");
 }
 
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v32';
+const APP_VERSION='v33';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

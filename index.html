@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v30</title>
+<title>Entreno Boyle v31</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v30"
+      version: "v31"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -417,6 +417,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="stbox"><div class="stval" id="e-vol">0</div><div class="stlbl">kg volumen</div></div>
       <div class="stbox"><div class="stval" id="e-ser">0/0</div><div class="stlbl">series</div></div>
     </div>
+    <!-- CALENTAMIENTO EXPANDIBLE -->
+    <div class="card" id="e-warmup-card">
+      <div onclick="toggleSection('warmup')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
+        <div class="card-lbl" style="margin-bottom:0;color:var(--orange)">🔥 Calentamiento</div>
+        <i class="ti ti-chevron-down" id="warmup-icon" style="color:var(--text3);transition:transform .2s"></i>
+      </div>
+      <div id="warmup-body" style="display:none;margin-top:.75rem"></div>
+    </div>
+
     <div class="card" id="e-cal-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
         <div class="card-lbl" style="margin-bottom:0;color:var(--orange)">🔥 Calentamiento</div>
@@ -436,7 +445,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
       <div style="font-size:11px;color:var(--text3)">Cambios solo para la sesion de hoy (Dia <span id="e-editor-dia">—</span>)</div>
     </div>
-    <div class="card" id="e-enf-card"><div class="card-lbl" style="color:var(--green)">🧘 Enfriamiento</div><div id="e-enf"></div></div>
+    <!-- ENFRIAMIENTO EXPANDIBLE -->
+    <div class="card" id="e-enf-card">
+      <div onclick="toggleSection('enf')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div class="card-lbl" style="margin-bottom:0;color:var(--green)">🧘 Enfriamiento</div>
+        <i class="ti ti-chevron-down" id="enf-icon" style="color:var(--text3);transition:transform .2s"></i>
+      </div>
+      <div id="e-enf" style="display:none;margin-top:.75rem"></div>
+    </div>
     <div class="card"><div class="card-lbl">Historial reciente</div><div id="e-hist"></div></div>
   </div>
 
@@ -1090,6 +1106,20 @@ function abrirVariantes(ejOrig){
     listEl.appendChild(div);
   }
   document.getElementById('mo-var-title').textContent=ejOrig;
+  // Imágenes del ejercicio
+  var imgsEl=document.getElementById('mo-var-imgs');
+  var infoEl=document.getElementById('mo-var-info');
+  if(imgsEl){
+    var ejImgs=getEjImgs(ejOrig);
+    imgsEl.innerHTML=ejImgs.map(function(src){
+      return '<img src="'+src+'" style="height:72px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display:none">';
+    }).join('');
+    imgsEl.style.display=ejImgs.length?'flex':'none';
+  }
+  if(infoEl){
+    var info=EJ_INFO[ejOrig]||{};
+    infoEl.innerHTML=info.tecnica?'<div style="font-size:12px;color:var(--text2);background:var(--bg3);border-radius:var(--rs);padding:.4rem .6rem;line-height:1.4">'+info.tecnica+'</div>':'';
+  }
   document.getElementById('mo-var').classList.add('open');
 }
 function closeMoVar(){
@@ -2279,11 +2309,80 @@ function setNutTipo(tipo){
   renders.nut();
 }
 
+const EJ_IMGS={"Foam roll gluteo y TFL": ["foam_roll_1", "foam_roll_2"], "Foam roll toracica": ["foam_roll_3", "foam_roll_4"], "Foam roll aductores": ["foam_roll_5", "foam_roll_6"], "Foam roll pectorales": ["foam_roll_dynamic_1"], "Estiramiento psoas en caballero": ["static_stretch_1", "static_stretch_2"], "Estiramiento aductores en suelo": ["static_stretch_3"], "Estiramiento pecho en marco": ["static_stretch_4"], "Hip hinge sin peso": ["mobility_1", "mobility_2"], "Rotaciones toracicas en suelo": ["mobility_3", "mobility_4"], "Movilidad tobillo en pared": ["ankle_mob_1", "ankle_mob_2"], "Trap Bar Deadlift": ["hip_dom_1", "hip_dom_2"], "KB Swing bilateral": ["kb_swing_sl_rdl"], "Sumo deadlift": ["sumo_deadlift_1", "sumo_deadlift_2"], "Split Squat / RFESS": ["single_leg_strength_1", "single_leg_strength_2", "single_leg_strength_3"], "Single-leg RDL (Straight-leg DL)": ["sl_rdl", "sl_hip_dom_1", "sl_hip_dom_2"], "Slide Board Lunge / Ham ISO": ["sl_hip_dom_3"], "Cook Hip Lift": ["cook_hip_lift_1", "cook_hip_lift_2"], "Ab Wheel / Body Saw": ["antiext_1", "antiext_2", "antiext_3"], "AB Wheel / Valslide Rollout": ["rollout_base", "rollout_pro1", "rollout_pro2"], "Side Plank / Suitcase Carry": ["side_plank_carry"], "Farmer Walk / Side Plank Row": ["side_plank_carry"], "Plancha antirotacion (Chop)": ["chop_lift_1", "chop_lift_2"], "Chop/Lift (standing)": ["chop_lift_2", "chop_lift_3"], "Cook Hip Lift (core)": ["cook_hip_lift_core", "cook_hip_lift_core2"], "Turkish Get-Up": ["turkish_getup_1", "turkish_getup_2"], "DB Row / TRX Row": ["horiz_pull_1", "horiz_pull_2"], "Single-arm single-leg Row": ["sl_sa_row_1", "sl_sa_row_2"], "Press banca (Bench Press)": ["press_1", "press_2"], "Press hombro KB (half-kneeling)": ["overhead_press_1", "overhead_press_2", "overhead_press_3"], "Chin-up / Pull-up": ["sl_rdl_upper", "sl_rdl_prog"]};
+const IMGS_BASE='imgs/';
+function getEjImgs(ej){
+  var imgs=EJ_IMGS[ej];
+  if(!imgs||!imgs.length) return [];
+  return imgs.map(function(k){return IMGS_BASE+k+'.png';});
+}
+
+// ══════════════════════════════════════
+// CALENTAMIENTO / ENFRIAMIENTO EXPANDIBLES
+// ══════════════════════════════════════
+function toggleSection(id){
+  var body=document.getElementById(id==='warmup'?'warmup-body':'e-enf');
+  var icon=document.getElementById(id+'-icon');
+  if(!body) return;
+  var open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(icon) icon.style.transform=open?'':'rotate(180deg)';
+  if(!open) id==='warmup'?renderWarmupBody():renderEnfBody();
+}
+
+function renderWarmupBody(){
+  var dB=getDiaBoyle();
+  var body=document.getElementById('warmup-body');
+  if(!body||!dB) return;
+  var cal=CAL_BOYLE[dB];
+  if(!cal||!cal.length){body.innerHTML='<div style="color:var(--text3);font-size:13px">No hay calentamiento para este dia.</div>';return;}
+  var html='';
+  cal.forEach(function(fase){
+    html+='<div style="margin-bottom:.75rem">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">';
+    html+='<span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span>';
+    html+='<span style="font-size:11px;color:var(--text3)">'+fase.tiempo+'</span>';
+    html+='</div>';
+    fase.items.forEach(function(item){
+      var ejImgs=getEjImgs(item.n);
+      html+='<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">';
+      html+='<div style="display:flex;align-items:flex-start;gap:8px">';
+      if(ejImgs.length){
+        html+='<img src="'+ejImgs[0]+'" alt="'+item.n+'" style="width:56px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">';
+      }
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+item.n+'</div>';
+      if(item.d) html+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+item.d+'</div>';
+      if(item.t) html+='<span style="font-size:10px;background:var(--orange-bg,var(--bg3));color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+item.t+'</span>';
+      html+='</div></div></div>';
+    });
+    html+='</div>';
+  });
+  body.innerHTML=html;
+}
+
+function renderEnfBody(){
+  var dB=getDiaBoyle();
+  var body=document.getElementById('e-enf');
+  if(!body) return;
+  var enf=ENF[dB||'Mov']||ENF['Mov']||[];
+  if(!enf.length){body.innerHTML='<div style="color:var(--text3);font-size:13px">Sin enfriamiento definido.</div>';return;}
+  var html='';
+  enf.forEach(function(item){
+    html+='<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+    html+='<span style="font-size:13px;font-weight:600;color:var(--text)">'+item.n+'</span>';
+    html+='<span style="font-size:11px;color:var(--text3)">'+item.t+'</span>';
+    html+='</div></div>';
+  });
+  body.innerHTML=html;
+}
+
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v30';
+const APP_VERSION='v31';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -3370,6 +3469,8 @@ checkBackupReminder();
   <div class="ms">
     <div class="mh"></div>
     <div class="mt" id="mo-var-title">Variantes</div>
+    <div id="mo-var-imgs" style="display:flex;gap:6px;overflow-x:auto;margin-bottom:.5rem;padding-bottom:2px"></div>
+    <div id="mo-var-info" style="margin-bottom:.5rem"></div>
     <div id="mo-var-list"></div>
     <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem" onclick="closeMoVar()">Cancelar</button>
   </div>

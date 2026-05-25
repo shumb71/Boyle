@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v41</title>
+<title>Entreno Boyle v42</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v41"
+      version: "v42"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1171,6 +1171,34 @@ function closeMoVar(){
   document.getElementById('mo-var').classList.remove('open');
 }
 
+function addVarianteDesdeModal(){
+  var input = document.getElementById('mo-var-nueva-input');
+  var nueva = (input.value||'').trim();
+  if(!nueva) return;
+  // Ejercicio actual abierto en el modal
+  var ejOrig = document.getElementById('mo-var-title').textContent;
+  if(!ejOrig) return;
+  // Añadir a VARIANTES
+  if(!VARIANTES[ejOrig]) VARIANTES[ejOrig]=[ejOrig];
+  if(!VARIANTES[ejOrig].includes(nueva)) VARIANTES[ejOrig].push(nueva);
+  // Guardar en ST.variantesCustom para persistencia
+  if(!ST.variantesCustom) ST.variantesCustom={};
+  if(!ST.variantesCustom[ejOrig]) ST.variantesCustom[ejOrig]=VARIANTES[ejOrig].slice();
+  else if(!ST.variantesCustom[ejOrig].includes(nueva)) ST.variantesCustom[ejOrig].push(nueva);
+  // Si la variante no existe en EJ_BASE ni EJ_INFO, añadirla a Ejercicios
+  var existeEnBase = EJ_BASE.find(function(e){return e.n===nueva||e.key===nueva;});
+  if(!existeEnBase){
+    var id = 'custom_'+Date.now();
+    EJ_BASE.push({id:id, n:nueva, cat:'Otros', key:nueva});
+    if(!ST.ejsCustom) ST.ejsCustom={};
+    ST.ejsCustom[id]={nombre:nueva, cat:'Otros', key:nueva};
+  }
+  save();
+  input.value='';
+  // Reabrir el modal con la nueva variante incluida
+  abrirVariantes(ejOrig);
+}
+
 const ENF={
   A:[{n:'Posicion fetal + respiracion',t:'2 min. Siempre al final. Descomprime el disco.',tm:'2 min'},{n:'Psoas en caballero',t:'40 seg por lado. Rodilla en suelo, cadera adelante.',tm:'40 seg'},{n:'Isquiotibiales tumbado',t:'40 seg por lado. Sin forzar.',tm:'40 seg'},{n:'Gluteo figura 4',t:'40 seg por lado. Tobillo sobre la rodilla contraria.',tm:'40 seg'}],
   B:[{n:'Posicion fetal + respiracion',t:'2 min. Siempre al final.',tm:'2 min'},{n:'Pecho en marco de puerta',t:'40 seg. Brazo en L, rota el cuerpo hacia afuera.',tm:'40 seg'},{n:'Trapecio y cervicales',t:'30 seg por lado. Inclina la cabeza, mano sobre la sien.',tm:'30 seg'},{n:'Foam roller toracica',t:'2 min. Apoyar en zona dorsal, extender suavemente.',tm:'2 min'}],
@@ -1410,7 +1438,9 @@ function semaforo(d,f){
 let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{}};
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};}}catch(e){}}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};
+  // Restaurar variantes custom
+  if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}}}catch(e){}}
 function save(){try{ST._localSaveTime=Date.now();localStorage.setItem('jose_v9',JSON.stringify(ST));saveFirebase();}catch(e){}}
 load();
 
@@ -2975,7 +3005,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v41';
+const APP_VERSION='v42';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -3696,7 +3726,9 @@ function cargarDesdeDrive(token,fileId,fechaStr){
   .then(function(r){return r.json();})
   .then(function(data){
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};
+  // Restaurar variantes custom
+  if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}
     if(!ST.eval)ST.eval=[];
     save();
     renders.hoy();
@@ -4052,7 +4084,9 @@ function leerDesdeD(token,syncEl){
   .then(function(data){
     if(!data) return;
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};
+  // Restaurar variantes custom
+  if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}
     if(!ST.eval)ST.eval=[];
     save();renders.hoy();checkBackupReminder();
     syncEl.style.background='var(--green-bg)';syncEl.style.color='var(--green-text)';
@@ -4078,7 +4112,12 @@ checkBackupReminder();
     <div id="mo-var-imgs" style="display:flex;gap:6px;overflow-x:auto;margin-bottom:.5rem;padding-bottom:2px"></div>
     <div id="mo-var-info" style="margin-bottom:.5rem"></div>
     <div id="mo-var-list"></div>
-    <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem" onclick="closeMoVar()">Cancelar</button>
+    <!-- Añadir variante nueva inline -->
+    <div style="display:flex;gap:8px;margin-top:.75rem">
+      <input type="text" id="mo-var-nueva-input" placeholder="Añadir variante nueva..." style="flex:1;padding:9px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:14px;background:var(--bg);color:var(--text);outline:none">
+      <button onclick="addVarianteDesdeModal()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:9px 14px;font-size:14px;font-weight:700;cursor:pointer">+</button>
+    </div>
+    <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.5rem" onclick="closeMoVar()">Cerrar</button>
   </div>
 </div>
 

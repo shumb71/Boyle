@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v40</title>
+<title>Entreno Boyle v41</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v40"
+      version: "v41"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -760,7 +760,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="dnav-item" id="dnav-ejercicios" onclick="navTo('ejercicios','Ejercicios')">
         <i class="ti ti-list-details dnav-icon"></i><span class="dnav-label">Ejercicios</span>
       </button>
-      <button class="dnav-item" id="dnav-historial" onclick="navTo('historial','Historial')"><i class="ti ti-chart-line dnav-icon"></i><span class="dnav-label">Historial</span></button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-config" onclick="navTo('config','Config')">
         <i class="ti ti-settings dnav-icon" aria-hidden="true"></i><span class="dnav-label">Configuracion</span>
@@ -2048,6 +2047,22 @@ function togNut(i,key){
   save();renders.nut();
 }
 
+function abrirVariantes2(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  abrirVariantes(ej);
+}
+function toggleEjCheck2(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  toggleEjCheck(ej);
+}
+function quitarEjSesion2(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  quitarEjSesion(ej);
+}
+function abrirHistEj2(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  abrirHistEj(ej);
+}
 function openMo2(el){
   var ej=el.dataset.ej.replace(/&#39;/g,"'");
   var pi=parseInt(el.dataset.pi)||0;
@@ -2960,7 +2975,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v40';
+const APP_VERSION='v41';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

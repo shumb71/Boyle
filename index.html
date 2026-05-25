@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v31</title>
+<title>Entreno Boyle v32</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v31"
+      version: "v32"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1112,7 +1112,7 @@ function abrirVariantes(ejOrig){
   if(imgsEl){
     var ejImgs=getEjImgs(ejOrig);
     imgsEl.innerHTML=ejImgs.map(function(src){
-      return '<img src="'+src+'" style="height:72px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display:none">';
+      return '<img src="'+src+'" style="height:72px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display=\'none\'">';
     }).join('');
     imgsEl.style.display=ejImgs.length?'flex':'none';
   }
@@ -2348,7 +2348,7 @@ function renderWarmupBody(){
       html+='<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">';
       html+='<div style="display:flex;align-items:flex-start;gap:8px">';
       if(ejImgs.length){
-        html+='<img src="'+ejImgs[0]+'" alt="'+item.n+'" style="width:56px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">';
+        html+='<img src="'+ejImgs[0]+'" alt="'+item.n+'" style="width:56px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">';
       }
       html+='<div style="flex:1">';
       html+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+item.n+'</div>';
@@ -2382,7 +2382,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v31';
+const APP_VERSION='v32';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v38</title>
+<title>Entreno Boyle v39</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v38"
+      version: "v39"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -451,6 +451,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
 
   <!-- HISTORIAL -->
+  <!-- EJERCICIOS -->
+  <div class="screen" id="s-ejercicios">
+    <div class="ph"><h1>Ejercicios</h1><span style="font-size:13px;color:var(--text2)" id="ej-count">—</span></div>
+    <!-- Buscador -->
+    <div class="card" style="padding:.6rem .75rem">
+      <input type="text" id="ej-search" placeholder="Buscar ejercicio..." oninput="filtrarEjercicios(this.value)"
+        style="width:100%;border:none;background:var(--bg3);color:var(--text);border-radius:var(--rs);padding:.5rem .75rem;font-size:14px">
+    </div>
+    <!-- Filtro categoría -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 .75rem .5rem" id="ej-cats"></div>
+    <!-- Lista -->
+    <div id="ej-lista"></div>
+  </div>
+
   <div class="screen" id="s-historial">
     <div class="ph"><h1>Historial</h1><span style="font-size:13px;color:var(--text2)" id="hist-total"></span></div>
     <div id="hist-content"></div>
@@ -579,6 +593,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="cal-det-garmin"></div>
       <div id="cal-det-entreno"></div>
     </div>
+    <!-- Estadísticas mensuales Garmin -->
+    <div class="card" id="cal-stats-card" style="display:none">
+      <div class="card-lbl">📊 Resumen del mes</div>
+      <div id="cal-stats"></div>
+    </div>
+
     <div class="card" id="cal-vacio" style="text-align:center;padding:2rem 1rem">
       <div style="font-size:32px;margin-bottom:.5rem">📅</div>
       <div style="color:var(--text2);font-size:14px">Importa JSONs de Garmin para ver tus datos en el calendario</div>
@@ -706,6 +726,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-eval" onclick="navTo('eval','Evaluacion')">
         <i class="ti ti-clipboard-check dnav-icon" aria-hidden="true"></i><span class="dnav-label">Evaluacion</span>
+      </button>
+      <button class="dnav-item" id="dnav-ejercicios" onclick="navTo('ejercicios','Ejercicios')">
+        <i class="ti ti-list-details dnav-icon"></i><span class="dnav-label">Ejercicios</span>
       </button>
       <button class="dnav-item" id="dnav-historial" onclick="navTo('historial','Historial')"><i class="ti ti-chart-line dnav-icon"></i><span class="dnav-label">Historial</span></button>
       <div class="dnav-sep"></div>
@@ -1355,10 +1378,10 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto"};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{}};
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";}}catch(e){}}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};}}catch(e){}}
 function save(){try{ST._localSaveTime=Date.now();localStorage.setItem('jose_v9',JSON.stringify(ST));saveFirebase();}catch(e){}}
 load();
 
@@ -1450,6 +1473,7 @@ function closeDrawer(){
 }
 function navTo(id,title){
   if(id==='ciclo') setTimeout(renderPrograma,50);
+  if(id==='ejercicios') setTimeout(renderEjercicios,50);
   closeDrawer();
   setTimeout(()=>goTo(id,null),200);
   document.getElementById('topbar-title').textContent=title;
@@ -1686,7 +1710,7 @@ const renders={
             +'<div data-ej="'+ejSafe+'" onclick="toggleEjCheck2(this)" style="width:20px;height:20px;border-radius:50%;background:'+(ejDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(ejDone?'rgba(99,153,34,.35)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:'+(tieneDatosReales?'default':'pointer')+'">'
             +(ejDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')
             +'</div>'
-            +'<div style="flex:1"><span class="ejname">'+getVarianteActual(ej)+'</span>'
+            +'<div style="flex:1"><span class="ejname" data-ej="'+ejSafe+'" onclick="abrirFichaDesdeEntreno(this)" style="cursor:pointer">'+getVarianteActual(ej)+'</span>'
             +(getVarianteActual(ej)!==ej?'<div style="font-size:10px;color:var(--text3)">variante de '+ej+'</div>':'')
             +'</div>'
             +varBtn
@@ -2394,11 +2418,327 @@ function renderEnfBody(){
   body.innerHTML=out.join("");
 }
 
+
+// ══════════════════════════════════════
+// BASE DE DATOS DE EJERCICIOS
+// ══════════════════════════════════════
+const EJ_CATS = ['Todos','Explosivo','Hip Dom','Rodilla Unilat','Traccion','Press','Core','Movilidad'];
+
+const EJ_BASE = [
+  // EXPLOSIVOS
+  {id:'hang_clean',n:'Hang Clean',cat:'Explosivo',key:'Hang Clean'},
+  {id:'kb_swing',n:'KB Swing',cat:'Explosivo',key:'DB Snatch / KB Swing'},
+  {id:'db_snatch',n:'DB Snatch',cat:'Explosivo',key:'DB Snatch / KB Swing'},
+  // HIP DOMINANTE
+  {id:'trap_bar_dl',n:'Trap Bar Deadlift',cat:'Hip Dom',key:'Trap Bar Deadlift'},
+  {id:'sl_rdl',n:'Single-leg RDL',cat:'Hip Dom',key:'Single-leg RDL (Straight-leg DL)'},
+  {id:'slide_lunge',n:'Slide Board Lunge',cat:'Hip Dom',key:'Slide Board Lunge / Ham ISO'},
+  {id:'cook_hip',n:'Cook Hip Lift',cat:'Hip Dom',key:'Slide Board Lunge / Ham ISO'},
+  // RODILLA UNILATERAL
+  {id:'split_squat_kb',n:'Split Squat KB bottoms-up',cat:'Rodilla Unilat',key:'Split Squat (Bottoms-up KB)'},
+  {id:'rfess',n:'RFESS / Split Squat',cat:'Rodilla Unilat',key:'Split Squat / RFESS'},
+  {id:'sl_squat',n:'Single-leg Squat',cat:'Rodilla Unilat',key:'Single-leg RDL (Straight-leg DL)'},
+  // TRACCION
+  {id:'chinup',n:'Chin-up / Pull-up',cat:'Traccion',key:'Chin-up / Pull-up'},
+  {id:'db_row',n:'DB Row / TRX Row',cat:'Traccion',key:'DB Row / TRX Row'},
+  {id:'farmer_walk',n:'Farmer Walk / Side Plank Row',cat:'Traccion',key:'Farmer Walk / Side Plank Row'},
+  // PRESS
+  {id:'bench_press',n:'Press Banca',cat:'Press',key:'Press banca (Bench Press)'},
+  {id:'incline_press',n:'Incline Press',cat:'Press',key:'Incline Bench / Close Grip Bench'},
+  {id:'kb_press',n:'Press KB Half-kneeling',cat:'Press',key:'Press hombro KB (half-kneeling)'},
+  {id:'pushup',n:'Push-up variante',cat:'Press',key:'Push-up variante (TRX/lastrada)'},
+  // CORE
+  {id:'chop',n:'Chop / Lift',cat:'Core',key:'Plancha antirotacion (Chop)'},
+  {id:'chop_standing',n:'Chop/Lift Standing',cat:'Core',key:'Chop/Lift (standing)'},
+  {id:'side_plank',n:'Side Plank / Suitcase Carry',cat:'Core',key:'Side Plank / Suitcase Carry'},
+  {id:'ab_wheel',n:'Ab Wheel / Body Saw',cat:'Core',key:'Ab Wheel / Body Saw'},
+  {id:'valslide',n:'Valslide Rollout',cat:'Core',key:'AB Wheel / Valslide Rollout'},
+  // MOVILIDAD
+  {id:'hip_hinge',n:'Hip Hinge sin peso',cat:'Movilidad',key:'Hip hinge sin peso'},
+  {id:'tor_rot',n:'Rotaciones Toracicas',cat:'Movilidad',key:'Rotaciones toracicas en suelo'},
+  {id:'ankle_mob',n:'Movilidad Tobillo',cat:'Movilidad',key:'Movilidad tobillo en pared'},
+  {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
+  // TRINEO
+  {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
+];
+
+// Estado seleccionado en ficha
+var _fichaEjActual = null;
+var _fichaEjCat = 'Todos';
+var _fichaChart = null;
+
+function getEjData(keyOrId){
+  // Buscar por id o por key
+  var ej = EJ_BASE.find(function(e){return e.id===keyOrId||e.key===keyOrId||e.n===keyOrId;});
+  return ej || {id:keyOrId, n:keyOrId, cat:'', key:keyOrId};
+}
+
+function renderEjercicios(){
+  var q = (document.getElementById('ej-search')||{}).value||'';
+  // Categorías
+  var catsEl = document.getElementById('ej-cats');
+  if(catsEl && !catsEl.innerHTML){
+    catsEl.innerHTML = EJ_CATS.map(function(c){
+      return '<button data-cat="'+c+'" onclick="setEjCat(this.dataset.cat)" id="ejcat-'+c.replace(/ /g,'_')+'" style="border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;background:'+(c==="Todos"?"var(--blue)":"var(--bg3)")+';color:'+(c==="Todos"?"#fff":"var(--text2)")+'">'+c+'</button>';
+    }).join('');
+  }
+  // Construir lista base (EJ_BASE + custom de ST)
+  var custom = ST.ejsCustom||{};
+  var todos = EJ_BASE.slice();
+  // Añadir custom que no estén en base
+  Object.keys(custom).forEach(function(id){
+    if(!todos.find(function(e){return e.id===id;})){
+      todos.push(Object.assign({id:id},custom[id]));
+    }
+  });
+  // Filtrar
+  var filtrados = todos.filter(function(e){
+    var catOk = _fichaEjCat==='Todos'||e.cat===_fichaEjCat;
+    var qOk = !q || e.n.toLowerCase().includes(q.toLowerCase());
+    return catOk && qOk;
+  });
+  document.getElementById('ej-count').textContent = filtrados.length + ' ejercicios';
+  var listaEl = document.getElementById('ej-lista');
+  if(!listaEl) return;
+  // Agrupar por categoría
+  var porCat = {};
+  filtrados.forEach(function(e){
+    var c = e.cat||'Otros';
+    if(!porCat[c]) porCat[c]=[];
+    porCat[c].push(e);
+  });
+  var html = '';
+  Object.keys(porCat).forEach(function(cat){
+    html += '<div style="padding:.3rem .75rem .1rem"><span style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">'+cat+'</span></div>';
+    html += '<div class="card" style="padding:0">';
+    porCat[cat].forEach(function(e){
+      var custom_data = (ST.ejsCustom&&ST.ejsCustom[e.id])||{};
+      var tieneImg = !!(custom_data.img || (ST.ejsImgs&&ST.ejsImgs[e.id]));
+      var nombre = custom_data.nombre || e.n;
+      // Contar historial
+      var histCount = 0;
+      Object.keys(ST.sets||{}).forEach(function(k){
+        if(k.includes('_'+e.key)) histCount += (ST.sets[k]||[]).filter(Boolean).length;
+      });
+      html += '<div data-ejid="'+e.id+'" onclick="abrirFichaEj(this.dataset.ejid)" style="display:flex;align-items:center;gap:10px;padding:.6rem .75rem;border-bottom:.5px solid var(--border);cursor:pointer">'
+        + (tieneImg?'<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0"><img src="'+(custom_data.img||ST.ejsImgs[e.id])+'" style="width:100%;height:100%;object-fit:cover"></div>':'<div style="width:36px;height:36px;border-radius:8px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">💪</div>')
+        + '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+nombre+'</div>'
+        + (histCount?'<div style="font-size:11px;color:var(--text3)">'+histCount+' series registradas</div>':'')
+        + '</div>'
+        + '<i class="ti ti-chevron-right" style="color:var(--text3);font-size:16px"></i>'
+        + '</div>';
+    });
+    html += '</div>';
+  });
+  listaEl.innerHTML = html;
+}
+
+function setEjCat(cat){
+  _fichaEjCat = cat;
+  EJ_CATS.forEach(function(c){
+    var btn = document.getElementById('ejcat-'+c.replace(/ /g,'_'));
+    if(btn){btn.style.background=c===cat?'var(--blue)':'var(--bg3)';btn.style.color=c===cat?'#fff':'var(--text2)';}
+  });
+  renderEjercicios();
+}
+
+function filtrarEjercicios(q){ renderEjercicios(); }
+
+function abrirFichaEj(ejId){
+  _fichaEjActual = ejId;
+  var ej = getEjData(ejId);
+  var custom = (ST.ejsCustom&&ST.ejsCustom[ejId])||{};
+  var nombre = custom.nombre || ej.n;
+  var info = EJ_INFO[ej.key]||{};
+  // Nombre
+  document.getElementById('mo-ficha-nombre').textContent = nombre;
+  document.getElementById('mo-ficha-cat').textContent = ej.cat||'—';
+  document.getElementById('mo-ficha-tecnica').textContent = custom.tecnica||info.tecnica||'Sin descripción técnica';
+  // Imagen
+  var img = custom.img||(ST.ejsImgs&&ST.ejsImgs[ejId])||'';
+  var imgEl = document.getElementById('mo-ficha-img');
+  var noImgEl = document.getElementById('mo-ficha-no-img');
+  if(img){imgEl.src=img;imgEl.style.display='block';noImgEl.style.display='none';}
+  else{imgEl.style.display='none';noImgEl.style.display='block';}
+  // Histórico
+  var hist = [];
+  Object.keys(ST.sets||{}).forEach(function(k){
+    if(k.includes('_'+ej.key)){
+      var dia = parseInt(k.replace('d','').split('_')[0]);
+      (ST.sets[k]||[]).forEach(function(s){
+        if(s) hist.push({dia:dia,p:s.p,r:s.r,rpe:s.rpe});
+      });
+    }
+  });
+  hist.sort(function(a,b){return a.dia-b.dia;});
+  var histEl = document.getElementById('mo-ficha-hist');
+  if(hist.length){
+    histEl.innerHTML = hist.slice(-20).reverse().map(function(h){
+      return '<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:.5px solid var(--border);font-size:12px">'
+        +'<span style="color:var(--text3)">Dia '+h.dia+'</span>'
+        +'<span style="font-weight:700;color:var(--text)">'+h.p+'kg × '+h.r+' reps</span>'
+        +'<span style="color:var(--text3)">RPE '+h.rpe+'</span>'
+        +'</div>';
+    }).join('');
+  } else {
+    histEl.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:.5rem 0">Sin datos registrados aún</div>';
+  }
+  // Gráfico
+  renderFichaChart(hist);
+  // Abrir modal
+  document.getElementById('mo-ficha-ej').classList.add('open');
+}
+
+function renderFichaChart(hist){
+  var canvas = document.getElementById('mo-ficha-chart');
+  if(!canvas) return;
+  if(_fichaChart){_fichaChart.destroy();_fichaChart=null;}
+  if(!hist.length){canvas.style.display='none';return;}
+  canvas.style.display='block';
+  // Máximo por día
+  var byDia = {};
+  hist.forEach(function(h){
+    if(!byDia[h.dia]||h.p>byDia[h.dia]) byDia[h.dia]=h.p;
+  });
+  var dias = Object.keys(byDia).sort(function(a,b){return a-b;});
+  var vals = dias.map(function(d){return byDia[d];});
+  if(typeof Chart !== 'undefined'){
+    _fichaChart = new Chart(canvas, {
+      type:'line',
+      data:{
+        labels:dias.map(function(d){return 'D'+d;}),
+        datasets:[{
+          label:'Peso máx (kg)',
+          data:vals,
+          borderColor:'var(--blue)',
+          backgroundColor:'rgba(59,130,246,.1)',
+          tension:.3,
+          pointRadius:4,
+          fill:true,
+        }]
+      },
+      options:{
+        responsive:true,
+        plugins:{legend:{display:false}},
+        scales:{
+          y:{beginAtZero:false,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10}}},
+          x:{grid:{display:false},ticks:{font:{size:10}}}
+        }
+      }
+    });
+  }
+}
+
+function subirFotoEj(input){
+  var file = input.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var b64 = e.target.result;
+    if(!ST.ejsImgs) ST.ejsImgs={};
+    ST.ejsImgs[_fichaEjActual]=b64;
+    // Actualizar modal
+    var imgEl=document.getElementById('mo-ficha-img');
+    var noImgEl=document.getElementById('mo-ficha-no-img');
+    imgEl.src=b64;imgEl.style.display='block';noImgEl.style.display='none';
+    save();
+    renderEjercicios();
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+
+function editarNombreEj(){
+  var ej = getEjData(_fichaEjActual);
+  var custom = (ST.ejsCustom&&ST.ejsCustom[_fichaEjActual])||{};
+  var actual = custom.nombre || ej.n;
+  var nuevo = prompt('Nombre del ejercicio:', actual);
+  if(nuevo&&nuevo.trim()&&nuevo.trim()!==actual){
+    if(!ST.ejsCustom) ST.ejsCustom={};
+    if(!ST.ejsCustom[_fichaEjActual]) ST.ejsCustom[_fichaEjActual]={};
+    ST.ejsCustom[_fichaEjActual].nombre = nuevo.trim();
+    document.getElementById('mo-ficha-nombre').textContent = nuevo.trim();
+    save();
+    renderEjercicios();
+  }
+}
+
+function usarEjEnSesion(){
+  // Cerrar ficha y abrir la sesión de hoy con este ejercicio destacado
+  document.getElementById('mo-ficha-ej').classList.remove('open');
+  navTo('entreno','Entreno');
+}
+
+
+// ══════════════════════════════════════
+// ESTADÍSTICAS MENSUALES GARMIN
+// ══════════════════════════════════════
+function renderCalStats(year, month){
+  var card = document.getElementById('cal-stats-card');
+  var el = document.getElementById('cal-stats');
+  if(!card||!el) return;
+  var hist = ST.garminHist||{};
+  var dias = Object.keys(hist).filter(function(f){
+    var d = new Date(f+'T00:00:00');
+    return d.getFullYear()===year && d.getMonth()===month;
+  });
+  if(!dias.length){card.style.display='none';return;}
+  card.style.display='block';
+  // Calcular stats
+  var totalKm=0, totalPasos=0, totalKcal=0, totalSueno=0, totalActivos=0;
+  var entrenos=0, diasConDatos=dias.length;
+  var bbMax=0, bbMin=100;
+  dias.forEach(function(f){
+    var g=hist[f];
+    totalKm+=parseFloat(g.distancia_km||0);
+    totalPasos+=parseInt(g.pasos||0);
+    totalKcal+=parseInt(g.calorias_dia||0);
+    totalSueno+=parseInt(g.sueno_total_min||0);
+    totalActivos+=parseInt(g.minutos_activos||0);
+    if(g.fuerza||( g.actividades&&g.actividades.length)) entrenos++;
+    if(g.body_battery_max&&g.body_battery_max>bbMax) bbMax=g.body_battery_max;
+    if(g.body_battery_min&&g.body_battery_min<bbMin) bbMin=g.body_battery_min;
+  });
+  var mediaPasos = Math.round(totalPasos/diasConDatos);
+  var mediaKcal = Math.round(totalKcal/diasConDatos);
+  var mediaSueno = Math.round(totalSueno/diasConDatos);
+  var suenohStr = Math.floor(mediaSueno/60)+'h '+(mediaSueno%60)+'min';
+  el.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">'
+    +'<div style="font-size:20px;font-weight:700;color:var(--blue)">'+totalKm.toFixed(1)+'</div>'
+    +'<div style="font-size:10px;color:var(--text2)">km totales</div></div>'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">'
+    +'<div style="font-size:20px;font-weight:700;color:var(--green)">'+entrenos+'</div>'
+    +'<div style="font-size:10px;color:var(--text2)">entrenos</div></div>'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">'
+    +'<div style="font-size:18px;font-weight:700;color:var(--orange)">'+(mediaPasos/1000).toFixed(1)+'k</div>'
+    +'<div style="font-size:10px;color:var(--text2)">media pasos/día</div></div>'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">'
+    +'<div style="font-size:18px;font-weight:700;color:var(--blue)">'+suenohStr+'</div>'
+    +'<div style="font-size:10px;color:var(--text2)">media sueño/día</div></div>'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">'
+    +'<div style="font-size:18px;font-weight:700;color:var(--red-text)">'+mediaKcal+'</div>'
+    +'<div style="font-size:10px;color:var(--text2)">media kcal/día</div></div>'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">'
+    +'<div style="font-size:18px;font-weight:700;color:var(--text)">'+totalActivos+'</div>'
+    +'<div style="font-size:10px;color:var(--text2)">min activos mes</div></div>'
+    +'</div>'
+    +(bbMax?'<div style="background:var(--blue-bg);border-radius:var(--rs);padding:.4rem .75rem;display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">⚡ Body Battery rango mes</span><span style="font-size:12px;font-weight:700;color:var(--blue-text)">'+bbMin+' — '+bbMax+'</span></div>':'')
+    +'<div style="font-size:10px;color:var(--text3);margin-top:.4rem;text-align:right">'+diasConDatos+' días con datos</div>';
+}
+
+function abrirFichaDesdeEntreno(el){
+  var ejKey = el.dataset.ej.replace(/&#39;/g,"'");
+  var ej = EJ_BASE.find(function(e){return e.key===ejKey||e.n===ejKey;});
+  var id = ej?ej.id:ejKey;
+  abrirFichaEj(id);
+}
+
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v38';
+const APP_VERSION='v39';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -2551,7 +2891,11 @@ async function fetchGarminAuto(manual) {
     // ST.garmin también = dict de fechas para compatibilidad
     if (!ST.garmin) ST.garmin = {};
     Object.assign(ST.garmin, data.dias);
-    ST.garminActualizado = data.actualizado || new Date().toISOString().slice(0,10);
+    // Guardar con hora
+    var ahora = new Date();
+    var horaLocal = ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    var fechaLocal = ahora.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    ST.garminActualizado = (data.actualizado||fechaLocal) + ' · ' + horaLocal;
     save();
     if (typeof renderGarminHoy === 'function') renderGarminHoy();
     if (typeof renderHoy === 'function') renderHoy();
@@ -2629,6 +2973,7 @@ function calMes(delta){
   if(calMonth<0){calMonth=11;calYear--;}
   if(calMonth>11){calMonth=0;calYear++;}
   renders.cal();
+  renderCalStats(calYear,calMonth);
 }
 
 function calFechaKey(y,m,d){
@@ -2755,6 +3100,7 @@ function calSelDia(fecha){
 }
 
 renders.cal=function(){
+  renderCalStats(calYear,calMonth);
   const hist=ST.garminHist||{};
   const tieneHist=Object.keys(hist).length>0;
   // Título mes
@@ -3113,7 +3459,7 @@ function cargarDesdeDrive(token,fileId,fechaStr){
   .then(function(r){return r.json();})
   .then(function(data){
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};
     if(!ST.eval)ST.eval=[];
     save();
     renders.hoy();
@@ -3469,7 +3815,7 @@ function leerDesdeD(token,syncEl){
   .then(function(data){
     if(!data) return;
     ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";
+    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};
     if(!ST.eval)ST.eval=[];
     save();renders.hoy();checkBackupReminder();
     syncEl.style.background='var(--green-bg)';syncEl.style.color='var(--green-text)';
@@ -3561,6 +3907,42 @@ checkBackupReminder();
       <button class="bcan" onclick="document.getElementById('mo-anadir').classList.remove('open')">Cancelar</button>
       <button class="bsav" onclick="confirmarAnadirEj()">Añadir</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL FICHA EJERCICIO -->
+<div class="mo" id="mo-ficha-ej" onclick="closeMo(event,'mo-ficha-ej')">
+  <div class="ms" style="max-height:90vh;overflow-y:auto">
+    <div class="mh"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <div class="mt" id="mo-ficha-nombre" style="margin-bottom:0;flex:1"></div>
+      <button onclick="editarNombreEj()" style="border:none;background:var(--bg3);color:var(--text2);border-radius:10px;padding:3px 10px;font-size:12px;cursor:pointer">✏️ Editar</button>
+    </div>
+    <!-- Imagen -->
+    <div id="mo-ficha-img-wrap" style="margin-bottom:.75rem;text-align:center">
+      <img id="mo-ficha-img" src="" alt="" style="max-width:100%;border-radius:var(--rs);display:none;max-height:200px;object-fit:cover">
+      <div id="mo-ficha-no-img" style="background:var(--bg3);border-radius:var(--rs);padding:2rem;color:var(--text3);font-size:13px">Sin imagen</div>
+      <label style="display:inline-block;margin-top:.5rem;border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer;font-weight:600">
+        📷 Subir foto <input type="file" accept="image/*" style="display:none" onchange="subirFotoEj(this)">
+      </label>
+    </div>
+    <!-- Info tecnica -->
+    <div class="card-lbl">Técnica</div>
+    <div id="mo-ficha-tecnica" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:.75rem;background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem"></div>
+    <!-- Categoría -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem">
+      <span style="font-size:12px;color:var(--text3)">Categoría:</span>
+      <span id="mo-ficha-cat" style="font-size:12px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:20px;padding:2px 10px"></span>
+    </div>
+    <!-- Histórico -->
+    <div class="card-lbl">Histórico de cargas</div>
+    <div id="mo-ficha-hist" style="margin-bottom:.75rem;max-height:160px;overflow-y:auto"></div>
+    <!-- Gráfico -->
+    <div class="card-lbl">Progresión</div>
+    <canvas id="mo-ficha-chart" style="width:100%;max-height:160px;margin-bottom:.75rem"></canvas>
+    <!-- Usar en sesión -->
+    <button onclick="usarEjEnSesion()" style="width:100%;padding:11px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:.5rem">↩ Usar en sesión de hoy</button>
+    <button onclick="document.getElementById('mo-ficha-ej').classList.remove('open')" style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer">Cerrar</button>
   </div>
 </div>
 </body>

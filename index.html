@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v35</title>
+<title>Entreno Boyle v37</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v35"
+      version: "v37"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -426,13 +426,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="warmup-body" style="display:none;margin-top:.75rem"></div>
     </div>
 
-    <div class="card" id="e-cal-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
-        <div class="card-lbl" style="margin-bottom:0;color:var(--orange)">🔥 Calentamiento</div>
-        <button onclick="toggleCal('e-cal-body')" style="border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer" id="e-cal-btn">Ver protocolo</button>
-      </div>
-      <div id="e-cal-body" style="display:none"></div>
-    </div>
     <div class="card"><div class="card-lbl">Series de hoy</div><div id="e-list"></div></div>
     <!-- EDITOR SESION -->
     <div class="card" id="e-editor-card">
@@ -1652,6 +1645,7 @@ const renders={
     // Renderizar por bloques (trisets/pares) si hay datos Boyle
     var bloques=dB&&BOYLE_DIAS[dB]?BOYLE_DIAS[dB].pares:null;
     if(bloques){
+      try{
       el.innerHTML=bloques.map(function(bloque,bi){
         var esBloqueTriset=bloque.tipo==='triset';
         var colorBloque=esBloqueTriset?'var(--blue)':'var(--green)';
@@ -1680,11 +1674,12 @@ const renders={
             var st=ss[pi];
             if(st){vol+=st.p*st.r;done++;}
             var lbl=st?(st.p+'x'+st.r+' R'+st.rpe):('S'+(pi+1));
-            var ejQ=ej.replace(/'/g,"\'");
+            var ejQ=ej.replace(/'/g,"\\'"); // redundante, se redefine abajo
             var spanEl='<span class="pill'+(st?' done':'')+'" data-ej="'+ejSafe+'" data-pi="'+pi+'" onclick="openMo2(this)">'+ lbl +'</span>';
             pillsArr.push(spanEl);
           }
           var ejQ=ej.replace(/'/g,"\'");
+          var ejSafe=ej.replace(/'/g,'&#39;');
           var varBtn=getVariantesEj(ej).length>1?('<button data-ej="'+ejSafe+'" onclick="abrirVariantes2(this)" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';  
           return '<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
             +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(ult||info.tecnica?'4px':'0')+'">'
@@ -1723,6 +1718,10 @@ const renders={
           +'<div style="padding:0 .75rem .5rem">'+timerHtml+'</div>'
           +'</div>';
       }).join('');
+      }catch(err){
+        el.innerHTML='<div style="color:red;padding:1rem;font-size:12px">Error render: '+err.message+'</div>';
+        console.error('Render bloques error:',err);
+      }
     } else {
       el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Dia de descanso</div>';
     }
@@ -1730,11 +1729,7 @@ const renders={
     const edDia=document.getElementById('e-editor-dia');if(edDia){edDia.textContent=dB||'Descanso';}
     document.getElementById('e-ser').textContent=done+'/'+tot;
     renderEnf(c.s,'e-enf','e-enf-card');
-    const eCalBody=document.getElementById('e-cal-body');
-    if(eCalBody){eCalBody.style.display='none';eCalBody.innerHTML='';}
-    const eCalBtn=document.getElementById('e-cal-btn');
-    if(eCalBtn) eCalBtn.textContent='Ver protocolo';
-    const eCalCard=document.getElementById('e-cal-card');
+    // e-cal-body eliminado — calentamiento en e-warmup-card
     if(eCalCard){if(CAL[c.s]){eCalCard.style.display='block';}else{eCalCard.style.display='none';}}
     const hist=document.getElementById('e-hist');
     const all=Object.entries(ST.sets).filter(([k])=>!k.startsWith('d'+ST.dia+'_')).slice(-6).reverse();
@@ -2403,7 +2398,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v35';
+const APP_VERSION='v37';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

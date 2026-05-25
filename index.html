@@ -1680,22 +1680,23 @@ const renders={
             if(st){vol+=st.p*st.r;done++;}
             var lbl=st?(st.p+'x'+st.r+' R'+st.rpe):('S'+(pi+1));
             var ejQ=ej.replace(/'/g,"\'");
-            pillsArr.push('<span class="pill'+(st?' done':'')+'" onclick="openMo(''+ejQ+'','+pi+')">'+lbl+'</span>');
+            var spanEl='<span class="pill'+(st?' done':'')+'" data-ej="'+ejSafe+'" data-pi="'+pi+'" onclick="openMo2(this)">'+ lbl +'</span>';
+            pillsArr.push(spanEl);
           }
           var ejQ=ej.replace(/'/g,"\'");
-          var varBtn=getVariantesEj(ej).length>1?('<button onclick="abrirVariantes(''+ejQ+'')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';
+          var varBtn=getVariantesEj(ej).length>1?('<button data-ej="'+ejSafe+'" onclick="abrirVariantes2(this)" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';  
           return '<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
             +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(ult||info.tecnica?'4px':'0')+'">'
-            +'<div onclick="toggleEjCheck(''+ejQ+'')" style="width:20px;height:20px;border-radius:50%;background:'+(ejDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(ejDone?'rgba(99,153,34,.35)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:'+(tieneDatosReales?'default':'pointer')+'">'
+            +'<div data-ej="'+ejSafe+'" onclick="toggleEjCheck2(this)" style="width:20px;height:20px;border-radius:50%;background:'+(ejDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(ejDone?'rgba(99,153,34,.35)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:'+(tieneDatosReales?'default':'pointer')+'">'
             +(ejDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')
             +'</div>'
             +'<div style="flex:1"><span class="ejname">'+getVarianteActual(ej)+'</span>'
             +(getVarianteActual(ej)!==ej?'<div style="font-size:10px;color:var(--text3)">variante de '+ej+'</div>':'')
             +'</div>'
             +varBtn
-            +'<button onclick="quitarEjSesion(''+ejQ+'')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:15px;line-height:1"><i class="ti ti-x"></i></button>'
+            +'<button data-ej="'+ejSafe+'" onclick="quitarEjSesion2(this)" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:15px;line-height:1"><i class="ti ti-x"></i></button>'
             +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+numSer+'x'+rpsLabel+'</span>'
-            +'<button onclick="abrirHistEj(''+ejQ+'')" style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:17px;line-height:1"><i class="ti ti-chart-line"></i></button>'
+            +'<button data-ej="'+ejSafe+'" onclick="abrirHistEj2(this)" style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:17px;line-height:1"><i class="ti ti-chart-line"></i></button>'
             +'</div>'
             +(ult?'<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:4px;display:inline-block"><span style="color:var(--text3);margin-right:4px">'+ultFechaStr+'</span>'+ult.peso+'kg x '+ult.reps+' R'+ult.rpe+'</div>':'')
             +(info.tecnica?'<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">'+info.tecnica+'</div>':'')
@@ -1997,6 +1998,11 @@ function togNut(i,key){
   save();renders.nut();
 }
 
+function openMo2(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  var pi=parseInt(el.dataset.pi)||0;
+  openMo(ej,pi);
+}
 function openMo(ej,serie){
   mEj=ej;mSer=serie;
   document.getElementById('mo-title').textContent=ej+' — Serie '+(serie+1);

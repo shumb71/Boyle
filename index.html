@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v39</title>
+<title>Entreno Boyle v40</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v39"
+      version: "v40"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -438,6 +438,30 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
       <div style="font-size:11px;color:var(--text3)">Cambios solo para la sesion de hoy (Dia <span id="e-editor-dia">—</span>)</div>
     </div>
+    <!-- PLYOS OPCIONALES -->
+    <div class="card" id="e-plyo-card">
+      <div onclick="toggleSection('plyo')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="card-lbl" style="margin-bottom:0;color:var(--blue)">⚡ Pliométricos</div>
+          <span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 8px;font-weight:700">OPCIONAL</span>
+        </div>
+        <i class="ti ti-chevron-down" id="plyo-icon" style="color:var(--text3);transition:transform .2s"></i>
+      </div>
+      <div id="plyo-body" style="display:none;margin-top:.75rem"></div>
+    </div>
+
+    <!-- FINISHERS -->
+    <div class="card" id="e-finisher-card">
+      <div onclick="toggleSection('finisher')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="card-lbl" style="margin-bottom:0;color:var(--orange)">🔥 Finisher</div>
+          <span style="font-size:10px;background:var(--orange-bg,var(--bg3));color:var(--orange);border-radius:10px;padding:1px 8px;font-weight:700">OPCIONAL</span>
+        </div>
+        <i class="ti ti-chevron-down" id="finisher-icon" style="color:var(--text3);transition:transform .2s"></i>
+      </div>
+      <div id="finisher-body" style="display:none;margin-top:.75rem"></div>
+    </div>
+
     <!-- ENFRIAMIENTO EXPANDIBLE -->
     <div class="card" id="e-enf-card">
       <div onclick="toggleSection('enf')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
@@ -453,7 +477,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- HISTORIAL -->
   <!-- EJERCICIOS -->
   <div class="screen" id="s-ejercicios">
-    <div class="ph"><h1>Ejercicios</h1><span style="font-size:13px;color:var(--text2)" id="ej-count">—</span></div>
+    <div class="ph" style="display:flex;align-items:center;justify-content:space-between">
+      <h1>Ejercicios</h1>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;color:var(--text2)" id="ej-count">—</span>
+        <button onclick="abrirNuevoEj()" style="border:none;background:var(--blue);color:#fff;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer">+ Nuevo</button>
+      </div>
+    </div>
     <!-- Buscador -->
     <div class="card" style="padding:.6rem .75rem">
       <input type="text" id="ej-search" placeholder="Buscar ejercicio..." oninput="filtrarEjercicios(this.value)"
@@ -1710,7 +1740,7 @@ const renders={
             +'<div data-ej="'+ejSafe+'" onclick="toggleEjCheck2(this)" style="width:20px;height:20px;border-radius:50%;background:'+(ejDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(ejDone?'rgba(99,153,34,.35)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:'+(tieneDatosReales?'default':'pointer')+'">'
             +(ejDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')
             +'</div>'
-            +'<div style="flex:1"><span class="ejname" data-ej="'+ejSafe+'" onclick="abrirFichaDesdeEntreno(this)" style="cursor:pointer">'+getVarianteActual(ej)+'</span>'
+            +'<div style="flex:1"><span class="ejname" data-ej="'+ejSafe+'" onclick="abrirFichaDesdeEntreno(this)" style="cursor:pointer">'+getVarianteActual(ej)+'</span> <button data-ej="'+ejSafe+'" onclick="abrirCambiarEjSesion2(this)" style="border:none;background:transparent;color:var(--text3);font-size:12px;cursor:pointer;padding:0 2px" title="Cambiar ejercicio">⇄</button>'
             +(getVarianteActual(ej)!==ej?'<div style="font-size:10px;color:var(--text3)">variante de '+ej+'</div>':'')
             +'</div>'
             +varBtn
@@ -2361,13 +2391,19 @@ function getEjImgs(ej){
 // CALENTAMIENTO / ENFRIAMIENTO EXPANDIBLES
 // ══════════════════════════════════════
 function toggleSection(id){
-  var body=document.getElementById(id==='warmup'?'warmup-body':'e-enf');
+  var bodyMap={warmup:'warmup-body',enf:'e-enf',plyo:'plyo-body',finisher:'finisher-body'};
+  var body=document.getElementById(bodyMap[id]||id);
   var icon=document.getElementById(id+'-icon');
   if(!body) return;
   var open=body.style.display==='block';
   body.style.display=open?'none':'block';
   if(icon) icon.style.transform=open?'':'rotate(180deg)';
-  if(!open) id==='warmup'?renderWarmupBody():renderEnfBody();
+  if(!open){
+    if(id==='warmup') renderWarmupBody();
+    else if(id==='enf') renderEnfBody();
+    else if(id==='plyo') renderPlyoBody();
+    else if(id==='finisher') renderFinisherBody();
+  }
 }
 
 function renderWarmupBody(){
@@ -2727,6 +2763,11 @@ function renderCalStats(year, month){
     +'<div style="font-size:10px;color:var(--text3);margin-top:.4rem;text-align:right">'+diasConDatos+' días con datos</div>';
 }
 
+function abrirCambiarEjSesion2(el){
+  var ejKey = el.dataset.ej.replace(/&#39;/g,"'");
+  abrirCambiarEjSesion(ejKey);
+}
+
 function abrirFichaDesdeEntreno(el){
   var ejKey = el.dataset.ej.replace(/&#39;/g,"'");
   var ej = EJ_BASE.find(function(e){return e.key===ejKey||e.n===ejKey;});
@@ -2734,11 +2775,192 @@ function abrirFichaDesdeEntreno(el){
   abrirFichaEj(id);
 }
 
+
+// ══════════════════════════════════════
+// PLYOS Y FINISHERS POR DÍA
+// ══════════════════════════════════════
+const PLYOS = {
+  D1: [
+    {n:'Box Jump (linear)',d:'3x3 saltos al cajón. Aterriza en la misma posición. MAX 25 contactos totales.',rest:60},
+    {n:'Broad Jump',d:'3x3 saltos hacia adelante. Máxima distancia. Aterriza controlado.',rest:60},
+    {n:'Chest Pass + Sprint 10m',d:'2-3 lanzamientos de balón medicinal seguidos de sprint. Activa el CNS.',rest:90},
+  ],
+  D2: [
+    {n:'Lateral Bound and Stick',d:'3x3 por lado. Salta lateral y aterriza estable en un pie. Sin caer.',rest:60},
+    {n:'Lateral Box Jump',d:'3x3 saltos laterales al cajón. Aterriza en posición de media sentadilla.',rest:60},
+    {n:'Side Twist Throw (Medball)',d:'3x3 por lado. Lanza el balón de forma rotacional contra la pared.',rest:60},
+  ],
+  D3: [
+    {n:'Box Jump (linear)',d:'3x3. Si ya hiciste en D1 esta semana, reducir a 2x3.',rest:60},
+    {n:'Hurdle Jump',d:'3x3 saltos sobre valla (o cuerda). Reactivo, mínimo tiempo en suelo.',rest:90},
+    {n:'Chest Pass + Sprint 10m',d:'2 lanzamientos + sprint. Variante: lanzar hacia arriba (overhead).',rest:90},
+  ],
+  D4: [
+    {n:'Lateral Bound and Stick',d:'3x3 por lado. El día más exigente — solo si hay frescura real.',rest:60},
+    {n:'Single-leg Broad Jump',d:'3x3 por lado. Progresión avanzada. Solo cuando el lateral bound está consolidado.',rest:90},
+    {n:'Overhead Medball Throw',d:'3 lanzamientos hacia arriba con 2-3 kg. Activa cadena posterior.',rest:60},
+  ],
+};
+
+const FINISHERS = {
+  D1: [
+    {n:'Trineo empuje pesado',d:'4x20m carga alta. Postura baja, empuja con todo el cuerpo. 90s descanso.',tipo:'potencia'},
+    {n:'Trineo marcha (técnica sprint)',d:'4x20m carga ligera. Patrón de carrera. 60s descanso.',tipo:'potencia'},
+    {n:'KB Swing pesado',d:'5x10 reps. Cadera atrás y adelante explosivo. 60s descanso.',tipo:'metabolico'},
+    {n:'Push-up / Row Circuit',d:'3 rondas: 10 push-up + 10 DB Row por lado. Sin descanso entre ejercicios.',tipo:'metabolico'},
+  ],
+  D2: [
+    {n:'Farmer Walk bilateral',d:'4x30m con KB pesado. Erguido, core activo. 60s descanso.',tipo:'potencia'},
+    {n:'Suitcase Carry',d:'3x20m por lado. No inclinarse hacia el lado cargado. Antilateral puro.',tipo:'potencia'},
+    {n:'Trineo arrastre hacia atrás',d:'4x20m. Cuádriceps sin compresión articular. Ideal si hay molestia de rodilla.',tipo:'metabolico'},
+    {n:'KB Swing unilateral',d:'4x8 por lado. Transferencia de potencia unilateral. 45s descanso.',tipo:'metabolico'},
+  ],
+  D3: [
+    {n:'Trineo empuje ligero',d:'4x20m velocidad máxima. Carga muy ligera, sprint técnico.',tipo:'potencia'},
+    {n:'KB Swing pesado',d:'5x10. Alternativa al trineo si no disponible.',tipo:'metabolico'},
+    {n:'Battle Ropes',d:'4x20s máxima intensidad. 40s descanso. Solo si disponible.',tipo:'metabolico'},
+    {n:'Push-up / Row Circuit',d:'3 rondas: 10 push-up + 10 DB Row. Sin descanso entre ejercicios.',tipo:'metabolico'},
+  ],
+  D4: [
+    {n:'Trineo arrastre con correa al pecho',d:'4x20m. Patrón de carrera, bajo impacto. Ideal fin de semana.',tipo:'potencia'},
+    {n:'Farmer Walk bilateral',d:'3x30m. Versión más corta — el D4 ya es muy exigente.',tipo:'potencia'},
+    {n:'Suitcase Carry',d:'3x20m por lado. Complementa el antilateral del día.',tipo:'metabolico'},
+    {n:'KB Swing bilateral',d:'4x10. Finalizador de potencia de cadera. 60s descanso.',tipo:'metabolico'},
+  ],
+};
+
+
+function renderPlyoBody(){
+  var dB=getDiaBoyle();
+  var body=document.getElementById("plyo-body");
+  if(!body) return;
+  var plyos=PLYOS[dB];
+  if(!plyos||!plyos.length){
+    body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay pliométricos definidos para este día.</div>";
+    return;
+  }
+  var nota="<div style=\"font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem\">⚠️ MAX 25 contactos totales por sesión. Solo si hay frescura real. En días de turno de noche, omitir.</div>";
+  var items=plyos.map(function(p){
+    return "<div style=\"padding:.5rem 0;border-bottom:.5px solid var(--border)\">"
+      +"<div style=\"font-size:13px;font-weight:700;color:var(--blue)\">"+p.n+"</div>"
+      +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+p.d+"</div>"
+      +"<div style=\"margin-top:5px;display:flex;align-items:center;gap:6px\">"
+      +"<span style=\"font-size:11px;color:var(--text3)\">⏱ Descanso:</span>"
+      +"<span style=\"font-size:12px;font-weight:700;color:var(--text)\">"+p.rest+"s</span>"
+      +"<button data-ej=\"plyo_"+p.n.replace(/ /g,'_')+"_\" onclick=\"startRestTimer(this.dataset.ej)\" style=\"border:none;background:var(--blue);color:#fff;border-radius:12px;padding:2px 10px;font-size:11px;cursor:pointer;font-weight:700\">▶ GO</button>"
+      +"</div>"
+      +"</div>";
+  }).join("");
+  body.innerHTML=nota+items;
+}
+
+function renderFinisherBody(){
+  var dB=getDiaBoyle();
+  var body=document.getElementById("finisher-body");
+  if(!body) return;
+  var finishers=FINISHERS[dB];
+  if(!finishers||!finishers.length){
+    body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay finishers definidos para este día.</div>";
+    return;
+  }
+  var sv=semaforo(ST.sliders.d,ST.sliders.f);
+  var esFatiga=sv.cls==='sem-r';
+  var rec="<div style=\"font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem\">"
+    +(esFatiga?"⚠️ Fatiga alta — elige finisher metabólico (KB Swing, Farmer Walk). Evita trineo pesado.":"💡 Elige un finisher según el tiempo y equipo disponible.")
+    +"</div>";
+  // Separar por tipo
+  var potencia=finishers.filter(function(f){return f.tipo==="potencia";});
+  var metabolico=finishers.filter(function(f){return f.tipo==="metabolico";});
+  function renderGrupo(lista,titulo,color){
+    if(!lista.length) return "";
+    return "<div style=\"font-size:10px;font-weight:800;color:"+color+";text-transform:uppercase;letter-spacing:.06em;margin:.5rem 0 .25rem\">"+titulo+"</div>"
+      +lista.map(function(f){
+        return "<div style=\"padding:.5rem 0;border-bottom:.5px solid var(--border)\">"
+          +"<div style=\"font-size:13px;font-weight:700;color:var(--text)\">"+f.n+"</div>"
+          +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+f.d+"</div>"
+          +"</div>";
+      }).join("");
+  }
+  body.innerHTML=rec
+    +renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")
+    +renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)");
+}
+
+
+function abrirNuevoEj(){
+  document.getElementById('nuevo-ej-nombre').value='';
+  document.getElementById('nuevo-ej-tecnica').value='';
+  document.getElementById('mo-nuevo-ej').classList.add('open');
+  setTimeout(function(){document.getElementById('nuevo-ej-nombre').focus();},300);
+}
+
+function confirmarNuevoEj(){
+  var nombre=document.getElementById('nuevo-ej-nombre').value.trim();
+  if(!nombre){alert('Escribe el nombre del ejercicio');return;}
+  var cat=document.getElementById('nuevo-ej-cat').value;
+  var tecnica=document.getElementById('nuevo-ej-tecnica').value.trim();
+  var id='custom_'+Date.now();
+  if(!ST.ejsCustom) ST.ejsCustom={};
+  ST.ejsCustom[id]={nombre:nombre,cat:cat,tecnica:tecnica,key:nombre};
+  // Añadir también a EJ_BASE en memoria
+  EJ_BASE.push({id:id,n:nombre,cat:cat,key:nombre});
+  save();
+  document.getElementById('mo-nuevo-ej').classList.remove('open');
+  renderEjercicios();
+}
+
+var _cambiarEjOrig = null;
+function abrirCambiarEjSesion(ejKey){
+  _cambiarEjOrig = ejKey;
+  document.getElementById('mo-cambiar-ej-actual').textContent = ejKey;
+  document.getElementById('mo-cambiar-ej-search').value='';
+  filtrarCambioEj('');
+  document.getElementById('mo-cambiar-ej').classList.add('open');
+}
+
+function filtrarCambioEj(q){
+  var lista = document.getElementById('mo-cambiar-ej-lista');
+  if(!lista) return;
+  var todos = EJ_BASE.slice();
+  var custom = ST.ejsCustom||{};
+  Object.keys(custom).forEach(function(id){
+    if(!todos.find(function(e){return e.id===id;})){
+      todos.push({id:id,n:custom[id].nombre||id,cat:custom[id].cat||'',key:custom[id].key||custom[id].nombre||id});
+    }
+  });
+  var filtrados = q ? todos.filter(function(e){return e.n.toLowerCase().includes(q.toLowerCase());}) : todos;
+  lista.innerHTML = filtrados.map(function(e){
+    return '<div data-key="'+e.key+'" data-orig="'+(_cambiarEjOrig||'')+'" onclick="confirmarCambioEj(this)" '
+      +'style="padding:.6rem .75rem;border-bottom:.5px solid var(--border);cursor:pointer;font-size:14px;color:var(--text)">'+e.n+'<span style="font-size:11px;color:var(--text3);margin-left:8px">'+e.cat+'</span></div>';
+  }).join('');
+}
+
+function confirmarCambioEj(el){
+  var newKey = el.dataset.key;
+  var origKey = _cambiarEjOrig;
+  if(!origKey||!newKey||origKey===newKey){
+    document.getElementById('mo-cambiar-ej').classList.remove('open');
+    return;
+  }
+  // Sustituir en sesionCustom del día actual
+  if(!ST.sesionCustom) ST.sesionCustom={};
+  var dB = getDiaBoyle();
+  if(!ST.sesionCustom[ST.dia]){
+    ST.sesionCustom[ST.dia]={ejs:dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[]};
+  }
+  var idx = ST.sesionCustom[ST.dia].ejs.indexOf(origKey);
+  if(idx>=0) ST.sesionCustom[ST.dia].ejs[idx]=newKey;
+  else ST.sesionCustom[ST.dia].ejs.push(newKey);
+  save();
+  document.getElementById('mo-cambiar-ej').classList.remove('open');
+  renders.entreno();
+}
+
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v39';
+const APP_VERSION='v40';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -3943,6 +4165,54 @@ checkBackupReminder();
     <!-- Usar en sesión -->
     <button onclick="usarEjEnSesion()" style="width:100%;padding:11px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:.5rem">↩ Usar en sesión de hoy</button>
     <button onclick="document.getElementById('mo-ficha-ej').classList.remove('open')" style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer">Cerrar</button>
+  </div>
+</div>
+
+<!-- MODAL NUEVO EJERCICIO -->
+<div class="mo" id="mo-nuevo-ej" onclick="closeMo(event,'mo-nuevo-ej')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">Nuevo ejercicio</div>
+    <div class="ig">
+      <label>Nombre</label>
+      <input type="text" id="nuevo-ej-nombre" placeholder="Ej: Turkish Get-Up..." style="width:100%">
+    </div>
+    <div class="ig">
+      <label>Categoría</label>
+      <select id="nuevo-ej-cat" style="width:100%;padding:.5rem;border:none;background:var(--bg3);color:var(--text);border-radius:var(--rs);font-size:14px">
+        <option>Explosivo</option>
+        <option>Hip Dom</option>
+        <option>Rodilla Unilat</option>
+        <option>Traccion</option>
+        <option>Press</option>
+        <option>Core</option>
+        <option>Movilidad</option>
+        <option>Otros</option>
+      </select>
+    </div>
+    <div class="ig">
+      <label>Notas técnicas (opcional)</label>
+      <textarea id="nuevo-ej-tecnica" placeholder="Descripción técnica..." rows="3"
+        style="width:100%;border:none;background:var(--bg3);color:var(--text);border-radius:var(--rs);padding:.5rem .75rem;font-size:13px;resize:none"></textarea>
+    </div>
+    <div class="br2">
+      <button class="bcan" onclick="document.getElementById('mo-nuevo-ej').classList.remove('open')">Cancelar</button>
+      <button class="bsav" onclick="confirmarNuevoEj()">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR EJERCICIO EN SESIÓN -->
+<div class="mo" id="mo-cambiar-ej" onclick="closeMo(event,'mo-cambiar-ej')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">Cambiar ejercicio</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:.75rem">Sustituir: <strong id="mo-cambiar-ej-actual"></strong></div>
+    <input type="text" id="mo-cambiar-ej-search" placeholder="Buscar ejercicio..." oninput="filtrarCambioEj(this.value)"
+      style="width:100%;border:none;background:var(--bg3);color:var(--text);border-radius:var(--rs);padding:.5rem .75rem;font-size:14px;margin-bottom:.5rem">
+    <div id="mo-cambiar-ej-lista" style="max-height:300px;overflow-y:auto"></div>
+    <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem"
+      onclick="document.getElementById('mo-cambiar-ej').classList.remove('open')">Cancelar</button>
   </div>
 </div>
 </body>

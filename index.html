@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v33</title>
+<title>Entreno Boyle v34</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v33"
+      version: "v34"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -803,15 +803,15 @@ const BOYLE_DIAS={
     desc:'Explosive/Olympic lift + Hip dominante bilateral + Traccion vertical. Dias 1 y 3 son lineales.',
     calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up LINEAR + Linear Plyos + Chest Pass Linear Sprint',
     pares:[
-      {lbl:'PAR 1 — Explosivo + Core antirotacion',
-       ejs:['Hang Clean','Plancha antirotacion (Chop)'],
-       nota:'Explosivo SIEMPRE primero. Core en el descanso (triset).'},
-      {lbl:'PAR 2 — Hip dominante bilateral + Press horizontal',
+      {lbl:'TRISET 1 — Explosivo + Core antirotacion + Movilidad',tipo:'triset',
+       ejs:['Hang Clean','Plancha antirotacion (Chop)','Hip hinge sin peso'],
+       descanso:90,nota:'Explosivo primero. Core y movilidad usan el descanso del SNC.'},
+      {lbl:'PAR 2 — Hip dominante bilateral + Press horizontal',tipo:'par',
        ejs:['Trap Bar Deadlift','Press banca (Bench Press)'],
-       nota:'Unilateral antes que bilateral si hay ambos en el dia.'},
-      {lbl:'PAR 3 — Press vertical + Hip dominante slide',
+       descanso:120,nota:'Unilateral antes que bilateral si hay ambos en el dia.'},
+      {lbl:'PAR 3 — Press vertical + Hip dominante slide',tipo:'par',
        ejs:['Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-       nota:'Trabajo especial de cadera y rehab al final.'},
+       descanso:90,nota:'Trabajo especial de cadera y rehab al final.'},
     ],
     notas:'Trineo: empujes como finalizador o en calentamiento. 3-4 series de 20-30m.',
   },
@@ -820,15 +820,15 @@ const BOYLE_DIAS={
     desc:'Hip dominante bilateral (Hex Bar) + Rodilla dominante unilateral. Traccion horizontal.',
     calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up MULTI-DIRECTION + Lateral Plyos + Rotary/Overhead Medball',
     pares:[
-      {lbl:'PAR 1 — Hip dom bilateral + Core antilateral',
-       ejs:['Trap Bar Deadlift','Side Plank / Suitcase Carry'],
-       nota:'Hex Bar como motor principal del dia.'},
-      {lbl:'PAR 2 — Rodilla unilateral + Traccion horizontal',
+      {lbl:'TRISET 1 — Hip dom bilateral + Core antilateral + Movilidad',tipo:'triset',
+       ejs:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Equilibrio unipodal'],
+       descanso:120,nota:'Hex Bar como motor principal. Core y movilidad en el descanso.'},
+      {lbl:'PAR 2 — Rodilla unilateral + Traccion horizontal',tipo:'par',
        ejs:['Split Squat (Bottoms-up KB)','DB Row / TRX Row'],
-       nota:'Bottoms-up KB activa estabilizadores del hombro.'},
-      {lbl:'PAR 3 — Hip dom slide + Core antiextension',
+       descanso:90,nota:'Bottoms-up KB activa estabilizadores del hombro.'},
+      {lbl:'PAR 3 — Hip dom slide + Core antiextension',tipo:'par',
        ejs:['Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-       nota:''},
+       descanso:90,nota:''},
     ],
     notas:'Traccion horizontal: DB Row unilateral preferido. Minimo 3 sets.',
   },
@@ -837,15 +837,15 @@ const BOYLE_DIAS={
     desc:'Explosivo + Rodilla unilateral + Press horizontal variante. Dia simetrico al Dia 1.',
     calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up LINEAR + Linear Plyos + Chest Pass Linear Sprint',
     pares:[
-      {lbl:'PAR 1 — Explosivo + Core antirotacion (Lift)',
-       ejs:['Hang Clean / DB Snatch','Chop/Lift (standing)'],
-       nota:'Variante del explosivo: DB Snatch o KB Swing si menos frescura.'},
-      {lbl:'PAR 2 — Press horizontal + Rodilla unilateral',
+      {lbl:'TRISET 1 — Explosivo + Core antirotacion + Movilidad',tipo:'triset',
+       ejs:['Hang Clean / DB Snatch','Chop/Lift (standing)','Rotaciones toracicas en suelo'],
+       descanso:90,nota:'Variante del explosivo: DB Snatch o KB Swing si menos frescura.'},
+      {lbl:'PAR 2 — Press horizontal + Rodilla unilateral',tipo:'par',
        ejs:['Incline Bench / Close Grip Bench','Split Squat / RFESS'],
-       nota:'RFESS = Rear Foot Elevated Split Squat. Unilateral primero.'},
-      {lbl:'PAR 3 — Push-up variante + Hip dom slide',
-       ejs:['Push-up variante (TRX/lastrada)','Slide Board Lunge'],
-       nota:'Specialty work o rehab rotatorio al final.'},
+       descanso:90,nota:'RFESS = Rear Foot Elevated Split Squat. Unilateral primero.'},
+      {lbl:'PAR 3 — Push-up variante + Hip dom slide',tipo:'par',
+       ejs:['Push-up variante (TRX/lastrada)','Slide Board Lunge / Ham ISO'],
+       descanso:90,nota:'Specialty work o rehab rotatorio al final.'},
     ],
     notas:'Front Squat se puede introducir en Dia 3 cuando el patron esta consolidado.',
   },
@@ -854,15 +854,15 @@ const BOYLE_DIAS={
     desc:'Rodilla unilateral + Hip dom unilateral. Traccion vertical. El dia mas exigente.',
     calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up MULTI-DIRECTION + Lateral Plyos + Rotary/Overhead Medball',
     pares:[
-      {lbl:'PAR 1 — Rodilla unilateral + Core antilateral',
-       ejs:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row'],
-       nota:'Maxima exigencia de estabilidad unilateral.'},
-      {lbl:'PAR 2 — Hip dom unilateral + Traccion vertical',
+      {lbl:'TRISET 1 — Rodilla unilateral + Core antilateral + Movilidad',tipo:'triset',
+       ejs:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Movilidad tobillo en pared'],
+       descanso:90,nota:'Maxima exigencia de estabilidad unilateral.'},
+      {lbl:'PAR 2 — Hip dom unilateral + Traccion vertical',tipo:'par',
        ejs:['Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up'],
-       nota:'Chin-up: cuando llegues a 10 reps, lastre +10kg.'},
-      {lbl:'PAR 3 — Hip dom slide + Core antiextension',
-       ejs:['Slide Board Lunge / Cook Hip Lift','AB Wheel / Valslide Rollout'],
-       nota:''},
+       descanso:120,nota:'Chin-up: cuando llegues a 10 reps, lastre +10kg.'},
+      {lbl:'PAR 3 — Hip dom slide + Core antiextension',tipo:'par',
+       ejs:['Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
+       descanso:90,nota:''},
     ],
     notas:'Pliometricos opcionales: Box Jump (25 contactos max/sesion). Solo si hay frescura.',
   },
@@ -1035,10 +1035,10 @@ const VARIANTES={
 
 // INFORMACION TECNICA DE EJERCICIOS
 const EJS_DEF={
-  D1:['Hang Clean','Plancha antirotacion (Chop)','Trap Bar Deadlift','Press banca (Bench Press)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-  D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Split Squat (Bottoms-up KB)','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-  D3:['Hang Clean','Chop/Lift (standing)','Incline Bench / Close Grip Bench','Split Squat / RFESS','Push-up variante (TRX/lastrada)','Slide Board Lunge / Ham ISO'],
-  D4:['Split Squat / RFESS','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
+  D1:['Hang Clean','Plancha antirotacion (Chop)','Hip hinge sin peso','Trap Bar Deadlift','Press banca (Bench Press)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
+  D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Equilibrio unipodal','Split Squat (Bottoms-up KB)','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
+  D3:['Hang Clean / DB Snatch','Chop/Lift (standing)','Rotaciones toracicas en suelo','Incline Bench / Close Grip Bench','Split Squat / RFESS','Push-up variante (TRX/lastrada)','Slide Board Lunge / Ham ISO'],
+  D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Movilidad tobillo en pared','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
   Descanso:[],
   Mov:['Movilidad activa (Daily Mob)'],
 };
@@ -1648,68 +1648,82 @@ const renders={
       return;
     }
     let vol=0,done=0,tot=0;
-    el.innerHTML=ejs.map(ej=>{
-      const key='d'+ST.dia+'_'+ej;
-      const ss=ST.sets[key]||[];
-      const info=EJ_INFO[ej]||{};
-      let numSer,rpsLabel;
-      if(info.tipo==='fijo'){numSer=parseInt(info.series)||3;rpsLabel=info.reps||'—';}
-      else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
-      tot+=numSer;
-      const ult=getUltimaSesion(ej);
-      // Change 7: exercise is "done" if any set has data today OR manual check
-      const ejDone=ejEstaHecho(ej);
-      const tieneDatosReales=(ss.filter(Boolean).length>0);
-      // cursor pointer solo si no hay datos reales (para toggle manual)
-      const checkCursor=tieneDatosReales?'default':'pointer';
-      const checkTitle=tieneDatosReales?'Completado con datos':'Marcar como hecho';
-      // Change 8: format date of last session
-      let ultFechaStr='';
-      if(ult){
-        // Try to get real date from fechaSesiones
-        const fechaReal=ST.fechaSesiones&&ST.fechaSesiones[ult.dia];
-        if(fechaReal){
-          const fd=new Date(fechaReal+'T00:00:00');
-          ultFechaStr=fd.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-        } else {
-          ultFechaStr='Dia '+ult.dia;
-        }
-      }
-      const pills=Array.from({length:numSer},(_,i)=>{
-        const st=ss[i];
-        if(st){vol+=st.p*st.r;done++;}
-        const lbl=st?`${st.p}×${st.r} R${st.rpe}`:`S${i+1}`;
-        return`<span class="pill${st?' done':''}" onclick="openMo('${ej.replace(/'/g,"\\'")}',${i})">${lbl}</span>`;
+    // Renderizar por bloques (trisets/pares) si hay datos Boyle
+    var bloques=dB&&BOYLE_DIAS[dB]?BOYLE_DIAS[dB].pares:null;
+    if(bloques){
+      el.innerHTML=bloques.map(function(bloque,bi){
+        var esBloqueTriset=bloque.tipo==='triset';
+        var colorBloque=esBloqueTriset?'var(--blue)':'var(--green)';
+        var bgBloque=esBloqueTriset?'var(--blue-bg)':'var(--green-bg)';
+        var labelTipo=esBloqueTriset?'TRISET':'PAR';
+        var ejsBloque=bloque.ejs;
+        var ejsHtml=ejsBloque.map(function(ej){
+          var key='d'+ST.dia+'_'+ej;
+          var ss=ST.sets[key]||[];
+          var info=EJ_INFO[ej]||{};
+          var numSer,rpsLabel;
+          if(info.tipo==='fijo'){numSer=parseInt(info.series)||3;rpsLabel=info.reps||'--';}
+          else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
+          tot+=numSer;
+          var ult=getUltimaSesion(ej);
+          var ejDone=ejEstaHecho(ej);
+          var tieneDatosReales=(ss.filter(Boolean).length>0);
+          var ultFechaStr='';
+          if(ult){
+            var fechaReal=ST.fechaSesiones&&ST.fechaSesiones[ult.dia];
+            if(fechaReal){var fd=new Date(fechaReal+'T00:00:00');ultFechaStr=fd.toLocaleDateString('es-ES',{day:'numeric',month:'short'});}
+            else{ultFechaStr='Dia '+ult.dia;}
+          }
+          var pillsArr=[];
+          for(var pi=0;pi<numSer;pi++){
+            var st=ss[pi];
+            if(st){vol+=st.p*st.r;done++;}
+            var lbl=st?(st.p+'x'+st.r+' R'+st.rpe):('S'+(pi+1));
+            var ejQ=ej.replace(/'/g,"\'");
+            pillsArr.push('<span class="pill'+(st?' done':'')+'" onclick="openMo(''+ejQ+'','+pi+')">'+lbl+'</span>');
+          }
+          var ejQ=ej.replace(/'/g,"\'");
+          var varBtn=getVariantesEj(ej).length>1?('<button onclick="abrirVariantes(''+ejQ+'')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';
+          return '<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
+            +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(ult||info.tecnica?'4px':'0')+'">'
+            +'<div onclick="toggleEjCheck(''+ejQ+'')" style="width:20px;height:20px;border-radius:50%;background:'+(ejDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(ejDone?'rgba(99,153,34,.35)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:'+(tieneDatosReales?'default':'pointer')+'">'
+            +(ejDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')
+            +'</div>'
+            +'<div style="flex:1"><span class="ejname">'+getVarianteActual(ej)+'</span>'
+            +(getVarianteActual(ej)!==ej?'<div style="font-size:10px;color:var(--text3)">variante de '+ej+'</div>':'')
+            +'</div>'
+            +varBtn
+            +'<button onclick="quitarEjSesion(''+ejQ+'')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:15px;line-height:1"><i class="ti ti-x"></i></button>'
+            +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+numSer+'x'+rpsLabel+'</span>'
+            +'<button onclick="abrirHistEj(''+ejQ+'')" style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:17px;line-height:1"><i class="ti ti-chart-line"></i></button>'
+            +'</div>'
+            +(ult?'<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:4px;display:inline-block"><span style="color:var(--text3);margin-right:4px">'+ultFechaStr+'</span>'+ult.peso+'kg x '+ult.reps+' R'+ult.rpe+'</div>':'')
+            +(info.tecnica?'<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">'+info.tecnica+'</div>':'')
+            +'<div style="margin-top:4px"><div class="pills">'+pillsArr.join('')+'</div></div>'
+            +'</div>';
+        }).join('');
+        var restSecs=bloque.descanso||90;
+        var bKey='bloque_'+bi;
+        var timerHtml='<div style="display:flex;align-items:center;gap:8px;margin-top:.4rem;padding:.4rem .5rem;background:var(--bg3);border-radius:var(--rs)">'
+          +'<span style="font-size:11px;color:var(--text3);flex:1">&#9203; Descanso del bloque</span>'
+          +'<input type="number" value="'+restSecs+'" min="10" max="600" step="5" data-ej="'+bKey+'"'
+          +' style="width:48px;border:none;background:var(--bg2);color:var(--text);border-radius:6px;padding:2px 6px;font-size:12px;font-weight:700;text-align:center" onchange="setRestTime(this.dataset.ej,this.value)" inputmode="numeric">'
+          +'<span style="font-size:11px;color:var(--text3)">seg</span>'
+          +'<button onclick="startRestTimer(this.dataset.ej)" data-ej="'+bKey+'" style="border:none;background:'+colorBloque+';color:#fff;border-radius:12px;padding:3px 12px;font-size:12px;cursor:pointer;font-weight:700">&#9654; GO</button>'
+          +'</div>';
+        return '<div style="margin-bottom:.75rem;border:1px solid '+colorBloque+';border-radius:var(--rs);overflow:hidden">'
+          +'<div style="background:'+bgBloque+';padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between">'
+          +'<span style="font-size:11px;font-weight:800;color:'+colorBloque+';text-transform:uppercase;letter-spacing:.06em">'+labelTipo+' '+(bi+1)+'</span>'
+          +'<span style="font-size:11px;color:var(--text2)">'+bloque.lbl.replace(/^(TRISET|PAR) \d+ — /,'')+'</span>'
+          +'</div>'
+          +'<div style="padding:0 .75rem">'+ejsHtml+'</div>'
+          +(bloque.nota?'<div style="font-size:11px;color:var(--text3);padding:.3rem .75rem;font-style:italic">&#128204; '+bloque.nota+'</div>':'')
+          +'<div style="padding:0 .75rem .5rem">'+timerHtml+'</div>'
+          +'</div>';
       }).join('');
-      const ejSafe=ej.replace(/'/g,'&#39;');
-      return`<div style="padding:.6rem 0;border-bottom:.5px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:${ult||info.tecnica?'4px':'0'}">
-          <div onclick="toggleEjCheck('${ej.replace(/'/g,"\\'")}') " title="${checkTitle}" style="width:22px;height:22px;border-radius:50%;background:${ejDone?'var(--green-bg)':'var(--bg3)'};border:.5px solid ${ejDone?'rgba(99,153,34,.35)':'var(--border2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:${checkCursor};transition:all .15s">
-            ${ejDone?'<i class="ti ti-check" style="font-size:13px;color:var(--green-text)"></i>':''}
-          </div>
-          <div style="flex:1">
-            <span class="ejname">${getVarianteActual(ej)}</span>
-            ${getVarianteActual(ej)!==ej?`<div style="font-size:10px;color:var(--text3)">variante de ${ej}</div>`:''}
-          </div>
-          ${getVariantesEj(ej).length>1?`<button onclick="abrirVariantes('${ej.replace(/'/g,String.fromCharCode(39))}')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>`:''}
-          <button onclick="quitarEjSesion(''" +ej+ "')" style="border:none;background:transparent;color:var(--red-text);cursor:pointer;padding:2px 4px;font-size:16px;line-height:1;flex-shrink:0" title="Quitar del dia"><i class="ti ti-trash" aria-hidden="true"></i></button>
-          <span style="font-size:11px;color:var(--text2);white-space:nowrap">${numSer}x${rpsLabel}</span>
-          <button onclick="abrirHistEj('${ej.replace(/'/g,"\\'")}') " style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:18px;line-height:1;flex-shrink:0" title="Ver historial"><i class="ti ti-chart-line" aria-hidden="true"></i></button>
-        </div>
-        ${ult?`<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:4px;display:inline-block"><span style="color:var(--text3);margin-right:4px">${ultFechaStr}</span>${ult.peso}kg × ${ult.reps} · R${ult.rpe}</div>`:''}
-        ${info.tecnica?`<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">${info.tecnica}</div>`:''}
-        <div style="margin-top:4px"><div class="pills">${pills}</div></div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
-          <span style="font-size:11px;color:var(--text3)">&#9203; Descanso:</span>
-          <input type="number" value="${getRestTime(ejSafe)}" min="10" max="600" step="5"
-            style="width:52px;border:none;background:var(--bg3);color:var(--text);border-radius:8px;padding:2px 6px;font-size:12px;font-weight:600;text-align:center"
-            onchange="setRestTime(this.dataset.ej,this.value)" data-ej="${ejSafe}"
-            inputmode="numeric">
-          <span style="font-size:11px;color:var(--text3)">seg</span>
-          <button onclick="startRestTimer(this.dataset.ej)" data-ej="${ejSafe}" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:12px;padding:2px 10px;font-size:11px;cursor:pointer;font-weight:600">&#9654; Iniciar</button>
-        </div>
-      </div>`;
-    }).join('');
+    } else {
+      el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Dia de descanso</div>';
+    }
     document.getElementById('e-vol').textContent=Math.round(vol);
     const edDia=document.getElementById('e-editor-dia');if(edDia){const dB2=getDiaBoyle();edDia.textContent=dB2||'Descanso';}
     document.getElementById('e-ser').textContent=done+'/'+tot;
@@ -2382,7 +2396,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v33';
+const APP_VERSION='v34';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

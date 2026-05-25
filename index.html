@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v34</title>
+<title>Entreno Boyle v35</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v34"
+      version: "v35"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1637,10 +1637,11 @@ const renders={
     const pr=PROG[(ST.sem-1)%12];
     document.getElementById('e-sem').textContent='Semana '+ST.sem+(pr.d?' — Descarga':'');
     const dB=getDiaBoyle();
-    const ejs=dB?getEjs(dB):[];
     const el=document.getElementById('e-list');
-    if(!ejs||!ejs.length){
-      el.innerHTML='<div class="empty">No hay series para hoy</div>';
+    // Con estructura Boyle, verificar que hay pares definidos
+    var tienePares=dB&&BOYLE_DIAS[dB]&&BOYLE_DIAS[dB].pares&&BOYLE_DIAS[dB].pares.length>0;
+    if(!dB||!tienePares){
+      el.innerHTML='<div class="empty">Dia de descanso o movilidad</div>';
       document.getElementById('e-vol').textContent='0';
       document.getElementById('e-ser').textContent='0/0';
       document.getElementById('e-hist').innerHTML='<div class="empty">Sin historial</div>';
@@ -1726,7 +1727,7 @@ const renders={
       el.innerHTML='<div style="color:var(--text3);padding:1rem;text-align:center">Dia de descanso</div>';
     }
     document.getElementById('e-vol').textContent=Math.round(vol);
-    const edDia=document.getElementById('e-editor-dia');if(edDia){const dB2=getDiaBoyle();edDia.textContent=dB2||'Descanso';}
+    const edDia=document.getElementById('e-editor-dia');if(edDia){edDia.textContent=dB||'Descanso';}
     document.getElementById('e-ser').textContent=done+'/'+tot;
     renderEnf(c.s,'e-enf','e-enf-card');
     const eCalBody=document.getElementById('e-cal-body');
@@ -2402,7 +2403,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v34';
+const APP_VERSION='v35';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

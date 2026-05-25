@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest">
-<title>Entreno Boyle v37</title>
+<title>Entreno Boyle v38</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v37"
+      version: "v38"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -2398,7 +2398,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v37';
+const APP_VERSION='v38';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -2881,6 +2881,13 @@ renders.garmin=function(){
     ${g.estres_medio?`<div class="prow"><span class="plbl">😤 Estres medio</span><span class="pval">${g.estres_medio}/100</span></div>`:''}
     ${g.body_battery_max?`<div class="prow"><span class="plbl">⚡ Body Battery</span><span class="pval">${g.body_battery_min||0} → ${g.body_battery_max}</span></div>`:''}
   `;
+  // Resetear cards antes de rellenar
+  document.getElementById('g-sueno-card').style.display='none';
+  document.getElementById('g-fuerza-card').style.display='none';
+  document.getElementById('g-acts-card').style.display='none';
+  document.getElementById('g-sueno').innerHTML='';
+  document.getElementById('g-fuerza').innerHTML='';
+  document.getElementById('g-acts').innerHTML='';
   // Sueño
   if(g.sueno_total_min){
     document.getElementById('g-sueno-card').style.display='block';

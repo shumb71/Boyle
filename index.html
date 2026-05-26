@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v45</title>
+<title>Entreno Boyle v46</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v45"
+      version: "v46"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1812,9 +1812,8 @@ const renders={
     document.getElementById('e-vol').textContent=Math.round(vol);
     const edDia=document.getElementById('e-editor-dia');if(edDia){edDia.textContent=dB||'Descanso';}
     document.getElementById('e-ser').textContent=done+'/'+tot;
-    renderEnf(c.s,'e-enf','e-enf-card');
-    // e-cal-body eliminado — calentamiento en e-warmup-card
-    if(eCalCard){if(CAL[c.s]){eCalCard.style.display='block';}else{eCalCard.style.display='none';}}
+    renderEnf(dB||'Mov','e-enf','e-enf-card');
+    // calentamiento en e-warmup-card
     const hist=document.getElementById('e-hist');
     const all=Object.entries(ST.sets).filter(([k])=>!k.startsWith('d'+ST.dia+'_')).slice(-6).reverse();
     hist.innerHTML=all.length?all.map(([k,v])=>{
@@ -3012,7 +3011,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v45';
+const APP_VERSION='v46';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

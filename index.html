@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v46</title>
+<title>Entreno Boyle v47</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v46"
+      version: "v47"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1459,7 +1459,8 @@ function getDiaBoyle(){
 
 // Obtener ultima sesion de un ejercicio
 function getUltimaSesion(ej){
-  const keys=Object.keys(ST.sets).filter(k=>k.includes('_'+ej)).sort((a,b)=>{
+  var ejC=(ej||'').replace(/&#39;/g,"'");
+  const keys=Object.keys(ST.sets).filter(k=>k.includes('_'+ejC)).sort((a,b)=>{
     const da=parseInt(a.split('_')[0].replace('d',''));
     const db=parseInt(b.split('_')[0].replace('d',''));
     return db-da;
@@ -1737,7 +1738,8 @@ const renders={
         var labelTipo=esBloqueTriset?'TRISET':'PAR';
         var ejsBloque=bloque.ejs;
         var ejsHtml=ejsBloque.map(function(ej){
-          var key='d'+ST.dia+'_'+ej;
+          var ejR=ej.replace(/&#39;/g,"'");
+          var key='d'+ST.dia+'_'+ejR;
           var ss=ST.sets[key]||[];
           var info=EJ_INFO[ej]||{};
           var numSer,rpsLabel;
@@ -2160,8 +2162,9 @@ function toggleEjCheck(ej){
 }
 
 function ejEstaHecho(ej){
-  const key='d'+ST.dia+'_'+ej;
-  const tieneDatos=(ST.sets[key]||[]).filter(Boolean).length>0;
+  var ejC=(ej||'').replace(/&#39;/g,"'");
+  var key='d'+ST.dia+'_'+ejC;
+  var tieneDatos=(ST.sets[key]||[]).filter(Boolean).length>0;
   if(tieneDatos) return true;
   return !!(ST.checksManual&&ST.checksManual[key]);
 }
@@ -3011,7 +3014,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v46';
+const APP_VERSION='v47';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

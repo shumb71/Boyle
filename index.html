@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v47</title>
+<title>Entreno Boyle v48</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v47"
+      version: "v48"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1755,17 +1755,17 @@ const renders={
             if(fechaReal){var fd=new Date(fechaReal+'T00:00:00');ultFechaStr=fd.toLocaleDateString('es-ES',{day:'numeric',month:'short'});}
             else{ultFechaStr='Dia '+ult.dia;}
           }
+          var ejQ=ej.replace(/'/g,"\\'");
+          var ejSafe=ej.replace(/'/g,'&#39;');
           var pillsArr=[];
           for(var pi=0;pi<numSer;pi++){
             var st=ss[pi];
             if(st){vol+=st.p*st.r;done++;}
             var lbl=st?(st.p+'x'+st.r+' R'+st.rpe):('S'+(pi+1));
-            var ejQ=ej.replace(/'/g,"\\'"); // redundante, se redefine abajo
             var spanEl='<span class="pill'+(st?' done':'')+'" data-ej="'+ejSafe+'" data-pi="'+pi+'" onclick="openMo2(this)">'+ lbl +'</span>';
             pillsArr.push(spanEl);
           }
           var ejQ=ej.replace(/'/g,"\'");
-          var ejSafe=ej.replace(/'/g,'&#39;');
           var varBtn=getVariantesEj(ej).length>1?('<button data-ej="'+ejSafe+'" onclick="abrirVariantes2(this)" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';  
           return '<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
             +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:'+(ult||info.tecnica?'4px':'0')+'">'
@@ -3014,7 +3014,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v47';
+const APP_VERSION='v48';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

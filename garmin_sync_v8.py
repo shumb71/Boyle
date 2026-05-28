@@ -1,12 +1,6 @@
-#!/usr/bin/env python3
-"""
-garmin_sync_v8.py — Para GitHub Actions
-Descarga los últimos 30 días + el día de HOY (siempre, para datos en curso).
-Lee credenciales desde variables de entorno GARMIN_EMAIL y GARMIN_PASSWORD.
-"""
-
 import json
 import os
+import time
 from datetime import date, timedelta
 
 EMAIL    = os.environ.get("GARMIN_EMAIL", "")
@@ -14,19 +8,13 @@ PASSWORD = os.environ.get("GARMIN_PASSWORD", "")
 
 FICHERO_SALIDA = "garmin_historial.json"
 DIAS_ATRAS     = 30
-TOKEN_STORE    = "/tmp/garmin_tokens"
 
 def login():
     from garminconnect import Garmin
-    client = Garmin(EMAIL, PASSWORD, is_cn=False, prompt_mfa=None)
-    try:
-        client.login(TOKEN_STORE)
-        print("✅ Login OK (tokens reutilizados)")
-    except Exception:
-        print("🔑 Haciendo login en Garmin...")
-        client.login()
-        client.garth.dump(TOKEN_STORE)
-        print("✅ Login OK")
+    client = Garmin(email=EMAIL, password=PASSWORD)
+    print("🔑 Haciendo login en Garmin...")
+    client.login()
+    print("✅ Login OK")
     return client
 
 def cargar_historial_existente():
@@ -41,20 +29,25 @@ def cargar_historial_existente():
             pass
     return {}
 
-def fetch_dia(client, fecha_str):
+def fetch_dia(client, fecha_str, reintentos=2):
     d = {"fecha": fecha_str}
-    try:
-        stats = client.get_stats(fecha_str)
-        d["pasos"]            = stats.get("totalSteps", 0)
-        d["calorias_dia"]     = stats.get("totalKilocalories", 0)
-        d["calorias_activas"] = stats.get("activeKilocalories", 0)
-        d["distancia_km"]     = round((stats.get("totalDistanceMeters") or 0) / 1000, 2)
-        d["minutos_activos"]  = stats.get("moderateIntensityMinutes", 0)
-        d["fc_reposo"]        = stats.get("restingHeartRate")
-        d["estres_medio"]     = stats.get("averageStressLevel")
-        print(f"  Pasos: {d['pasos']}")
-    except Exception as e:
-        print(f"  ⚠️ Stats: {e}")
+
+    for intento in range(reintentos + 1):
+        try:
+            stats = client.get_stats(fecha_str)
+            d["pasos"]            = stats.get("totalSteps", 0)
+            d["calorias_dia"]     = stats.get("totalKilocalories", 0)
+            d["calorias_activas"] = stats.get("activeKilocalories", 0)
+            d["distancia_km"]     = round((stats.get("totalDistanceMeters") or 0) / 1000, 2)
+            d["minutos_activos"]  = stats.get("moderateIntensityMinutes", 0)
+            d["fc_reposo"]        = stats.get("restingHeartRate")
+            d["estres_medio"]     = stats.get("averageStressLevel")
+            print(f"  Pasos: {d['pasos']}")
+            break
+        except Exception as e:
+            print(f"  ⚠️ Stats intento {intento+1}: {e}")
+            if intento < reintentos:
+                time.sleep(3)
 
     try:
         sueno = client.get_sleep_data(fecha_str)
@@ -113,17 +106,32 @@ def main():
 
     for i in range(0, DIAS_ATRAS + 1):
         fecha = (hoy - timedelta(days=i)).isoformat()
-        if i == 0:
-            # Hoy siempre se re-descarga (datos parciales que van actualizándose)
+        if i <= 3:
+            # Últimos 3 días siempre se re-descargan (datos pueden llegar tarde)
             fechas_a_descargar.append(fecha)
-            print(f"🔄 {fecha} — hoy, siempre se actualiza")
+            print(f"🔄 {fecha} — últimos 3 días, siempre se actualiza")
         elif fecha not in dias_existentes:
             fechas_a_descargar.append(fecha)
+            print(f"📥 {fecha} — falta, se descarga")
         else:
             print(f"⏭️  {fecha} — ya existe, saltando")
 
     print(f"\n📥 Descargando {len(fechas_a_descargar)} día(s)...\n")
-    client = login()
+
+    # Login con reintentos
+    client = None
+    for intento in range(3):
+        try:
+            client = login()
+            break
+        except Exception as e:
+            print(f"⚠️ Login intento {intento+1} fallido: {e}")
+            if intento < 2:
+                time.sleep(5)
+
+    if not client:
+        print("❌ No se pudo hacer login después de 3 intentos")
+        exit(1)
 
     for fecha in sorted(fechas_a_descargar):
         print(f"\n📅 {fecha}")
@@ -132,6 +140,7 @@ def main():
             dias_existentes[fecha] = datos
         except Exception as e:
             print(f"  ❌ Error: {e}")
+        time.sleep(1)  # Pausa entre peticiones para no saturar la API
 
     with open(FICHERO_SALIDA, "w", encoding="utf-8") as f:
         json.dump({

@@ -699,13 +699,13 @@
     },
     "2026-05-25": {
       "fecha": "2026-05-25",
-      "pasos": 2384,
-      "calorias_dia": 1450.0,
-      "calorias_activas": 274.0,
-      "distancia_km": 1.96,
+      "pasos": 5998,
+      "calorias_dia": 2430.0,
+      "calorias_activas": 331.0,
+      "distancia_km": 4.94,
       "minutos_activos": 27,
       "fc_reposo": 44,
-      "estres_medio": 16,
+      "estres_medio": 20,
       "sueno_total_min": 541,
       "sueno_profundo_min": 55,
       "sueno_ligero_min": 354,
@@ -729,7 +729,96 @@
         "fc_media": 98.0,
         "fc_max": 147.0
       }
+    },
+    "2026-05-26": {
+      "fecha": "2026-05-26",
+      "pasos": 8139,
+      "calorias_dia": 2559.0,
+      "calorias_activas": 460.0,
+      "distancia_km": 6.72,
+      "minutos_activos": 20,
+      "fc_reposo": 42,
+      "estres_medio": 23,
+      "sueno_total_min": 525,
+      "sueno_profundo_min": 97,
+      "sueno_ligero_min": 300,
+      "sueno_rem_min": 129,
+      "sueno_puntuacion": 92,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 68,
+          "calorias": 297.0,
+          "fc_media": 95.0,
+          "fc_max": 142.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 68,
+        "calorias": 297.0,
+        "fc_media": 95.0,
+        "fc_max": 142.0
+      }
+    },
+    "2026-05-27": {
+      "fecha": "2026-05-27",
+      "pasos": 7660,
+      "calorias_dia": 2300.0,
+      "calorias_activas": 201.0,
+      "distancia_km": 6.39,
+      "minutos_activos": 0,
+      "fc_reposo": 44,
+      "estres_medio": 27,
+      "sueno_total_min": 314,
+      "sueno_profundo_min": 35,
+      "sueno_ligero_min": 236,
+      "sueno_rem_min": 44,
+      "sueno_puntuacion": 69
+    },
+    "2026-05-28": {
+      "fecha": "2026-05-28",
+      "pasos": 13969,
+      "calorias_dia": 2573.0,
+      "calorias_activas": 683.0,
+      "distancia_km": 10.65,
+      "minutos_activos": 63,
+      "fc_reposo": 43,
+      "estres_medio": 21,
+      "sueno_total_min": 388,
+      "sueno_profundo_min": 89,
+      "sueno_ligero_min": 215,
+      "sueno_rem_min": 84,
+      "sueno_puntuacion": 81,
+      "actividades": [
+        {
+          "nombre": "Ojén Senderismo",
+          "tipo": "hiking",
+          "duracion_min": 79,
+          "calorias": 496.0,
+          "fc_media": 112.0,
+          "fc_max": 143.0
+        },
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 33,
+          "calorias": 247.0,
+          "fc_media": 119.0,
+          "fc_max": 159.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 33,
+        "calorias": 247.0,
+        "fc_media": 119.0,
+        "fc_max": 159.0
+      }
     }
   },
-  "actualizado": "2026-05-25"
+  "actualizado": "2026-05-28"
 }

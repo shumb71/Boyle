@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v48</title>
+<title>Entreno Boyle v49</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -91,7 +91,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v48"
+      version: "v49"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -1091,9 +1091,9 @@ const EJS_DEF={
 const EJ_INFO={
   'Hang Clean':{tipo:'prog',tecnica:'SIEMPRE primero en la sesion. Desde encima de rodillas. Extension completa de cadera. 3-5 reps max — calidad sobre cantidad.'},
   'DB Snatch / KB Swing':{tipo:'prog',tecnica:'KB Swing: cadera atras y adelante explosivo. No es una sentadilla. Alternativa al Hang Clean si hay fatiga o tecnica no consolidada.'},
-  'Trap Bar Deadlift':{tipo:'prog',tecnica:'Agarre neutro en hex bar. Cadera baja al inicio. Empujar el suelo. Espalda neutra durante todo el recorrido. PARA si la lumbar se redondea.'},
-  'Split Squat (Bottoms-up KB)':{tipo:'prog',reps:'c/lado',tecnica:'KB invertido activa el manguito rotador. Rodilla trasera a 1 cm del suelo. Tronco erguido. Unilateral ANTES que bilateral en el dia.'},
-  'Split Squat / RFESS':{tipo:'prog',reps:'c/lado',tecnica:'Pie trasero elevado (RFESS). Bajada 3 seg. No dejar que la rodilla delantera supere el pie. Core muy activo.'},
+  'Trap Bar Deadlift':{tipo:'prog',tecnica:'Agarre neutro en hex bar. Cadera baja al inicio. Empujar el suelo. Espalda neutra durante todo el recorrido. PARA si la lumbar se redondea.',alerta:'⚠️ Condropatía femoral medial: vigilar que las rodillas NO colapsen en valgo durante el tirón. Generalmente bien tolerado.'},
+  'Split Squat (Bottoms-up KB)':{tipo:'prog',reps:'c/lado',tecnica:'KB invertido activa el manguito rotador. Rodilla trasera a 1 cm del suelo. Tronco erguido. Unilateral ANTES que bilateral en el dia.',alerta:'⚠️ Condropatía femoral medial: reducir rango, no bajar más allá de donde la rodilla pierda alineación. Si hay dolor sustituir por Step-up cajón bajo.'},
+  'Split Squat / RFESS':{tipo:'prog',reps:'c/lado',tecnica:'Pie trasero elevado (RFESS). Bajada 3 seg. No dejar que la rodilla delantera supere el pie. Core muy activo.',alerta:'⚠️ Condropatía femoral medial: vigilar rodilla en valgo. Rango reducido. Si dolor → Step-up o Split Squat sin elevación del pie trasero.'},
   'Single-leg Squat':{tipo:'prog',reps:'c/lado',tecnica:'Progresion avanzada. Solo cuando el RFESS esta consolidado. Cadera atras y abajo. Rodilla estable.'},
   'Single-leg RDL (Straight-leg DL)':{tipo:'prog',reps:'c/lado',tecnica:'Cadera atras, pierna de apoyo ligeramente doblada. Espalda recta. Lleva el pie libre hacia atras — no hacia abajo.'},
   'Slide Board Lunge / Ham ISO':{tipo:'prog',reps:'c/lado',tecnica:'Slide lunge: pie sobre disco o valslide. Control excentrico de 3-4 seg. Ham ISO: flexion isometrica en TRX o maquina.'},
@@ -1782,6 +1782,7 @@ const renders={
             +'</div>'
             +(ult?'<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:4px;display:inline-block"><span style="color:var(--text3);margin-right:4px">'+ultFechaStr+'</span>'+ult.peso+'kg x '+ult.reps+' R'+ult.rpe+'</div>':'')
             +(info.tecnica?'<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">'+info.tecnica+'</div>':'')
+            +(info.alerta?'<div style="font-size:11px;color:var(--orange);background:var(--orange-bg,var(--bg3));border-radius:6px;padding:3px 8px;margin-bottom:5px;line-height:1.4">'+info.alerta+'</div>':'')
             +'<div style="margin-top:4px"><div class="pills">'+pillsArr.join('')+'</div></div>'
             +'</div>';
         }).join('');
@@ -3014,7 +3015,7 @@ function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.ho
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v48';
+const APP_VERSION='v49';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -3325,7 +3326,16 @@ function calSelDia(fecha){
         </div>
       </div>
       ${g.body_battery_max?`<div class="prow" style="background:var(--bg3);border-radius:var(--rs);padding:.4rem .6rem;margin-bottom:4px"><span class="plbl">⚡ Body Battery</span><span class="pval">${g.body_battery_min||0} → ${g.body_battery_max}</span></div>`:''}
-      ${g.fuerza?`<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal</span></div>`:''}
+      ${(function(){
+        if(g.actividades&&g.actividades.length){
+          return g.actividades.map(function(act){
+            var t=(act.tipo||'').toLowerCase();
+            var icono=t.includes('strength')||t.includes('weight')||t.includes('fuerza')?'💪':t.includes('walk')||t.includes('hik')?'🚶':t.includes('cycl')||t.includes('bik')?'🚴':t.includes('swim')?'🏊':t.includes('yoga')?'🧘':'🏃';
+            return '<div style="background:var(--green-bg);border-radius:var(--rs);padding:.4rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">'+icono+' '+(act.nombre||act.tipo)+'</span><span style="font-size:12px;color:var(--green-text)">'+act.duracion_min+' min · '+act.calorias+' kcal</span></div>';
+          }).join('');
+        }
+        return g.fuerza?`<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal</span></div>`:'';
+      })()}
     </div>`;
   } else {
     htmlG=`<div style="color:var(--text3);font-size:12px;margin-bottom:.75rem">Sin datos Garmin este día</div>`;

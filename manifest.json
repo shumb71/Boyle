@@ -1,24 +1,22 @@
 {
-  "name": "Entreno PRO — José",
-  "short_name": "Entreno PRO",
-  "description": "App de entrenamiento personal",
-  "start_url": "/entreno-pro/index.html",
+  "name": "Entreno Boyle",
+  "short_name": "Boyle",
+  "description": "Programa de entrenamiento Boyle",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#185FA5",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/entreno-pro/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "/entreno-pro/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }

@@ -671,7 +671,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
     </div>
     <div class="card">
-      <div class="card-lbl">Ayer — resumen del dia</div>
+      <div class="card-lbl">Resumen del dia</div>
       <div id="g-resumen"><div class="empty">Importa el JSON desde Config → Importar Garmin</div></div>
     </div>
     <div class="card" id="g-sueno-card" style="display:none">
@@ -2614,7 +2614,8 @@ function abrirCambiarDiaEnCiclo(numDia){
   ];
   if(list) list.innerHTML=opciones.map(function(o){
     var sel=(o.k&&o.k===actual)||(o.k===''&&!actual);
-    return '<div onclick="asignarDiaBoyle('+numDia+',\''+o.k+'\')" style="padding:.75rem 1rem;border-bottom:.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:'+(sel?'var(--blue-bg)':'transparent')+';border-radius:'+(sel?'var(--rs)':'0')+'">' +
+    var onclk=o.k?('asignarDiaBoyle('+numDia+',\''+o.k+'\')'):'asignarDiaBoyle('+numDia+',\'\')';
+    return '<div onclick="'+onclk+'" style="padding:.75rem 1rem;border-bottom:.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:'+(sel?'var(--blue-bg)':'transparent')+';border-radius:'+(sel?'var(--rs)':'0')+'">' +
       '<span style="font-size:14px;font-weight:'+(sel?'700':'500')+';color:'+(sel?'var(--blue)':'var(--text)')+'">'+o.n+'</span>' +
       (sel?'<i class="ti ti-check" style="color:var(--blue)"></i>':'') +
       '</div>';
@@ -3434,6 +3435,7 @@ function confirmarCambioEj(el){
 }
 
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
+function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ciclo();renders.entreno();updateTopbarSem();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v51</title>
+<title>Entreno Boyle v52</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v51"
+      version: "v52"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -336,7 +336,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=51', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=52', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -515,8 +515,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="hist-content"></div>
   </div>
   <!-- CICLO -->
-  <div class="screen" id="s-ciclo">
-    <div class="ph"><h1>Programa</h1><span style="font-size:13px;color:var(--text2)">Boyle 4 dias</span></div>
+  <div class="screen" id="s-ciclo">    <div class="ph"><h1>Programa</h1><span style="font-size:13px;color:var(--text2)">Boyle 4 dias</span></div>
 
     <!-- CICLO DE TURNOS + DIA BOYLE -->
     <div class="card">
@@ -560,6 +559,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 
   <!-- NUTRICION -->
+  <!-- ENTRENAMIENTO BOYLE -->
+  <div class="screen" id="s-boyle">
+    <div class="ph"><h1>Entrenamiento Boyle</h1></div>
+    <!-- Selector de fase -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 .75rem .5rem" id="boyle-fase-tabs"></div>
+    <!-- Selector de día dentro de la fase -->
+    <div style="display:flex;gap:6px;padding:0 .75rem .75rem" id="boyle-dia-tabs"></div>
+    <!-- Contenido -->
+    <div id="boyle-content"></div>
+  </div>
+
   <div class="screen" id="s-nut">
     <div class="ph"><h1>Nutricion</h1><span id="n-ttag" class="tag tb">—</span></div>
     <div class="card" style="margin-bottom:.75rem">
@@ -767,6 +777,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </button>
       <button class="dnav-item" id="dnav-ciclo" onclick="navTo('ciclo','Programa')">
         <i class="ti ti-calendar dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa</span>
+      </button>
+      <button class="dnav-item" id="dnav-boyle" onclick="navTo('boyle','Entrenamiento Boyle')">
+        <i class="ti ti-books dnav-icon" aria-hidden="true"></i><span class="dnav-label">Entrenamiento Boyle</span>
       </button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-nut" onclick="navTo('nut','Nutricion')">
@@ -2244,6 +2257,170 @@ const renders={
   config(){renderCfgEjs();}
 };
 
+// ══════════════════════════════════════
+// ENTRENAMIENTO BOYLE — RENDER COMPLETO
+// ══════════════════════════════════════
+var _boyFase = 'F1';
+var _boyDia  = 'D1';
+
+renders.boyle = function(){
+  renderBoyleFaseTabs();
+  renderBoyleDiaTabs();
+  renderBoyleContenido();
+};
+
+function renderBoyleFaseTabs(){
+  var el=document.getElementById('boyle-fase-tabs');
+  if(!el) return;
+  var fases=['F1','F2','F3','F4'];
+  var faseNoms={F1:'F1 — Acum.',F2:'F2 — Peaking',F3:'F3 — Fuerza',F4:'F4 — Peaking 2'};
+  var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
+  var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
+  var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
+  el.innerHTML=fases.map(function(f){
+    var sel=f===_boyFase;
+    return '<button onclick="setBoyFase(\''+f+'\')" style="border:none;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;background:'+(sel?faseColors[f]:'var(--bg3)')+';color:'+(sel?'#fff':'var(--text2)')+'">'+faseNoms[f]+'</button>';
+  }).join('');
+}
+
+function renderBoyleDiaTabs(){
+  var el=document.getElementById('boyle-dia-tabs');
+  if(!el) return;
+  var dias=['D1','D2','D3','D4'];
+  var diaNoms={D1:'Día 1',D2:'Día 2',D3:'Día 3',D4:'Día 4'};
+  el.innerHTML=dias.map(function(d){
+    var sel=d===_boyDia;
+    return '<button onclick="setBoyDia(\''+d+'\')" style="flex:1;border:none;border-radius:20px;padding:5px 8px;font-size:12px;font-weight:600;cursor:pointer;background:'+(sel?'var(--blue)':'var(--bg3)')+';color:'+(sel?'#fff':'var(--text2)')+'">'+diaNoms[d]+'</button>';
+  }).join('');
+}
+
+function setBoyFase(f){ _boyFase=f; renderBoyleFaseTabs(); renderBoyleDiaTabs(); renderBoyleContenido(); }
+function setBoyDia(d){ _boyDia=d; renderBoyleDiaTabs(); renderBoyleContenido(); }
+
+function renderBoyleContenido(){
+  var el=document.getElementById('boyle-content');
+  if(!el) return;
+  var fase=_boyFase;
+  var diaKey=_boyDia;
+  var faseData=REPS_FASE[fase];
+  var ejsFase=EJS_FASES[fase]&&EJS_FASES[fase][diaKey]?EJS_FASES[diaKey]||EJS_FASES[fase][diaKey]:[];
+  // Usar EJS_FASES correctamente
+  var ejsLista=EJS_FASES[fase]?EJS_FASES[fase][diaKey]||[]:[];
+  // Historial de veces que se realizó este día
+  var historialDia=getHistorialDiaBoyle(diaKey, fase);
+  // Info de fase
+  var faseNoms={F1:'Acumulación',F2:'Peaking',F3:'Fuerza + Complejos',F4:'Peaking 2'};
+  var faseDesc={
+    F1:'3 series × 8 reps al 60-77%. Tempo 3/1/1. Construir base de volumen.',
+    F2:'3 series × 5 reps al 80-87%. Mayor carga, menos volumen. Transición a fuerza.',
+    F3:'3-5 series × 5 reps con complejos (ejercicio + potencia). Máxima transferencia.',
+    F4:'Igual que F3 con mayor intensidad. Turkish Get-Up completo. Peak del programa.',
+  };
+  var semanas=[1,2,3];
+  var html='';
+  // Banner de fase
+  var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
+  var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
+  var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
+  html+='<div class="card" style="border:.5px solid '+faseColors[fase]+';margin-bottom:.5rem">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem">'
+    +'<span style="font-size:13px;font-weight:700;color:'+faseTexts[fase]+'">'+fase+' — '+faseNoms[fase]+'</span>'
+    +'<span style="font-size:11px;background:'+faseBgs[fase]+';color:'+faseTexts[fase]+';border-radius:20px;padding:2px 8px">Sem '+(getFaseActual('F1')===fase?ST.sem:'—')+'</span>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--text2);line-height:1.5">'+faseDesc[fase]+'</div>'
+    +'</div>';
+  // Historial de ejecuciones de este día
+  if(historialDia.length){
+    html+='<div class="card" style="margin-bottom:.5rem">'
+      +'<div class="card-lbl">📅 Veces realizado ('+diaKey+')</div>';
+    html+=historialDia.map(function(h){
+      var varTag=h.variacion?'<span style="font-size:10px;background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 6px;margin-left:4px">variación</span>':'';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)">'
+        +'<div><span style="font-size:13px;font-weight:600;color:var(--text)">'+h.fecha+'</span>'+varTag+'</div>'
+        +'<span style="font-size:11px;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:1px 8px">'+h.fase+' S'+h.semana+'</span>'
+        +'</div>';
+    }).join('');
+    html+='</div>';
+  } else {
+    html+='<div style="font-size:12px;color:var(--text3);padding:.4rem .75rem;margin-bottom:.5rem">'+diaKey+' aún no realizado en '+fase+'</div>';
+  }
+  // Tabla de ejercicios con reps por semana
+  html+='<div class="card">'
+    +'<div class="card-lbl">Ejercicios y progresión</div>'
+    +'<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:4px;margin-bottom:.5rem">'
+    +'<div style="font-size:10px;font-weight:700;color:var(--text3);padding:4px 0">EJERCICIO</div>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:4px 4px">S1</div>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:4px 4px">S2</div>'
+    +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-align:center;padding:4px 4px">S3</div>'
+    +'</div>';
+  ejsLista.forEach(function(ej){
+    var info=EJ_INFO[ej]||{};
+    var repsData=faseData&&faseData[diaKey]?faseData[diaKey][ej]:null;
+    var base=faseData?faseData.base:null;
+    var s1=repsData?repsData[0]:(base?{r:base.r}:null);
+    var s2=repsData?repsData[1]:(base?{r:base.r}:null);
+    var s3=repsData?repsData[2]:(base?{r:base.r}:null);
+    var rFmt=function(s){return s?(s.r!==undefined?String(s.r):'—'):'—';};
+    // Registros reales del usuario para este ejercicio en este día
+    var mejorPeso=getMejorPesoEjDia(ej, diaKey);
+    html+='<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
+      +'<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:4px;align-items:center">'
+      +'<div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+ej+'</div>'
+      +(info.tecnica?'<div style="font-size:10px;color:var(--text3);line-height:1.3;margin-top:2px">'+info.tecnica.slice(0,80)+(info.tecnica.length>80?'...':'')+'</div>':'')
+      +(mejorPeso?'<div style="font-size:10px;color:var(--blue-text);margin-top:2px">🏆 '+mejorPeso+'</div>':'')
+      +'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px;min-width:28px">'+rFmt(s1)+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px;min-width:28px">'+rFmt(s2)+'</div>'
+      +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px;min-width:28px">'+rFmt(s3)+'</div>'
+      +'</div>'
+      +(info.alerta?'<div style="font-size:10px;color:var(--orange);margin-top:3px">'+info.alerta+'</div>':'')
+      +'</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function getHistorialDiaBoyle(diaKey, fase){
+  // Busca en historialFechas las sesiones donde se realizó ese día Boyle
+  var hist=ST.historialFechas||{};
+  var resultado=[];
+  Object.keys(hist).sort().forEach(function(fecha){
+    var h=hist[fecha];
+    if(!h||!h.completado) return;
+    if(h.diaBoyleReal===diaKey){
+      resultado.push({
+        fecha:fecha,
+        fase:h.fase||'—',
+        semana:h.semana||'—',
+        variacion:h.variacion||false,
+      });
+    }
+  });
+  return resultado;
+}
+
+function getMejorPesoEjDia(ej, diaKey){
+  // Busca en ST.sets el mejor peso registrado para este ejercicio en días asignados a diaKey
+  var mejor=null;
+  var fechaSesiones=ST.fechaSesiones||{};
+  Object.keys(ST.sets||{}).forEach(function(k){
+    var match=k.match(/^d(\d+)_(.+)$/);
+    if(!match) return;
+    var numDia=parseInt(match[1]);
+    var ejKey=match[2];
+    if(ejKey!==ej) return;
+    // Verificar que ese día estaba asignado a diaKey
+    var dBDelDia=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:CICLO[(numDia-1)%12].b;
+    if(dBDelDia!==diaKey) return;
+    var sets=(ST.sets[k]||[]).filter(Boolean);
+    sets.forEach(function(s){
+      if(!mejor||s.p>mejor.p) mejor={p:s.p,r:s.r,rpe:s.rpe};
+    });
+  });
+  return mejor?(mejor.p+'kg × '+mejor.r+' R'+mejor.rpe):null;
+}
+
 function setEvalScore(id,score,btn){
   if(!ST._evalCur) ST._evalCur={};
   ST._evalCur[id]=score;
@@ -2605,10 +2782,15 @@ function renderCicloBoyle(){
 
 function abrirCambiarDia(){abrirCambiarDiaEnCiclo(ST.dia);}
 
+var _cdSemTemp = 1; // semana temporal en el modal
+
 function abrirCambiarDiaEnCiclo(numDia){
   var mo=document.getElementById('mo-cambiardia');
   var lbl=document.getElementById('mo-cd-dialbl');
   if(lbl) lbl.textContent=numDia;
+  // Inicializar semana temporal con la semana actual
+  _cdSemTemp = ST.sem||1;
+  cdSemRender();
   var list=document.getElementById('mo-cd-list');
   var actual=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:CICLO[(numDia-1)%12].b;
   var opciones=[
@@ -2630,6 +2812,27 @@ function abrirCambiarDiaEnCiclo(numDia){
 }
 
 // ══════════════════════════════════════
+// SELECTOR SEMANA EN MODAL CAMBIAR DIA
+// ══════════════════════════════════════
+function cdSemChange(d){
+  _cdSemTemp = Math.max(1, Math.min(12, (_cdSemTemp||1)+d));
+  cdSemRender();
+}
+
+function cdSemRender(){
+  var lbl=document.getElementById('mo-cd-sem-lbl');
+  var faseLbl=document.getElementById('mo-cd-fase-lbl');
+  if(lbl) lbl.textContent=_cdSemTemp;
+  if(faseLbl){
+    var fase=getFaseActual(_cdSemTemp);
+    var faseNoms={F1:'F1 — Acumulación',F2:'F2 — Peaking',F3:'F3 — Fuerza',F4:'F4 — Peaking 2'};
+    var faseColors={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
+    faseLbl.textContent=faseNoms[fase]||fase;
+    faseLbl.style.color=faseColors[fase]||'var(--text2)';
+  }
+}
+
+// ══════════════════════════════════════
 // PLANIFICADOR INTELIGENTE DE CICLO
 // ══════════════════════════════════════
 
@@ -2639,6 +2842,10 @@ var _recalcPendiente = null;
 function asignarDiaBoyle(numDia, val){
   if(!ST.diaBoyle) ST.diaBoyle={};
   var valReal = val==='' ? 'Descanso' : (val||null);
+  // Guardar semana si cambió
+  if(_cdSemTemp && _cdSemTemp !== ST.sem){
+    ST.sem = _cdSemTemp;
+  }
   // Cerrar modal de cambio de día
   document.getElementById('mo-cambiardia').classList.remove('open');
   // Guardar el cambio
@@ -2660,42 +2867,70 @@ function getDiaBoyleLabel(dB, sem){
 }
 
 function calcularRecalculo(desde, diaBoyleAsignado){
-  // Recalcula desde el día 'desde'+1 hasta el 12
-  // Retorna array de {d, dB} con la nueva asignación propuesta
   var resultado=[];
-  // Determinar el siguiente día Boyle a asignar después del asignado
   var orden=['D1','D2','D3','D4'];
   var idxActual = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? orden.indexOf(diaBoyleAsignado) : -1;
   var nextIdx = (idxActual+1) % 4;
-  // Calcular semana actual y siguiente para etiquetas
-  var semActual = ST.sem||1;
-  var diaBoyleCount = 0; // cuántos días Boyle hemos asignado en este recálculo
+
+  // Construir historial de los días ANTES de 'desde' para saber la racha actual
+  // (hasta 2 días hacia atrás)
+  function tipoAntes(d){
+    if(d<1) return null;
+    var dB=ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : CICLO[d-1].b;
+    if(!dB||dB==='Descanso') return 'D';
+    return 'E';
+  }
+  // Racha actual al llegar al día 'desde' (incluye el propio día asignado)
+  var tipoDesde = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? 'E' : 'D';
+  var rachaAntes = 1;
+  if(tipoAntes(desde-1)===tipoDesde) rachaAntes=2; // ya había uno igual antes
+
+  var rachaActual = rachaAntes; // racha acumulada al entrar al bucle
+  var tipoActual = tipoDesde;
+
   for(var d=desde+1; d<=12; d++){
     var c=CICLO[d-1];
-    // No tocar días que ya tienen entreno registrado con pesos
+    // No tocar días con registros reales
     var tieneRegistro = Object.keys(ST.sets||{}).some(function(k){ return k.startsWith('d'+d+'_'); });
     if(tieneRegistro){
-      var dBExist = ST.diaBoyle&&ST.diaBoyle[d] ? ST.diaBoyle[d] : c.b;
+      var dBExist = ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : c.b;
+      var tipoExist = dBExist&&dBExist!=='Descanso' ? 'E' : 'D';
+      if(tipoExist===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoExist;}
+      if(dBExist&&dBExist!=='Descanso') nextIdx=(orden.indexOf(dBExist)+1)%4;
       resultado.push({d:d, dB:dBExist, locked:true});
-      // Avanzar el índice si este día tiene un entreno Boyle
-      if(dBExist&&dBExist!=='Descanso'){
-        nextIdx=(orden.indexOf(dBExist)+1)%4;
-      }
       continue;
     }
-    // Asignar según energía y turno
-    var puedoEntrenar = c.e==='Alta' || (c.e==='Media' && c.t!=='Noche');
+
     var esNoche = c.t==='Noche';
+    var puedoEntrenar = !esNoche && (c.e==='Alta' || c.e==='Media');
+
+    // Aplicar reglas de racha
+    var forzarDescanso = false;
+    var forzarEntreno = false;
+
+    if(tipoActual==='E' && rachaActual>=2) forzarDescanso=true;  // 2 entrenos seguidos → descanso obligatorio
+    if(tipoActual==='D' && rachaActual>=2 && puedoEntrenar) forzarEntreno=true; // 2 descansos seguidos → entreno si puede
+
+    var asignar;
     if(esNoche || c.e==='Baja'){
-      resultado.push({d:d, dB:'Descanso', locked:false});
-    } else if(puedoEntrenar){
-      var dBAsig=orden[nextIdx];
-      resultado.push({d:d, dB:dBAsig, locked:false});
+      asignar='Descanso';
+    } else if(forzarDescanso){
+      asignar='Descanso';
+    } else if(forzarEntreno){
+      asignar=orden[nextIdx];
       nextIdx=(nextIdx+1)%4;
-      diaBoyleCount++;
+    } else if(puedoEntrenar && c.e==='Alta'){
+      asignar=orden[nextIdx];
+      nextIdx=(nextIdx+1)%4;
     } else {
-      resultado.push({d:d, dB:'Descanso', locked:false});
+      asignar='Descanso';
     }
+
+    // Actualizar racha
+    var tipoAsig = asignar!=='Descanso' ? 'E' : 'D';
+    if(tipoAsig===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoAsig;}
+
+    resultado.push({d:d, dB:asignar, locked:false});
   }
   return resultado;
 }
@@ -3588,7 +3823,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v51';
+const APP_VERSION='v52';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4812,6 +5047,18 @@ checkBackupReminder();
     <div class="mh"></div>
     <div class="mt">Asignar dia Boyle</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:.75rem">Dia de ciclo <span id="mo-cd-dialbl" style="font-weight:700;color:var(--text)"></span></div>
+    <!-- Selector de semana -->
+    <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem .75rem;margin-bottom:.75rem">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Semana del programa</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="cdSemChange(-1)" style="border:none;background:var(--bg2);border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;color:var(--text)">‹</button>
+        <div style="flex:1;text-align:center">
+          <span style="font-size:22px;font-weight:700;color:var(--blue)" id="mo-cd-sem-lbl">1</span>
+          <span style="font-size:12px;color:var(--text2);margin-left:4px" id="mo-cd-fase-lbl">F1 — Acumulación</span>
+        </div>
+        <button onclick="cdSemChange(1)" style="border:none;background:var(--bg2);border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;color:var(--text)">›</button>
+      </div>
+    </div>
     <div id="mo-cd-list"></div>
     <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem" onclick="document.getElementById('mo-cambiardia').classList.remove('open')">Cancelar</button>
   </div>

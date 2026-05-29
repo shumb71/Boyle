@@ -336,7 +336,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=50', {scope: './'})})
+    navigator.serviceWorker.register('./sw.js?v=50', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1206,6 +1206,7 @@ const VARIANTES={
     'Dynamic push-pull de pie',
     'Half-kneeling push-pull (regresion)',
   ],
+  'Trineo (empujes)':[
     'Trineo empuje pesado (fuerza especial)',
     'Trineo empuje ligero (velocidad)',
     'Trineo marcha (tecnica sprint)',
@@ -1415,11 +1416,11 @@ const EJ_INFO={
   'Toe Touch Squat with medicine ball':{tipo:'fijo',series:'3',reps:'6',tecnica:'Toca punta del pie, balón medicinal por encima. Movilidad completa. Lento y controlado.'},
   'Half-kneeling antirotation hold':{tipo:'fijo',series:'3',reps:'20-25s',tecnica:'Half-kneeling, cable o goma lateral. Resistir la rotación. Core rígido. Sem 1: 20s → Sem 3: 25s.'},
   'Standing antirotation hold':{tipo:'fijo',series:'3',reps:'25s',tecnica:'De pie, cable lateral. Misma lógica que el half-kneeling pero de pie. Mayor exigencia estabilizadora.'},
-  'Trap Bar Deadlift + Hurdle Jump':[],
-  'Chin-up + Med Ball Slam':[],
-  'RFESS + Hurdle Hops':[],
-  'Ring Row + Med Ball Slam':[],
-  'Bench Press + Med Ball Bench':[],
+  'Trap Bar Deadlift + Hurdle Jump':{tipo:'prog',tecnica:'Complejo F3/F4: Trap Bar DL seguido inmediatamente de salto sobre valla. Potencia máxima.'},
+  'Chin-up + Med Ball Slam':{tipo:'prog',tecnica:'Complejo F3/F4: Chin-up seguido de slam de balón medicinal 3×10. Potencia del tren superior.'},
+  'RFESS + Hurdle Hops':{tipo:'prog',reps:'c/lado',tecnica:'Complejo F3/F4: RFESS seguido de saltos continuos sobre vallas. Potencia unilateral.'},
+  'Ring Row + Med Ball Slam':{tipo:'prog',tecnica:'Complejo F3/F4: Ring Row seguido de slam de balón medicinal.'},
+  'Bench Press + Med Ball Bench':{tipo:'prog',tecnica:'Complejo F3/F4: Press banca seguido de lanzamiento de balón medicinal desde el pecho.'},
   'Dumbbell Incline Bench':{tipo:'prog',tecnica:'Press inclinado con mancuernas. 30-45 grados. Mayor rango que barra. Reduce el estrés en el hombro.'},
   'Dumbbell Incline Bench + Med Ball':{tipo:'prog',tecnica:'Complejo: press inclinado + lanzamiento de balón medicinal. F3/F4.'},
   'Trineo (empujes)':{tipo:'fijo',series:'3',reps:'3-4 series 20-30m',tecnica:'Empuje pesado: postura baja, empuja con todo el cuerpo. Alternativa al ejercicio explosivo o como finalizador. Recuperacion rapida — sin agujetas.'},
@@ -2846,6 +2847,8 @@ function renderFaseBanner(){
   var base=REPS_FASE[fase]&&REPS_FASE[fase].base;
   if(lblReps&&base){lblReps.textContent=base.n+'×'+base.r;}
 }
+
+function setNutTipo(tipo){
   ST.nutTipo=tipo;
   save();
   renders.nut();

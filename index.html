@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v53</title>
+<title>Entreno Boyle v54</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v53"
+      version: "v54"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=53', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=54', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -3845,7 +3845,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v53';
+const APP_VERSION='v54';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4321,13 +4321,21 @@ renders.cal=function(){
 };
 
 function renderGarminHoy(){
-  const g=ST.garmin;
+  const hoy=new Date().toISOString().slice(0,10);
+  // Buscar datos de hoy en garminHist primero, luego fallback a ST.garmin
+  var g=(ST.garminHist&&ST.garminHist[hoy])?ST.garminHist[hoy]:null;
+  // Si no hay datos de hoy, buscar el día más reciente disponible
+  if(!g&&ST.garminHist){
+    var fechas=Object.keys(ST.garminHist).sort();
+    if(fechas.length) g=ST.garminHist[fechas[fechas.length-1]];
+  }
+  if(!g&&ST.garmin) g=ST.garmin;
   const card=document.getElementById('f-garmin-card');
   const el=document.getElementById('f-garmin-data');
   const felEl=document.getElementById('f-garmin-fecha');
   if(!g){card.style.display='none';return;}
   card.style.display='block';
-  if(felEl) felEl.textContent=g.fecha||'';
+  if(felEl) felEl.textContent=g.fecha||hoy;
   const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+( g.sueno_total_min%60)+'min':'—';
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">

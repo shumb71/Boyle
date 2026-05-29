@@ -2894,29 +2894,29 @@ function calcularRecalculo(desde, diaBoyleAsignado){
   var idxActual = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? orden.indexOf(diaBoyleAsignado) : -1;
   var nextIdx = (idxActual+1) % 4;
 
-  // Construir historial de los días ANTES de 'desde' para saber la racha actual
-  // (hasta 2 días hacia atrás)
-  function tipoAntes(d){
-    if(d<1) return null;
-    var dB=ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : CICLO[d-1].b;
-    if(!dB||dB==='Descanso') return 'D';
-    return 'E';
+  // Calcular racha inicial mirando los días anteriores a 'desde'
+  function getTipo(dB){ return dB&&dB!=='Descanso'?'E':'D'; }
+  function getDBAnt(d){
+    if(d<1||d>12) return null;
+    return ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : CICLO[d-1].b;
   }
-  // Racha actual al llegar al día 'desde' (incluye el propio día asignado)
-  var tipoDesde = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? 'E' : 'D';
-  var rachaAntes = 1;
-  if(tipoAntes(desde-1)===tipoDesde) rachaAntes=2; // ya había uno igual antes
 
-  var rachaActual = rachaAntes; // racha acumulada al entrar al bucle
+  var tipoDesde = getTipo(diaBoyleAsignado);
+  // Mirar hasta 2 días atrás para calcular racha real
+  var rachaActual = 1;
+  if(getTipo(getDBAnt(desde-1))===tipoDesde){
+    rachaActual=2;
+  }
   var tipoActual = tipoDesde;
 
   for(var d=desde+1; d<=12; d++){
     var c=CICLO[d-1];
-    // No tocar días con registros reales
+
+    // Días con registros reales — respetar pero actualizar racha
     var tieneRegistro = Object.keys(ST.sets||{}).some(function(k){ return k.startsWith('d'+d+'_'); });
     if(tieneRegistro){
       var dBExist = ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : c.b;
-      var tipoExist = dBExist&&dBExist!=='Descanso' ? 'E' : 'D';
+      var tipoExist = getTipo(dBExist);
       if(tipoExist===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoExist;}
       if(dBExist&&dBExist!=='Descanso') nextIdx=(orden.indexOf(dBExist)+1)%4;
       resultado.push({d:d, dB:dBExist, locked:true});
@@ -2926,30 +2926,31 @@ function calcularRecalculo(desde, diaBoyleAsignado){
     var esNoche = c.t==='Noche';
     var puedoEntrenar = !esNoche && (c.e==='Alta' || c.e==='Media');
 
-    // Aplicar reglas de racha
-    var forzarDescanso = false;
-    var forzarEntreno = false;
-
-    if(tipoActual==='E' && rachaActual>=2) forzarDescanso=true;  // 2 entrenos seguidos → descanso obligatorio
-    if(tipoActual==='D' && rachaActual>=2 && puedoEntrenar) forzarEntreno=true; // 2 descansos seguidos → entreno si puede
-
     var asignar;
-    if(esNoche || c.e==='Baja'){
+
+    if(tipoActual==='E' && rachaActual>=2){
+      // OBLIGATORIO descanso — llevamos 2 entrenos seguidos
       asignar='Descanso';
-    } else if(forzarDescanso){
-      asignar='Descanso';
-    } else if(forzarEntreno){
+    } else if(tipoActual==='D' && rachaActual>=2 && puedoEntrenar){
+      // OBLIGATORIO entreno — llevamos 2 descansos seguidos y podemos entrenar
       asignar=orden[nextIdx];
       nextIdx=(nextIdx+1)%4;
+    } else if(tipoActual==='D' && rachaActual>=2 && !puedoEntrenar){
+      // 2 descansos seguidos pero no podemos entrenar (noche/baja) — forzar descanso igualmente
+      // y anotar para el siguiente día
+      asignar='Descanso';
+    } else if(esNoche || c.e==='Baja'){
+      asignar='Descanso';
     } else if(puedoEntrenar && c.e==='Alta'){
       asignar=orden[nextIdx];
       nextIdx=(nextIdx+1)%4;
     } else {
+      // Media y no forzado → descanso preferente
       asignar='Descanso';
     }
 
     // Actualizar racha
-    var tipoAsig = asignar!=='Descanso' ? 'E' : 'D';
+    var tipoAsig = getTipo(asignar);
     if(tipoAsig===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoAsig;}
 
     resultado.push({d:d, dB:asignar, locked:false});

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v50</title>
+<title>Entreno Boyle v51</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v50"
+      version: "v51"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -336,7 +336,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=50', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=51', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -542,6 +542,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         </div>
       </div>
       <div id="c-prog"></div>
+      <button onclick="recalcularTodoCiclo()" style="width:100%;margin-top:.75rem;padding:10px;border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🔄 Recalcular todo el ciclo</button>
     </div>
 
     <!-- FASES BOYLE -->
@@ -2584,7 +2585,8 @@ function renderCicloBoyle(){
       '<div style="font-size:10px;color:var(--text3);margin-top:1px">'+c.h+'</div></div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">' +
       '<span style="font-size:10px;font-weight:700;color:'+eColor+'">'+c.e+'</span>' +
-      (dB?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px">'+dB+'</span>':'') +
+      (dB&&dB!=='Descanso'?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px">'+dB+' <span style="opacity:.6">S'+ST.sem+'</span></span>':
+       (dB==='Descanso'?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);border-radius:10px;padding:1px 7px">Descanso</span>':'')) +
       '</div></div>';
   }).join('');
   var pr=PROG[(ST.sem-1)%12];
@@ -2627,14 +2629,156 @@ function abrirCambiarDiaEnCiclo(numDia){
   mo.classList.add('open');
 }
 
-function asignarDiaBoyle(numDia,val){
+// ══════════════════════════════════════
+// PLANIFICADOR INTELIGENTE DE CICLO
+// ══════════════════════════════════════
+
+// Estado temporal para el recálculo pendiente
+var _recalcPendiente = null;
+
+function asignarDiaBoyle(numDia, val){
   if(!ST.diaBoyle) ST.diaBoyle={};
-  if(val==='') ST.diaBoyle[numDia]='Descanso';
-  else if(!val) delete ST.diaBoyle[numDia];
-  else ST.diaBoyle[numDia]=val;
-  save();
+  var valReal = val==='' ? 'Descanso' : (val||null);
+  // Cerrar modal de cambio de día
   document.getElementById('mo-cambiardia').classList.remove('open');
-  renders.hoy();renders.entreno();renderCicloBoyle();
+  // Guardar el cambio
+  if(!valReal) delete ST.diaBoyle[numDia];
+  else ST.diaBoyle[numDia]=valReal;
+  save();
+  renders.hoy(); renders.entreno(); renderCicloBoyle();
+  // Proponer recálculo hacia adelante (solo si hay días por delante en el ciclo)
+  if(numDia < 12){
+    _recalcPendiente={desde:numDia, diaBoyleAsignado:valReal};
+    mostrarModalRecalculo(numDia, valReal);
+  }
+}
+
+function getDiaBoyleLabel(dB, sem){
+  // Etiqueta tipo "D1-S1", "D2-S2"...
+  if(!dB||dB==='Descanso') return 'Descanso';
+  return dB+'-S'+sem;
+}
+
+function calcularRecalculo(desde, diaBoyleAsignado){
+  // Recalcula desde el día 'desde'+1 hasta el 12
+  // Retorna array de {d, dB} con la nueva asignación propuesta
+  var resultado=[];
+  // Determinar el siguiente día Boyle a asignar después del asignado
+  var orden=['D1','D2','D3','D4'];
+  var idxActual = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? orden.indexOf(diaBoyleAsignado) : -1;
+  var nextIdx = (idxActual+1) % 4;
+  // Calcular semana actual y siguiente para etiquetas
+  var semActual = ST.sem||1;
+  var diaBoyleCount = 0; // cuántos días Boyle hemos asignado en este recálculo
+  for(var d=desde+1; d<=12; d++){
+    var c=CICLO[d-1];
+    // No tocar días que ya tienen entreno registrado con pesos
+    var tieneRegistro = Object.keys(ST.sets||{}).some(function(k){ return k.startsWith('d'+d+'_'); });
+    if(tieneRegistro){
+      var dBExist = ST.diaBoyle&&ST.diaBoyle[d] ? ST.diaBoyle[d] : c.b;
+      resultado.push({d:d, dB:dBExist, locked:true});
+      // Avanzar el índice si este día tiene un entreno Boyle
+      if(dBExist&&dBExist!=='Descanso'){
+        nextIdx=(orden.indexOf(dBExist)+1)%4;
+      }
+      continue;
+    }
+    // Asignar según energía y turno
+    var puedoEntrenar = c.e==='Alta' || (c.e==='Media' && c.t!=='Noche');
+    var esNoche = c.t==='Noche';
+    if(esNoche || c.e==='Baja'){
+      resultado.push({d:d, dB:'Descanso', locked:false});
+    } else if(puedoEntrenar){
+      var dBAsig=orden[nextIdx];
+      resultado.push({d:d, dB:dBAsig, locked:false});
+      nextIdx=(nextIdx+1)%4;
+      diaBoyleCount++;
+    } else {
+      resultado.push({d:d, dB:'Descanso', locked:false});
+    }
+  }
+  return resultado;
+}
+
+function mostrarModalRecalculo(desde, diaBoyleAsignado){
+  var propuesta = calcularRecalculo(desde, diaBoyleAsignado);
+  _recalcPendiente = {desde:desde, propuesta:propuesta};
+  // Info
+  var infoEl = document.getElementById('mo-recalc-info');
+  var nomDia = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? diaBoyleAsignado : 'Descanso';
+  infoEl.innerHTML = 'Has asignado <strong style="color:var(--blue)">'+nomDia+'</strong> al día '+desde+'. '
+    +'¿Quieres que la app recalcule los días restantes del ciclo de forma óptima según tus turnos?';
+  // Preview
+  var prevEl = document.getElementById('mo-recalc-preview');
+  var semActual = ST.sem||1;
+  prevEl.innerHTML = propuesta.map(function(p){
+    var c=CICLO[p.d-1];
+    var eColor={Alta:'var(--blue-text)',Media:'var(--orange)',Baja:'var(--text3)'}[c.e]||'var(--text3)';
+    var dBColor=p.dB&&p.dB!=='Descanso'?'var(--blue-text)':'var(--text3)';
+    var dBBg=p.dB&&p.dB!=='Descanso'?'var(--blue-bg)':'var(--bg3)';
+    var lbl=p.dB&&p.dB!=='Descanso'?(p.dB+' <span style="font-size:10px;opacity:.7">S'+semActual+'</span>'):'Descanso';
+    var lockIcon=p.locked?'🔒 ':'';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .75rem;border-bottom:.5px solid var(--border)">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="width:24px;height:24px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2)">'+p.d+'</div>'
+      +'<div><div style="font-size:12px;font-weight:600;color:var(--text)">'+tnom(c.t)+'</div>'
+      +'<div style="font-size:10px;color:'+eColor+'">'+c.e+'</div></div></div>'
+      +'<span style="font-size:11px;font-weight:700;background:'+dBBg+';color:'+dBColor+';border-radius:20px;padding:2px 8px">'+lockIcon+lbl+'</span>'
+      +'</div>';
+  }).join('');
+  document.getElementById('mo-recalcular').classList.add('open');
+}
+
+function confirmarRecalculo(){
+  if(!_recalcPendiente||!_recalcPendiente.propuesta) return;
+  if(!ST.diaBoyle) ST.diaBoyle={};
+  _recalcPendiente.propuesta.forEach(function(p){
+    if(p.locked) return;
+    if(!p.dB||p.dB==='Descanso') ST.diaBoyle[p.d]='Descanso';
+    else ST.diaBoyle[p.d]=p.dB;
+  });
+  _recalcPendiente=null;
+  save();
+  document.getElementById('mo-recalcular').classList.remove('open');
+  renders.hoy(); renders.entreno(); renderCicloBoyle();
+  var t=document.getElementById('fb-toast');
+  if(t){t.textContent='✅ Ciclo recalculado';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+}
+
+function recalcularTodoCiclo(){
+  // Recalcular desde el día actual hacia adelante
+  // Primer día con entreno ya hecho = ancla
+  var diaDesde = ST.dia || 1;
+  // Buscar el último día Boyle asignado antes del día actual
+  var ultimoDiaBoyle = null;
+  for(var d=diaDesde; d>=1; d--){
+    var dB = ST.diaBoyle&&ST.diaBoyle[d] ? ST.diaBoyle[d] : CICLO[d-1].b;
+    if(dB&&dB!=='Descanso'){ ultimoDiaBoyle=dB; break; }
+  }
+  _recalcPendiente={desde:Math.max(1,diaDesde-1), propuesta:null};
+  var propuesta=calcularRecalculo(Math.max(0,diaDesde-1), ultimoDiaBoyle||'D4');
+  _recalcPendiente.propuesta=propuesta;
+  // Mostrar modal con info especial
+  var infoEl=document.getElementById('mo-recalc-info');
+  infoEl.innerHTML='Recalculo completo desde el <strong style="color:var(--blue)">día '+diaDesde+'</strong> hasta el final del ciclo, respetando días ya entrenados.';
+  var prevEl=document.getElementById('mo-recalc-preview');
+  var semActual=ST.sem||1;
+  prevEl.innerHTML=propuesta.map(function(p){
+    var c=CICLO[p.d-1];
+    var eColor={Alta:'var(--blue-text)',Media:'var(--orange)',Baja:'var(--text3)'}[c.e]||'var(--text3)';
+    var dBColor=p.dB&&p.dB!=='Descanso'?'var(--blue-text)':'var(--text3)';
+    var dBBg=p.dB&&p.dB!=='Descanso'?'var(--blue-bg)':'var(--bg3)';
+    var lbl=p.dB&&p.dB!=='Descanso'?(p.dB+' <span style="font-size:10px;opacity:.7">S'+semActual+'</span>'):'Descanso';
+    var lockIcon=p.locked?'🔒 ':'';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .75rem;border-bottom:.5px solid var(--border)">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<div style="width:24px;height:24px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2)">'+p.d+'</div>'
+      +'<div><div style="font-size:12px;font-weight:600;color:var(--text)">'+tnom(c.t)+'</div>'
+      +'<div style="font-size:10px;color:'+eColor+'">'+c.e+'</div></div></div>'
+      +'<span style="font-size:11px;font-weight:700;background:'+dBBg+';color:'+dBColor+';border-radius:20px;padding:2px 8px">'+lockIcon+lbl+'</span>'
+      +'</div>';
+  }).join('');
+  document.getElementById('mo-recalcular').classList.add('open');
 }
 
 function abrirAnadirEj(){
@@ -3444,7 +3588,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v50';
+const APP_VERSION='v51';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4604,7 +4748,19 @@ function leerDesdeD(token,syncEl){
 checkBackupReminder();
 </script>
 
-<!-- MODAL VARIANTES -->
+<!-- MODAL RECALCULAR CICLO -->
+<div class="mo" id="mo-recalcular" onclick="if(event.target===this)document.getElementById('mo-recalcular').classList.remove('open')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">🔄 Recalcular ciclo</div>
+    <div id="mo-recalc-info" style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.5;background:var(--bg3);border-radius:var(--rs);padding:.75rem"></div>
+    <div id="mo-recalc-preview" style="margin-bottom:1rem;max-height:260px;overflow-y:auto"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="document.getElementById('mo-recalcular').classList.remove('open')" class="bcan">Solo este día</button>
+      <button onclick="confirmarRecalculo()" class="bsav" style="background:var(--blue)">✓ Recalcular</button>
+    </div>
+  </div>
+</div>
 <div class="mo" id="mo-var" onclick="if(event.target===this)closeMoVar()">
   <div class="ms">
     <div class="mh"></div>

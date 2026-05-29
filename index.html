@@ -1771,7 +1771,11 @@ function getEjs(ses){
 }
 function getDiaBoyle(){
   // Devuelve el dia Boyle asignado al dia de ciclo actual (con override manual)
-  if(ST.diaBoyle&&ST.diaBoyle[ST.dia]) return ST.diaBoyle[ST.dia];
+  if(ST.diaBoyle&&ST.diaBoyle[ST.dia]){
+    var v=ST.diaBoyle[ST.dia];
+    if(v==='Descanso') return null;
+    return v;
+  }
   return CICLO[(ST.dia-1)%12].b||null;
 }
 
@@ -2613,7 +2617,7 @@ function abrirCambiarDiaEnCiclo(numDia){
     {k:'',n:'Descanso / Movilidad'},
   ];
   if(list) list.innerHTML=opciones.map(function(o){
-    var sel=(o.k&&o.k===actual)||(o.k===''&&!actual);
+    var sel=(o.k&&o.k===actual)||(o.k===''&&(!actual||actual==='Descanso'));
     var onclk=o.k?('asignarDiaBoyle('+numDia+',\''+o.k+'\')'):'asignarDiaBoyle('+numDia+',\'\')';
     return '<div onclick="'+onclk+'" style="padding:.75rem 1rem;border-bottom:.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:'+(sel?'var(--blue-bg)':'transparent')+';border-radius:'+(sel?'var(--rs)':'0')+'">' +
       '<span style="font-size:14px;font-weight:'+(sel?'700':'500')+';color:'+(sel?'var(--blue)':'var(--text)')+'">'+o.n+'</span>' +
@@ -2625,7 +2629,8 @@ function abrirCambiarDiaEnCiclo(numDia){
 
 function asignarDiaBoyle(numDia,val){
   if(!ST.diaBoyle) ST.diaBoyle={};
-  if(!val) delete ST.diaBoyle[numDia];
+  if(val==='') ST.diaBoyle[numDia]='Descanso';
+  else if(!val) delete ST.diaBoyle[numDia];
   else ST.diaBoyle[numDia]=val;
   save();
   document.getElementById('mo-cambiardia').classList.remove('open');
@@ -3941,7 +3946,7 @@ function renderGarminHoy(){
       </div>
     </div>
     ${g.body_battery_max?`<div style="margin-top:8px;background:var(--bg3);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">Body Battery</span><span style="font-size:15px;font-weight:700;color:var(--blue)">${g.body_battery_min||0} → ${g.body_battery_max} ⚡</span></div>`:''}
-    ${g.fuerza?`<div style="margin-top:8px;background:var(--green-bg);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza ayer</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal · FC ${g.fuerza.fc_media}/${g.fuerza.fc_max}</span></div>`:''}
+    ${g.fuerza?`<div style="margin-top:8px;background:var(--green-bg);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal · FC ${g.fuerza.fc_media}/${g.fuerza.fc_max}</span></div>`:''}
   `;
 }
 

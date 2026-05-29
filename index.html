@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v52</title>
+<title>Entreno Boyle v53</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v52"
+      version: "v53"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -291,7 +291,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .ir{background:var(--red-bg);color:var(--red-text);border:.5px solid rgba(226,75,74,.2)}
 .slbl{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .4rem}
 .empty{text-align:center;padding:1.5rem 1rem;color:var(--text3);font-size:13px}
-/* CALENTAMIENTO */
+/* CALENDARIO */
+.cal-cell{transition:all .15s;}
+.cal-cell.cal-sel{background:var(--blue-bg)!important;border:2px solid var(--blue)!important;}
+.cal-cell.cal-sel span{color:var(--blue)!important;font-weight:700!important;}
 .cal-fase{margin-bottom:1rem}
 .cal-fase-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:.5rem;display:flex;align-items:center;gap:6px}
 .cal-item{padding:.5rem 0;border-bottom:.5px solid var(--border);font-size:13px;color:var(--text)}
@@ -336,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=52', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=53', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1450,6 +1453,10 @@ function setVariante(ejOrig,variante){
   save();
   renders.hoy();
   renders.entreno();
+  closeMoVar();
+  // Refrescar Boyle si está activo
+  var sBoyle=document.getElementById('s-boyle');
+  if(sBoyle&&sBoyle.classList.contains('active')) renderBoyleContenido();
 }
 
 function abrirVariantes(ejOrig){
@@ -1471,9 +1478,7 @@ function abrirVariantes(ejOrig){
     (function(ejO,vOpt){
       div.onclick=function(e){
         e.stopPropagation();
-        if(!ST.variantes)ST.variantes={};
-        ST.variantes[ejO]=vOpt;
-        save();renders.hoy();renders.entreno();closeMoVar();
+        setVariante(ejO,vOpt);
       };
     })(ejOrig,v);
     listEl.appendChild(div);
@@ -2361,18 +2366,29 @@ function renderBoyleContenido(){
     var s2=repsData?repsData[1]:(base?{r:base.r}:null);
     var s3=repsData?repsData[2]:(base?{r:base.r}:null);
     var rFmt=function(s){return s?(s.r!==undefined?String(s.r):'—'):'—';};
-    // Registros reales del usuario para este ejercicio en este día
     var mejorPeso=getMejorPesoEjDia(ej, diaKey);
+    var variantesDisp=getVariantesEj(ej);
+    var varActual=getVarianteActual(ej);
+    var esVariante=varActual!==ej;
+    var ejSafe=ej.replace(/'/g,'&#39;');
+    // Botón variantes solo si hay más de una opción
+    var varBtn=variantesDisp.length>1
+      ?('<button data-ej="'+ejSafe+'" onclick="abrirVariantesBoyle(this)" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:4px">⚙ Variantes</button>')
+      :'';
     html+='<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
-      +'<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:4px;align-items:center">'
-      +'<div>'
+      +'<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px">'
+      +'<div style="flex:1">'
       +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+ej+'</div>'
-      +(info.tecnica?'<div style="font-size:10px;color:var(--text3);line-height:1.3;margin-top:2px">'+info.tecnica.slice(0,80)+(info.tecnica.length>80?'...':'')+'</div>':'')
+      +(esVariante?'<div style="font-size:11px;color:var(--blue-text);margin-top:1px">▶ usando: <strong>'+varActual+'</strong></div>':'')
+      +(info.tecnica?'<div style="font-size:10px;color:var(--text3);line-height:1.3;margin-top:2px">'+info.tecnica.slice(0,90)+(info.tecnica.length>90?'...':'')+'</div>':'')
       +(mejorPeso?'<div style="font-size:10px;color:var(--blue-text);margin-top:2px">🏆 '+mejorPeso+'</div>':'')
       +'</div>'
-      +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px;min-width:28px">'+rFmt(s1)+'</div>'
-      +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px;min-width:28px">'+rFmt(s2)+'</div>'
-      +'<div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px;min-width:28px">'+rFmt(s3)+'</div>'
+      +varBtn
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">'
+      +'<div style="font-size:10px;text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px"><div style="font-size:9px;color:var(--text3)">S1</div><div style="font-weight:700;color:var(--text2)">'+rFmt(s1)+'</div></div>'
+      +'<div style="font-size:10px;text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px"><div style="font-size:9px;color:var(--text3)">S2</div><div style="font-weight:700;color:var(--text2)">'+rFmt(s2)+'</div></div>'
+      +'<div style="font-size:10px;text-align:center;background:var(--bg3);border-radius:6px;padding:3px 5px"><div style="font-size:9px;color:var(--text3)">S3</div><div style="font-weight:700;color:var(--text2)">'+rFmt(s3)+'</div></div>'
       +'</div>'
       +(info.alerta?'<div style="font-size:10px;color:var(--orange);margin-top:3px">'+info.alerta+'</div>':'')
       +'</div>';
@@ -2380,6 +2396,12 @@ function renderBoyleContenido(){
   html+='</div>';
   el.innerHTML=html;
 }
+
+function abrirVariantesBoyle(btn){
+  var ej=(btn.dataset.ej||'').replace(/&#39;/g,"'");
+  abrirVariantes(ej);
+}
+var _boyleVarianteEjOrig=null;
 
 function getHistorialDiaBoyle(diaKey, fase){
   // Busca en historialFechas las sesiones donde se realizó ese día Boyle
@@ -3823,7 +3845,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v52';
+const APP_VERSION='v53';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4275,11 +4297,13 @@ renders.cal=function(){
       dots+=`<div style="width:6px;height:6px;border-radius:50%;background:${dotColor};margin:0 1px"></div>`;
     }
     // Color fondo
-    let bg=esSel?'var(--blue)':esHoy?'var(--bg3)':'var(--bg2)';
-    let border=esHoy&&!esSel?'1px solid var(--blue)':'1px solid var(--border)';
-    let txtColor=esSel?'#fff':esFuturo?'var(--text3)':'var(--text)';
-    html+=`<div class="cal-cell" data-fecha="${fecha}" onclick="calSelDia('${fecha}')"
-      style="background:${bg};border:${border};border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;transition:background .15s">
+    let bg=esHoy?'var(--bg3)':'var(--bg2)';
+    let border=esHoy?'1.5px solid var(--blue)':'1px solid var(--border)';
+    let txtColor=esFuturo?'var(--text3)':'var(--text)';
+    var hoyDot=esHoy?'<div style="position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--blue)"></div>':'';
+    html+=`<div class="cal-cell${esSel?' cal-sel':''}" data-fecha="${fecha}" onclick="calSelDia('${fecha}')"
+      style="position:relative;background:${bg};border:${border};border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:space-between">
+      ${hoyDot}
       <span style="font-size:13px;font-weight:${esHoy?'700':'500'};color:${txtColor}">${d}</span>
       <div style="display:flex;justify-content:center;flex-wrap:wrap">${dots}</div>
     </div>`;

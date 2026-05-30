@@ -3992,11 +3992,9 @@ async function fetchGarminAuto(manual) {
     const data = await resp.json();
     if (!data.dias) throw new Error('Formato incorrecto');
 
-    // Merge con datos existentes (no sobreescribir)
+    // Siempre sobreescribir — Garmin actualiza datos progresivamente durante el día
     if (!ST.garminHist) ST.garminHist = {};
-    // Guardar en garminHist (por fecha) para el calendario
     Object.assign(ST.garminHist, data.dias);
-    // ST.garmin también = dict de fechas para compatibilidad
     if (!ST.garmin) ST.garmin = {};
     Object.assign(ST.garmin, data.dias);
     // Guardar con hora
@@ -4053,9 +4051,9 @@ function importarGarminHistorial(input){
       if(!ST.garminHist) ST.garminHist={};
       let nuevos=0,existentes=0;
       Object.entries(dias).forEach(([fecha,g])=>{
-        if(ST.garminHist[fecha]){existentes++;}
-        else{ST.garminHist[fecha]=g;nuevos++;}
-        // Actualizar ST.garmin con el más reciente
+        if(ST.garminHist[fecha]) existentes++;
+        else nuevos++;
+        ST.garminHist[fecha]=g; // siempre sobreescribir
         if(!ST.garmin||fecha>ST.garmin.fecha) ST.garmin=g;
       });
       save();
@@ -4323,14 +4321,16 @@ renders.cal=function(){
 
 function renderGarminHoy(){
   const hoy=new Date().toISOString().slice(0,10);
-  // Buscar datos de hoy en garminHist primero, luego fallback a ST.garmin
-  var g=(ST.garminHist&&ST.garminHist[hoy])?ST.garminHist[hoy]:null;
-  // Si no hay datos de hoy, buscar el día más reciente disponible
+  var g=null;
+  // Buscar en garminHist (fuente principal)
+  if(ST.garminHist&&ST.garminHist[hoy]) g=ST.garminHist[hoy];
+  // Fallback: día más reciente disponible en garminHist
   if(!g&&ST.garminHist){
-    var fechas=Object.keys(ST.garminHist).sort();
+    var fechas=Object.keys(ST.garminHist).filter(function(f){return f.match(/^\d{4}-\d{2}-\d{2}$/);}).sort();
     if(fechas.length) g=ST.garminHist[fechas[fechas.length-1]];
   }
-  if(!g&&ST.garmin) g=ST.garmin;
+  // Fallback: ST.garmin solo si es un objeto de un único día (tiene campo 'pasos' directamente)
+  if(!g&&ST.garmin&&ST.garmin.pasos!==undefined) g=ST.garmin;
   const card=document.getElementById('f-garmin-card');
   const el=document.getElementById('f-garmin-data');
   const felEl=document.getElementById('f-garmin-fecha');

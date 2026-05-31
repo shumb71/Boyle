@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v54</title>
+<title>Entreno Boyle v55</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v54"
+      version: "v55"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=54', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=55', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -702,6 +702,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
     <div class="card">
       <div class="card-lbl">Sync automático Garmin</div>
+      <div id="garmin-trigger-status" style="display:none;font-size:12px;border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.75rem"></div>
+      <button id="btn-trigger-garmin" onclick="triggerGarminSync()" style="width:100%;padding:12px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:.75rem">🔄 Actualizar Garmin ahora</button>
       <div id="garmin-auto-status" style="font-size:12px;padding:8px 10px;border-radius:var(--rs);margin-bottom:8px;background:var(--blue-bg);color:var(--blue-text)">⏳ Cargando datos desde GitHub...</div>
       <button class="bkbtn bkimp" onclick="fetchGarminAuto(true)" style="margin-bottom:8px"><i class="ti ti-refresh"></i> Actualizar ahora desde GitHub</button>
       <div style="height:.5px;background:var(--border);margin:.75rem 0"></div>
@@ -3846,7 +3848,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v54';
+const APP_VERSION='v55';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4026,6 +4028,47 @@ async function fetchGarminAuto(manual) {
   }
 }
 
+// ══════════════════════════════════════
+// GITHUB WORKFLOW TRIGGER — GARMIN SYNC
+// ══════════════════════════════════════
+const GITHUB_TOKEN = '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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';
+const GITHUB_REPO  = 'shumb71/entreno-pro';
+const GITHUB_WORKFLOW = 'garmin_sync.yml';
+
+async function triggerGarminSync(){
+  var btn=document.getElementById('btn-trigger-garmin');
+  var statusEl=document.getElementById('garmin-trigger-status');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Lanzando...';}
+  if(statusEl){statusEl.style.display='block';statusEl.style.background='var(--blue-bg)';statusEl.style.color='var(--blue-text)';statusEl.textContent='⏳ Lanzando sync en GitHub...';}
+  try {
+    var resp = await fetch('https://api.github.com/repos/'+GITHUB_REPO+'/actions/workflows/'+GITHUB_WORKFLOW+'/dispatches', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer '+GITHUB_TOKEN,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ref: 'main'})
+    });
+    if(resp.status===204||resp.ok){
+      if(statusEl){statusEl.style.background='var(--orange-bg)';statusEl.style.color='var(--orange-text)';statusEl.textContent='✅ Sync lanzado — esperando 90s para descargar datos...';}
+      // Esperar 90 segundos y luego hacer fetch del JSON
+      setTimeout(async function(){
+        if(statusEl){statusEl.textContent='🔄 Descargando datos actualizados...';}
+        await fetchGarminAuto(true);
+        if(statusEl){statusEl.style.background='var(--green-bg)';statusEl.style.color='var(--green-text)';statusEl.textContent='✅ Datos Garmin actualizados';}
+        if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar Garmin ahora';}
+      }, 90000);
+    } else {
+      var err=await resp.text();
+      if(statusEl){statusEl.style.background='var(--red-bg)';statusEl.style.color='var(--red-text)';statusEl.textContent='❌ Error '+resp.status+': '+err.slice(0,80);}
+      if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar Garmin ahora';}
+    }
+  } catch(e){
+    if(statusEl){statusEl.style.background='var(--red-bg)';statusEl.style.color='var(--red-text)';statusEl.textContent='❌ Error de red: '+e.message;}
+    if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar Garmin ahora';}
+  }
+}
 // Cargar automáticamente al iniciar la app (esperar a que todo esté listo)
 window.addEventListener('load', () => {
   // Merge ST.garmin (estructura plana) → ST.garminHist (por fecha) al arrancar

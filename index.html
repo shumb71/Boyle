@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v55</title>
+<title>Entreno Boyle v56</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v55"
+      version: "v56"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=55', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=56', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -3848,7 +3848,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v55';
+const APP_VERSION='v56';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4031,11 +4031,16 @@ async function fetchGarminAuto(manual) {
 // ══════════════════════════════════════
 // GITHUB WORKFLOW TRIGGER — GARMIN SYNC
 // ══════════════════════════════════════
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = 'TU_TOKEN_AQUI'; // Se sobreescribe con ST.githubToken si existe
 const GITHUB_REPO  = 'shumb71/Boyle';
 const GITHUB_WORKFLOW = 'garmin_sync.yml';
 
 async function triggerGarminSync(){
+  var token = (ST.githubToken||GITHUB_TOKEN||'').trim();
+  if(!token||token==='TU_TOKEN_AQUI'){
+    alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "tu_token";\nsave();');
+    return;
+  }
   var btn=document.getElementById('btn-trigger-garmin');
   var statusEl=document.getElementById('garmin-trigger-status');
   if(btn){btn.disabled=true;btn.textContent='⏳ Lanzando...';}
@@ -4044,7 +4049,7 @@ async function triggerGarminSync(){
     var resp = await fetch('https://api.github.com/repos/'+GITHUB_REPO+'/actions/workflows/'+GITHUB_WORKFLOW+'/dispatches', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer '+GITHUB_TOKEN,
+        'Authorization': 'Bearer '+token,
         'Accept': 'application/vnd.github+json',
         'Content-Type': 'application/json',
       },

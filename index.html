@@ -3019,26 +3019,44 @@ const DRIVE_FOLDER_NAME = 'Entreno Boyle';
 const DRIVE_FILE_NAME   = 'Entreno_Boyle.xlsx';
 var _driveFileId = null; // se cachea tras la primera búsqueda
 
+async function getGdriveToken(){
+  // Obtener token de Google OAuth activo
+  if(gapi&&gapi.auth&&gapi.auth.getToken&&gapi.auth.getToken()) return gapi.auth.getToken().access_token;
+  // Fallback: buscar en el cliente de token
+  if(window._gdriveToken) return window._gdriveToken;
+  return null;
+}
+
 async function getOrCreateDriveFolder(){
+  var token=await getGdriveToken();
+  if(!token) return null;
   // Buscar carpeta existente
-  var q='name="'+DRIVE_FOLDER_NAME+'" and mimeType="application/vnd.google-apps.folder" and trashed=false';
-  var resp=await gapi.client.drive.files.list({q:q,fields:'files(id,name)',spaces:'drive'});
-  var files=resp.result.files;
-  if(files&&files.length) return files[0].id;
-  // Crear carpeta
-  var res=await gapi.client.drive.files.create({
-    resource:{name:DRIVE_FOLDER_NAME,mimeType:'application/vnd.google-apps.folder'},
-    fields:'id'
+  var q=encodeURIComponent('name="'+DRIVE_FOLDER_NAME+'" and mimeType="application/vnd.google-apps.folder" and trashed=false');
+  var resp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)',{
+    headers:{'Authorization':'Bearer '+token}
   });
-  return res.result.id;
+  var data=await resp.json();
+  if(data.files&&data.files.length) return data.files[0].id;
+  // Crear carpeta
+  var res=await fetch('https://www.googleapis.com/drive/v3/files',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({name:DRIVE_FOLDER_NAME,mimeType:'application/vnd.google-apps.folder'})
+  });
+  var folder=await res.json();
+  return folder.id||null;
 }
 
 async function getDriveFileId(folderId){
   if(_driveFileId) return _driveFileId;
-  var q='name="'+DRIVE_FILE_NAME+'" and "'+folderId+'" in parents and trashed=false';
-  var resp=await gapi.client.drive.files.list({q:q,fields:'files(id,name)',spaces:'drive'});
-  var files=resp.result.files;
-  if(files&&files.length){_driveFileId=files[0].id;return _driveFileId;}
+  var token=await getGdriveToken();
+  if(!token||!folderId) return null;
+  var q=encodeURIComponent('name="'+DRIVE_FILE_NAME+'" and "'+folderId+'" in parents and trashed=false');
+  var resp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)',{
+    headers:{'Authorization':'Bearer '+token}
+  });
+  var data=await resp.json();
+  if(data.files&&data.files.length){_driveFileId=data.files[0].id;return _driveFileId;}
   return null;
 }
 
@@ -3126,18 +3144,17 @@ function buildEntrenoExcel(){
 }
 
 async function exportarExcelDrive(silencioso){
-  if(!gapi||!gapi.client||!gapi.client.drive){
+  var token=await getGdriveToken();
+  if(!token){
     if(!silencioso) alert('Google Drive no conectado. Inicia sesión primero.');
     return;
   }
   try {
     var xlsxData=buildEntrenoExcel();
     if(!xlsxData){if(!silencioso) alert('Error generando Excel.');return;}
-    var blob=new Blob([xlsxData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     var folderId=await getOrCreateDriveFolder();
+    if(!folderId){if(!silencioso) alert('No se pudo crear carpeta en Drive.');return;}
     var fileId=await getDriveFileId(folderId);
-    var token=gapi.auth.getToken()&&gapi.auth.getToken().access_token;
-    if(!token){if(!silencioso) alert('Sin token de Google. Inicia sesión.');return;}
     var method,url;
     if(fileId){
       method='PATCH';
@@ -4044,6 +4061,7 @@ function exportarDrive(){
   if(typeof google==='undefined'||!google.accounts){status.textContent='Error: libreria Google no cargada. Necesitas conexion a internet.';btn.disabled=false;return;}
   const client=google.accounts.oauth2.initTokenClient({client_id:GDRIVE_CLIENT_ID,scope:GDRIVE_SCOPE,callback:(resp)=>{
     if(resp.error){status.textContent='Error: '+resp.error;btn.disabled=false;return;}
+    window._gdriveToken=resp.access_token; // cachear para exportarExcelDrive
     subirDrive(resp.access_token,btn,status);
   }});
   client.requestAccessToken();
@@ -4762,6 +4780,7 @@ function syncManual(){
       callback:function(resp){
         if(resp.error){setSyncPanel('☁️','No autorizado','Ve a Config para conectar Drive','orange');return;}
         driveTokenCached=resp.access_token;
+        window._gdriveToken=resp.access_token;
         comprobarVersionDrive(resp.access_token);
       }
     });
@@ -5186,6 +5205,7 @@ function sincronizarDrive(){
     callback:function(resp){
       if(resp.error){syncEl.textContent='Error: '+resp.error;return;}
       driveTokenCached=resp.access_token;
+      window._gdriveToken=resp.access_token;
       leerDesdeD(resp.access_token,syncEl);
     }
   });

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v56</title>
+<title>Entreno Boyle v57</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v56"
+      version: "v57"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=56', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=57', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -744,6 +744,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="bkbtn bkexp" onclick="exportar()"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar a Excel (.xlsx)</button>
       <button class="bkbtn" style="background:var(--bg2);color:var(--text2);border-color:var(--border2)" onclick="exportarJSON()"><i class="ti ti-download" aria-hidden="true"></i> Exportar backup JSON</button>
       <button class="bkbtn" id="btn-drive" style="background:#1a6f3a;color:#fff;border-color:#1a6f3a;border:none" onclick="exportarDrive()"><i class="ti ti-brand-google-drive" aria-hidden="true"></i> Guardar en Google Drive</button>
+      <button class="bkbtn" style="background:var(--blue);color:#fff;border:none" onclick="exportarExcelDrive(false)"><i class="ti ti-table-export" aria-hidden="true"></i> Excel Entreno → Google Drive</button>
       <div id="drive-status" style="font-size:12px;color:var(--text2);margin-top:.25rem;display:none"></div>
       <button class="bkbtn" style="background:#0f4c81;color:#fff;border:none" onclick="sincronizarDrive()"><i class="ti ti-cloud-download"></i> Sincronizar desde Drive</button>
       <div id="sync-status" style="font-size:12px;margin-top:.25rem;display:none;border-radius:var(--rs);padding:8px 12px"></div>
@@ -2866,8 +2867,8 @@ var _recalcPendiente = null;
 function asignarDiaBoyle(numDia, val){
   if(!ST.diaBoyle) ST.diaBoyle={};
   var valReal = val==='' ? 'Descanso' : (val||null);
-  // Guardar semana si cambió
-  if(_cdSemTemp && _cdSemTemp !== ST.sem){
+  // Guardar semana solo si es el día actual o futuro (no tocar días pasados)
+  if(_cdSemTemp && _cdSemTemp !== ST.sem && numDia >= ST.dia){
     ST.sem = _cdSemTemp;
   }
   // Cerrar modal de cambio de día
@@ -2875,9 +2876,14 @@ function asignarDiaBoyle(numDia, val){
   // Guardar el cambio
   if(!valReal) delete ST.diaBoyle[numDia];
   else ST.diaBoyle[numDia]=valReal;
+  // Si se asigna D4, la siguiente semana sube automáticamente
+  if(valReal==='D4'){
+    // Buscar siguiente día de entreno y sugerir semana+1 en el recálculo
+    ST._nextSemAfterD4 = (ST.sem||1)+1;
+  }
   save();
   renders.hoy(); renders.entreno(); renderCicloBoyle();
-  // Proponer recálculo hacia adelante (solo si hay días por delante en el ciclo)
+  // Proponer recálculo hacia adelante
   if(numDia < 12){
     _recalcPendiente={desde:numDia, diaBoyleAsignado:valReal};
     mostrarModalRecalculo(numDia, valReal);
@@ -2911,6 +2917,10 @@ function calcularRecalculo(desde, diaBoyleAsignado){
   }
   var tipoActual = tipoDesde;
 
+  var semParaEtiqueta = ST.sem||1;
+  // Si el día asignado es D4, la siguiente semana empieza desde D1
+  if(diaBoyleAsignado==='D4') semParaEtiqueta = Math.min(12, semParaEtiqueta+1);
+
   for(var d=desde+1; d<=12; d++){
     var c=CICLO[d-1];
 
@@ -2931,23 +2941,20 @@ function calcularRecalculo(desde, diaBoyleAsignado){
     var asignar;
 
     if(tipoActual==='E' && rachaActual>=2){
-      // OBLIGATORIO descanso — llevamos 2 entrenos seguidos
       asignar='Descanso';
     } else if(tipoActual==='D' && rachaActual>=2 && puedoEntrenar){
-      // OBLIGATORIO entreno — llevamos 2 descansos seguidos y podemos entrenar
       asignar=orden[nextIdx];
+      if(asignar==='D4') semParaEtiqueta=Math.min(12,semParaEtiqueta+1);
       nextIdx=(nextIdx+1)%4;
     } else if(tipoActual==='D' && rachaActual>=2 && !puedoEntrenar){
-      // 2 descansos seguidos pero no podemos entrenar (noche/baja) — forzar descanso igualmente
-      // y anotar para el siguiente día
       asignar='Descanso';
     } else if(esNoche || c.e==='Baja'){
       asignar='Descanso';
     } else if(puedoEntrenar && c.e==='Alta'){
       asignar=orden[nextIdx];
+      if(asignar==='D4') semParaEtiqueta=Math.min(12,semParaEtiqueta+1);
       nextIdx=(nextIdx+1)%4;
     } else {
-      // Media y no forzado → descanso preferente
       asignar='Descanso';
     }
 
@@ -2955,7 +2962,7 @@ function calcularRecalculo(desde, diaBoyleAsignado){
     var tipoAsig = getTipo(asignar);
     if(tipoAsig===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoAsig;}
 
-    resultado.push({d:d, dB:asignar, locked:false});
+    resultado.push({d:d, dB:asignar, locked:false, sem:semParaEtiqueta});
   }
   return resultado;
 }
@@ -3005,8 +3012,185 @@ function confirmarRecalculo(){
   if(t){t.textContent='✅ Ciclo recalculado';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
 }
 
+// ══════════════════════════════════════
+// EXCEL EXPORT → GOOGLE DRIVE
+// ══════════════════════════════════════
+const DRIVE_FOLDER_NAME = 'Entreno Boyle';
+const DRIVE_FILE_NAME   = 'Entreno_Boyle.xlsx';
+var _driveFileId = null; // se cachea tras la primera búsqueda
+
+async function getOrCreateDriveFolder(){
+  // Buscar carpeta existente
+  var q='name="'+DRIVE_FOLDER_NAME+'" and mimeType="application/vnd.google-apps.folder" and trashed=false';
+  var resp=await gapi.client.drive.files.list({q:q,fields:'files(id,name)',spaces:'drive'});
+  var files=resp.result.files;
+  if(files&&files.length) return files[0].id;
+  // Crear carpeta
+  var res=await gapi.client.drive.files.create({
+    resource:{name:DRIVE_FOLDER_NAME,mimeType:'application/vnd.google-apps.folder'},
+    fields:'id'
+  });
+  return res.result.id;
+}
+
+async function getDriveFileId(folderId){
+  if(_driveFileId) return _driveFileId;
+  var q='name="'+DRIVE_FILE_NAME+'" and "'+folderId+'" in parents and trashed=false';
+  var resp=await gapi.client.drive.files.list({q:q,fields:'files(id,name)',spaces:'drive'});
+  var files=resp.result.files;
+  if(files&&files.length){_driveFileId=files[0].id;return _driveFileId;}
+  return null;
+}
+
+function buildEntrenoExcel(){
+  var XLSX_lib=typeof XLSX!=='undefined'?XLSX:null;
+  if(!XLSX_lib){console.warn('XLSX not loaded');return null;}
+  var wb=XLSX_lib.utils.book_new();
+
+  // HOJA 1 — Historial de sesiones
+  var h1=[['Fecha','Día Ciclo','Fase','Semana','Día Boyle Prog','Día Boyle Real','Variación','Ejercicios Sustituidos','Duración (min)']];
+  var hist=ST.historialFechas||{};
+  Object.keys(hist).sort().forEach(function(fecha){
+    var h=hist[fecha];
+    if(!h||!h.completado) return;
+    h1.push([
+      fecha,
+      h.diaCiclo||'',
+      h.fase||'',
+      h.semana||'',
+      h.diaBoyleProg||'',
+      h.diaBoyleReal||'',
+      h.variacion?'Sí':'No',
+      (h.ejsSustituidos||[]).join(', '),
+      h.duracion_min||'',
+    ]);
+  });
+  // Añadir sesiones sin historialFechas (datos legacy)
+  var sesiones=ST.sesiones||{};
+  Object.keys(sesiones).forEach(function(k){
+    var s=sesiones[k];
+    if(s&&s.fecha) h1.push(['',k.replace('d',''),'','','','','','',s.duracion_min||'']);
+  });
+  var ws1=XLSX_lib.utils.aoa_to_sheet(h1);
+  XLSX_lib.utils.book_append_sheet(wb,ws1,'Sesiones');
+
+  // HOJA 2 — Sets y pesos
+  var h2=[['Día Ciclo','Día Boyle','Ejercicio','Serie','Peso (kg)','Reps','RPE','Fecha aprox']];
+  var sets=ST.sets||{};
+  var fechaSes=ST.fechaSesiones||{};
+  Object.keys(sets).sort().forEach(function(k){
+    var match=k.match(/^d(\d+)_(.+)$/);
+    if(!match) return;
+    var numDia=parseInt(match[1]);
+    var ej=match[2];
+    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'');
+    var fecha=fechaSes[numDia]||'';
+    var setsArr=(sets[k]||[]).filter(Boolean);
+    setsArr.forEach(function(s,i){
+      h2.push([numDia, dB||'', ej, i+1, s.p||'', s.r||'', s.rpe||'', fecha]);
+    });
+  });
+  var ws2=XLSX_lib.utils.aoa_to_sheet(h2);
+  XLSX_lib.utils.book_append_sheet(wb,ws2,'Sets y Pesos');
+
+  // HOJA 3 — Garmin por día
+  var h3=[['Fecha','Pasos','Kcal Totales','Kcal Activas','Distancia (km)','FC Reposo','Estrés Medio','Sueño Total (min)','Sueño Profundo','Sueño REM','Puntuación Sueño','Body Battery Max','Actividad Fuerza','Duración Fuerza (min)','Kcal Fuerza','FC Media Fuerza']];
+  var garminH=ST.garminHist||{};
+  Object.keys(garminH).sort().forEach(function(fecha){
+    var g=garminH[fecha];
+    if(!g) return;
+    var f=g.fuerza||null;
+    h3.push([
+      fecha,
+      g.pasos||0,
+      g.calorias_dia||0,
+      g.calorias_activas||0,
+      g.distancia_km||0,
+      g.fc_reposo||'',
+      g.estres_medio||'',
+      g.sueno_total_min||0,
+      g.sueno_profundo_min||0,
+      g.sueno_rem_min||0,
+      g.sueno_puntuacion||'',
+      g.body_battery_max||'',
+      f?f.nombre:'',
+      f?f.duracion_min:'',
+      f?f.calorias:'',
+      f?f.fc_media:'',
+    ]);
+  });
+  var ws3=XLSX_lib.utils.aoa_to_sheet(h3);
+  XLSX_lib.utils.book_append_sheet(wb,ws3,'Garmin');
+
+  return XLSX_lib.write(wb,{bookType:'xlsx',type:'array'});
+}
+
+async function exportarExcelDrive(silencioso){
+  if(!gapi||!gapi.client||!gapi.client.drive){
+    if(!silencioso) alert('Google Drive no conectado. Inicia sesión primero.');
+    return;
+  }
+  try {
+    var xlsxData=buildEntrenoExcel();
+    if(!xlsxData){if(!silencioso) alert('Error generando Excel.');return;}
+    var blob=new Blob([xlsxData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var folderId=await getOrCreateDriveFolder();
+    var fileId=await getDriveFileId(folderId);
+    var token=gapi.auth.getToken()&&gapi.auth.getToken().access_token;
+    if(!token){if(!silencioso) alert('Sin token de Google. Inicia sesión.');return;}
+    var method,url;
+    if(fileId){
+      method='PATCH';
+      url='https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=multipart';
+    } else {
+      method='POST';
+      url='https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    }
+    var metadata={name:DRIVE_FILE_NAME,mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
+    if(!fileId) metadata.parents=[folderId];
+    var boundary='entreno_boyle_boundary';
+    var delimiter='--'+boundary+'\r\n';
+    var closeDelimiter='--'+boundary+'--';
+    var metaStr=delimiter+'Content-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+'\r\n';
+    var metaBytes=new TextEncoder().encode(metaStr);
+    var dataHeader=delimiter+'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n';
+    var dataHeaderBytes=new TextEncoder().encode(dataHeader);
+    var closeBytes=new TextEncoder().encode('\r\n'+closeDelimiter);
+    var combined=new Uint8Array(metaBytes.length+dataHeaderBytes.length+xlsxData.length+closeBytes.length);
+    combined.set(metaBytes,0);
+    combined.set(dataHeaderBytes,metaBytes.length);
+    combined.set(new Uint8Array(xlsxData),metaBytes.length+dataHeaderBytes.length);
+    combined.set(closeBytes,metaBytes.length+dataHeaderBytes.length+xlsxData.length);
+    var resp=await fetch(url,{
+      method:method,
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary},
+      body:combined
+    });
+    if(resp.ok){
+      var result=await resp.json();
+      _driveFileId=result.id;
+      if(!silencioso){
+        var t=document.getElementById('fb-toast');
+        if(t){t.textContent='✅ Excel guardado en Drive → Entreno Boyle/'+DRIVE_FILE_NAME;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},4000);}
+      }
+    } else {
+      if(!silencioso) alert('Error subiendo a Drive: '+resp.status);
+    }
+  } catch(e){
+    console.warn('exportarExcelDrive error:',e);
+    if(!silencioso) alert('Error: '+e.message);
+  }
+}
+
+// Auto-volcado al minimizar/cerrar la app
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='hidden') exportarExcelDrive(true);
+});
+
+// Auto-volcado cada 15 minutos
+setInterval(function(){ exportarExcelDrive(true); }, 15*60*1000);
+
 function recalcularTodoCiclo(){
-  // Recalcular desde el día actual hacia adelante
   // Primer día con entreno ya hecho = ancla
   var diaDesde = ST.dia || 1;
   // Buscar el último día Boyle asignado antes del día actual
@@ -3216,6 +3400,7 @@ function finalizarSesion(){
   ST.fechaSesiones[ST.dia]=hoy;
   save();
   renderFinalizarStatus();
+  exportarExcelDrive(true);
   // Toast
   var t=document.getElementById('fb-toast');
   if(t){t.textContent='✅ Sesión registrada — '+hoy;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
@@ -3843,12 +4028,12 @@ function confirmarCambioEj(el){
   renders.entreno();
 }
 
-function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();}
+function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();exportarExcelDrive(true);}
 function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ciclo();renders.entreno();updateTopbarSem();}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v56';
+const APP_VERSION='v57';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){
@@ -4384,7 +4569,10 @@ function renderGarminHoy(){
   const felEl=document.getElementById('f-garmin-fecha');
   if(!g){card.style.display='none';return;}
   card.style.display='block';
-  if(felEl) felEl.textContent=g.fecha||hoy;
+  // Mostrar hora del sync para el día actual
+  var esHoy = g.fecha===hoy;
+  var syncInfo = esHoy&&ST.garminActualizado ? '📡 '+ST.garminActualizado.split(' · ')[1]||ST.garminActualizado : g.fecha||hoy;
+  if(felEl) felEl.textContent=syncInfo;
   const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+( g.sueno_total_min%60)+'min':'—';
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">

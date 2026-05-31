@@ -3189,23 +3189,13 @@ async function exportarExcelDrive(silencioso){
     }
     var metadata={name:DRIVE_FILE_NAME,mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
     if(!fileId) metadata.parents=[folderId];
-    var boundary='entreno_boyle_boundary';
-    var delimiter='--'+boundary+'\r\n';
-    var closeDelimiter='--'+boundary+'--';
-    var metaStr=delimiter+'Content-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+'\r\n';
-    var metaBytes=new TextEncoder().encode(metaStr);
-    var dataHeader=delimiter+'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n';
-    var dataHeaderBytes=new TextEncoder().encode(dataHeader);
-    var closeBytes=new TextEncoder().encode('\r\n'+closeDelimiter);
-    var combined=new Uint8Array(metaBytes.length+dataHeaderBytes.length+xlsxData.length+closeBytes.length);
-    combined.set(metaBytes,0);
-    combined.set(dataHeaderBytes,metaBytes.length);
-    combined.set(new Uint8Array(xlsxData),metaBytes.length+dataHeaderBytes.length);
-    combined.set(closeBytes,metaBytes.length+dataHeaderBytes.length+xlsxData.length);
+    var form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file',new Blob([new Uint8Array(xlsxData)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
     var resp=await fetch(url,{
       method:method,
-      headers:{'Authorization':'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary},
-      body:combined
+      headers:{'Authorization':'Bearer '+token},
+      body:form
     });
     if(resp.ok){
       var result=await resp.json();

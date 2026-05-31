@@ -3073,6 +3073,12 @@ async function getDriveFileId(folderId){
   return null;
 }
 
+function safeVal(v){
+  if(v===null||v===undefined) return '';
+  if(typeof v==='object') return JSON.stringify(v).slice(0,100);
+  return v;
+}
+
 function buildEntrenoExcel(){
   var XLSX_lib=typeof XLSX!=='undefined'?XLSX:null;
   if(!XLSX_lib){console.warn('XLSX not loaded');return null;}
@@ -3085,28 +3091,27 @@ function buildEntrenoExcel(){
     var h=hist[fecha];
     if(!h||!h.completado) return;
     h1.push([
-      fecha,
-      h.diaCiclo||'',
-      h.fase||'',
-      h.semana||'',
-      h.diaBoyleProg||'',
-      h.diaBoyleReal||'',
+      safeVal(fecha),
+      safeVal(h.diaCiclo),
+      safeVal(h.fase),
+      safeVal(h.semana),
+      safeVal(h.diaBoyleProg),
+      safeVal(h.diaBoyleReal),
       h.variacion?'Sí':'No',
-      (h.ejsSustituidos||[]).join(', '),
-      h.duracion_min||'',
+      safeVal((h.ejsSustituidos||[]).join(', ')),
+      safeVal(h.duracion_min),
     ]);
   });
-  // Añadir sesiones sin historialFechas (datos legacy)
   var sesiones=ST.sesiones||{};
   Object.keys(sesiones).forEach(function(k){
     var s=sesiones[k];
-    if(s&&s.fecha) h1.push(['',k.replace('d',''),'','','','','','',s.duracion_min||'']);
+    if(s&&s.fecha) h1.push([safeVal(s.fecha),safeVal(k.replace('d','')),'','','','','','',safeVal(s.duracion_min)]);
   });
   var ws1=XLSX_lib.utils.aoa_to_sheet(h1);
   XLSX_lib.utils.book_append_sheet(wb,ws1,'Sesiones');
 
   // HOJA 2 — Sets y pesos
-  var h2=[['Día Ciclo','Día Boyle','Ejercicio','Serie','Peso (kg)','Reps','RPE','Fecha aprox']];
+  var h2=[['Día Ciclo','Día Boyle','Ejercicio','Serie','Peso (kg)','Reps','RPE','Fecha']];
   var sets=ST.sets||{};
   var fechaSes=ST.fechaSesiones||{};
   Object.keys(sets).sort().forEach(function(k){
@@ -3114,11 +3119,12 @@ function buildEntrenoExcel(){
     if(!match) return;
     var numDia=parseInt(match[1]);
     var ej=match[2];
-    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'');
-    var fecha=fechaSes[numDia]||'';
+    var cicloItem=CICLO&&CICLO[(numDia-1)%12];
+    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(cicloItem?cicloItem.b:'');
+    var fecha=safeVal(fechaSes[numDia]);
     var setsArr=(sets[k]||[]).filter(Boolean);
     setsArr.forEach(function(s,i){
-      h2.push([numDia, dB||'', ej, i+1, s.p||'', s.r||'', s.rpe||'', fecha]);
+      h2.push([numDia, safeVal(dB), safeVal(ej), i+1, safeVal(s.p), safeVal(s.r), safeVal(s.rpe), fecha]);
     });
   });
   var ws2=XLSX_lib.utils.aoa_to_sheet(h2);
@@ -3132,28 +3138,33 @@ function buildEntrenoExcel(){
     if(!g) return;
     var f=g.fuerza||null;
     h3.push([
-      fecha,
-      g.pasos||0,
-      g.calorias_dia||0,
-      g.calorias_activas||0,
-      g.distancia_km||0,
-      g.fc_reposo||'',
-      g.estres_medio||'',
-      g.sueno_total_min||0,
-      g.sueno_profundo_min||0,
-      g.sueno_rem_min||0,
-      g.sueno_puntuacion||'',
-      g.body_battery_max||'',
-      f?f.nombre:'',
-      f?f.duracion_min:'',
-      f?f.calorias:'',
-      f?f.fc_media:'',
+      safeVal(fecha),
+      safeVal(g.pasos)||0,
+      safeVal(g.calorias_dia)||0,
+      safeVal(g.calorias_activas)||0,
+      safeVal(g.distancia_km)||0,
+      safeVal(g.fc_reposo),
+      safeVal(g.estres_medio),
+      safeVal(g.sueno_total_min)||0,
+      safeVal(g.sueno_profundo_min)||0,
+      safeVal(g.sueno_rem_min)||0,
+      safeVal(g.sueno_puntuacion),
+      safeVal(g.body_battery_max),
+      f?safeVal(f.nombre):'',
+      f?safeVal(f.duracion_min):'',
+      f?safeVal(f.calorias):'',
+      f?safeVal(f.fc_media):'',
     ]);
   });
   var ws3=XLSX_lib.utils.aoa_to_sheet(h3);
   XLSX_lib.utils.book_append_sheet(wb,ws3,'Garmin');
 
-  return XLSX_lib.write(wb,{bookType:'xlsx',type:'array'});
+  try {
+    return XLSX_lib.write(wb,{bookType:'xlsx',type:'array'});
+  } catch(e){
+    console.error('XLSX write error:',e);
+    return null;
+  }
 }
 
 async function exportarExcelDrive(silencioso){

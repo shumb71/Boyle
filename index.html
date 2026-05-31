@@ -3020,11 +3020,24 @@ const DRIVE_FILE_NAME   = 'Entreno_Boyle.xlsx';
 var _driveFileId = null; // se cachea tras la primera búsqueda
 
 async function getGdriveToken(){
-  // Obtener token de Google OAuth activo
-  if(gapi&&gapi.auth&&gapi.auth.getToken&&gapi.auth.getToken()) return gapi.auth.getToken().access_token;
-  // Fallback: buscar en el cliente de token
+  // Si ya tenemos un token cacheado, usarlo
   if(window._gdriveToken) return window._gdriveToken;
-  return null;
+  // Pedir token nuevo via google.accounts.oauth2
+  return new Promise(function(resolve, reject){
+    if(typeof google==='undefined'||!google.accounts||!google.accounts.oauth2){
+      reject(new Error('Google OAuth no disponible'));return;
+    }
+    var client=google.accounts.oauth2.initTokenClient({
+      client_id:GDRIVE_CLIENT_ID,
+      scope:GDRIVE_SCOPE,
+      callback:function(resp){
+        if(resp.error){reject(new Error(resp.error));return;}
+        window._gdriveToken=resp.access_token;
+        resolve(resp.access_token);
+      }
+    });
+    client.requestAccessToken();
+  });
 }
 
 async function getOrCreateDriveFolder(){

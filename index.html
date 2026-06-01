@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v58</title>
+<title>Entreno Boyle v59</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v58"
+      version: "v59"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=58', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=59', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -2682,6 +2682,9 @@ function guardar(){
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   ST.fechaSesiones[ST.dia]=new Date().toISOString().slice(0,10);
   save();
+  // Append a Google Sheets si está disponible
+  var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
+  appendSetToSheets(ST.dia, ejClean, serie, peso, reps, rpe, nota);
   document.getElementById('mo-set').classList.remove('open');
   renders.entreno();
 }
@@ -3218,47 +3221,6 @@ function buildEntrenoExcel(){
     return null;
   }
 }
-  var XLSX_lib=typeof XLSX!=='undefined'?XLSX:null;
-  if(!XLSX_lib){console.warn('XLSX not loaded');return null;}
-  var wb=XLSX_lib.utils.book_new();
-
-  // HOJA 1 — Historial de sesiones
-  var h1=[['Fecha','Día Ciclo','Fase','Semana','Día Boyle Prog','Día Boyle Real','Variación','Ejercicios Sustituidos','Duración (min)']];
-  var hist=ST.historialFechas||{};
-  Object.keys(hist).sort().forEach(function(fecha){
-    var h=hist[fecha];
-    if(!h||!h.completado) return;
-    h1.push([
-      safeVal(fecha),
-      safeVal(h.diaCiclo),
-      safeVal(h.fase),
-      safeVal(h.semana),
-      safeVal(h.diaBoyleProg),
-      safeVal(h.diaBoyleReal),
-      h.variacion?'Sí':'No',
-      safeVal((h.ejsSustituidos||[]).join(', ')),
-      safeVal(h.duracion_min),
-    ]);
-  });
-  var sesiones=ST.sesiones||{};
-  Object.keys(sesiones).forEach(function(k){
-    var s=sesiones[k];
-    if(!s) return;
-    var numDia=parseInt(k.replace('d',''));
-    var fecha=fechaSes[numDia]||'';
-    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'');
-    if(fecha&&hist[fecha]) return;
-    h1.push([
-      safeVal(fecha),
-      numDia,
-      '','','',
-      safeVal(dB),safeVal(dB),
-      'No','',
-      safeVal(s.duracion_min),
-      safeVal(s.duracion_str),
-      '','','',
-    ]);
-  });
 
 async function exportarExcelDrive(silencioso){
   var token=await getGdriveToken();
@@ -3525,6 +3487,7 @@ function finalizarSesion(){
   save();
   renderFinalizarStatus();
   exportarExcelDrive(true);
+  appendSesionToSheets(ST.historialFechas[hoy]);
   // Toast
   var t=document.getElementById('fb-toast');
   if(t){t.textContent='✅ Sesión registrada — '+hoy;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
@@ -4157,8 +4120,8 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v58';
-const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
+const APP_VERSION='v59';
+const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
   const btn=document.getElementById('btn-drive');
@@ -4339,7 +4302,73 @@ async function fetchGarminAuto(manual) {
 }
 
 // ══════════════════════════════════════
-// GITHUB WORKFLOW TRIGGER — GARMIN SYNC
+// GOOGLE SHEETS — APPEND INCREMENTAL
+// ══════════════════════════════════════
+var _sheetsId = null; // ID de la Google Sheet de Entreno Boyle
+
+async function getSheetsId(){
+  if(_sheetsId) return _sheetsId;
+  // Buscar en Drive
+  var token=await getGdriveToken();
+  if(!token) return null;
+  var q=encodeURIComponent('name="Entreno Boyle" and mimeType="application/vnd.google-apps.spreadsheet" and trashed=false');
+  var resp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)',{
+    headers:{'Authorization':'Bearer '+token}
+  });
+  var data=await resp.json();
+  if(data.files&&data.files.length){
+    _sheetsId=data.files[0].id;
+    return _sheetsId;
+  }
+  return null;
+}
+
+async function sheetsAppend(sheetName, values){
+  // Añade una fila al final de la hoja indicada
+  var token=await getGdriveToken();
+  if(!token) return false;
+  var sheetId=await getSheetsId();
+  if(!sheetId) return false;
+  var range=encodeURIComponent(sheetName+'!A:Z');
+  var resp=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({values:[values]})
+  });
+  return resp.ok;
+}
+
+// Llamar al registrar un set
+async function appendSetToSheets(numDia, ej, serie, peso, reps, rpe, nota){
+  var fecha=new Date().toISOString().slice(0,10);
+  var fase=getFaseActual(ST.sem);
+  var sem='Sem '+ST.sem;
+  var semEnFase='Sem '+getSemEnFase(ST.sem)+' de 3';
+  var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'—');
+  var values=[fecha,numDia,dB,fase,sem,semEnFase,ej,serie,peso,reps,rpe,nota||''];
+  sheetsAppend('Sets y Pesos', values).catch(function(){});
+}
+
+// Llamar al finalizar sesión
+async function appendSesionToSheets(sesionData){
+  var values=[
+    sesionData.fecha||'',
+    sesionData.diaCiclo||'',
+    sesionData.diaBoyleReal||'—',
+    sesionData.fase||'',
+    'Sem '+(sesionData.semana||ST.sem),
+    'Sem '+getSemEnFase(sesionData.semana||ST.sem)+' de 3',
+    '',
+    '',
+    sesionData.duracion_min||'',
+    '',
+    (ST.sliders||{}).d||'',
+    (ST.sliders||{}).f||'',
+    (ST.sliders||{}).s||'',
+    'Registrada'
+  ];
+  sheetsAppend('Sesiones', values).catch(function(){});
+}
 // ══════════════════════════════════════
 const GITHUB_TOKEN = 'TU_TOKEN_AQUI'; // Se sobreescribe con ST.githubToken si existe
 const GITHUB_REPO  = 'shumb71/Boyle';
@@ -4396,6 +4425,7 @@ window.addEventListener('load', () => {
     }
   }
   setTimeout(fetchGarminAuto, 3000); // 3s después de cargar completo
+  setTimeout(function(){ exportarExcelDrive(true); }, 8000); // 8s — volcado inicial al Drive
 });
 
 function importarGarminHistorial(input){

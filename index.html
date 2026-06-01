@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v57</title>
+<title>Entreno Boyle v58</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -92,7 +92,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v57"
+      version: "v58"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=57', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=58', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -3084,6 +3084,144 @@ function buildEntrenoExcel(){
   if(!XLSX_lib){console.warn('XLSX not loaded');return null;}
   var wb=XLSX_lib.utils.book_new();
 
+  // ── HOJA 1: SESIONES ──────────────────────────────────────
+  var h1=[['Fecha','Día Ciclo','Fase','Semana','Sem en Fase','Día Boyle Prog','Día Boyle Real','Variación','Ejercicios Sustituidos','Duración (min)','Duración (hms)','Descanso','Fatiga','Sueño (slider)']];
+  var hist=ST.historialFechas||{};
+  var sesiones=ST.sesiones||{};
+  var fechaSes=ST.fechaSesiones||{};
+
+  // Historial registrado con finalizarSesion
+  Object.keys(hist).sort().forEach(function(fecha){
+    var h=hist[fecha];
+    if(!h||!h.completado) return;
+    var sl=ST.sliders||{};
+    h1.push([
+      safeVal(fecha),
+      safeVal(h.diaCiclo),
+      safeVal(h.fase),
+      safeVal(h.semana),
+      safeVal(h.semEnFase),
+      safeVal(h.diaBoyleProg),
+      safeVal(h.diaBoyleReal),
+      h.variacion?'Sí':'No',
+      safeVal((h.ejsSustituidos||[]).join(', ')),
+      safeVal(h.duracion_min),
+      '',
+      safeVal(sl.d),
+      safeVal(sl.f),
+      safeVal(sl.s),
+    ]);
+  });
+  // Sesiones legacy (sin historialFechas)
+  Object.keys(sesiones).forEach(function(k){
+    var s=sesiones[k];
+    if(!s) return;
+    var numDia=parseInt(k.replace('d',''));
+    var fecha=fechaSes[numDia]||'';
+    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'');
+    // Solo añadir si no está ya en historialFechas
+    if(fecha&&hist[fecha]) return;
+    h1.push([
+      safeVal(fecha),
+      numDia,
+      '','','',
+      safeVal(dB),safeVal(dB),
+      'No','',
+      safeVal(s.duracion_min),
+      safeVal(s.duracion_str),
+      '','','',
+    ]);
+  });
+  var ws1=XLSX_lib.utils.aoa_to_sheet(h1);
+  XLSX_lib.utils.book_append_sheet(wb,ws1,'Sesiones');
+
+  // ── HOJA 2: SETS Y PESOS ──────────────────────────────────
+  var h2=[['Fecha','Día Ciclo','Día Boyle','Fase','Semana','Sem en Fase','Ejercicio','Serie','Peso (kg)','Reps','RPE','Check Manual']];
+  var sets=ST.sets||{};
+  var checks=ST.checksManual||{};
+
+  Object.keys(sets).sort().forEach(function(k){
+    var match=k.match(/^d(\d+)_(.+)$/);
+    if(!match) return;
+    var numDia=parseInt(match[1]);
+    var ej=match[2];
+    var cicloItem=CICLO&&CICLO[(numDia-1)%12];
+    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(cicloItem?cicloItem.b:'');
+    var fecha=safeVal(fechaSes[numDia]);
+    // Buscar fase y semana del historial de esa fecha
+    var fase='',sem='',semEnFase='';
+    if(fecha&&hist[fecha]){fase=hist[fecha].fase||'';sem=hist[fecha].semana||'';semEnFase=hist[fecha].semEnFase||'';}
+    var setsArr=(sets[k]||[]).filter(Boolean);
+    var esCheck=checks[k]||false;
+    if(setsArr.length===0&&esCheck){
+      h2.push([fecha,numDia,safeVal(dB),fase,sem,semEnFase,safeVal(ej),'','','','','✓']);
+    } else {
+      setsArr.forEach(function(s,i){
+        h2.push([fecha,numDia,safeVal(dB),fase,sem,semEnFase,safeVal(ej),i+1,safeVal(s.p),safeVal(s.r),safeVal(s.rpe),esCheck?'✓':'']);
+      });
+    }
+  });
+  // Checks manuales sin sets
+  Object.keys(checks).forEach(function(k){
+    if(sets[k]) return; // ya procesado
+    var match=k.match(/^d(\d+)_(.+)$/);
+    if(!match) return;
+    var numDia=parseInt(match[1]);
+    var ej=match[2];
+    var cicloItem=CICLO&&CICLO[(numDia-1)%12];
+    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(cicloItem?cicloItem.b:'');
+    var fecha=safeVal(fechaSes[numDia]);
+    h2.push([fecha,numDia,safeVal(dB),'','','',safeVal(ej),'','','','','✓']);
+  });
+  var ws2=XLSX_lib.utils.aoa_to_sheet(h2);
+  XLSX_lib.utils.book_append_sheet(wb,ws2,'Sets y Pesos');
+
+  // ── HOJA 3: GARMIN ────────────────────────────────────────
+  var h3=[['Fecha','Pasos','Kcal Totales','Kcal Activas','Distancia (km)','Min Activos','FC Reposo','Estrés Medio','Sueño Total (min)','Sueño Profundo','Sueño Ligero','Sueño REM','Punt Sueño','Body Battery Max','Body Battery Min','Actividades','Fuerza Nombre','Fuerza Duración (min)','Fuerza Kcal','Fuerza FC Media','Fuerza FC Max']];
+  var garminH=ST.garminHist||{};
+  Object.keys(garminH).sort().forEach(function(fecha){
+    var g=garminH[fecha];
+    if(!g) return;
+    var f=g.fuerza||null;
+    var acts=(g.actividades||[]).map(function(a){return a.nombre+'('+a.duracion_min+'min)';}).join(' | ');
+    h3.push([
+      safeVal(fecha),
+      safeVal(g.pasos)||0,
+      safeVal(g.calorias_dia)||0,
+      safeVal(g.calorias_activas)||0,
+      safeVal(g.distancia_km)||0,
+      safeVal(g.minutos_activos)||0,
+      safeVal(g.fc_reposo),
+      safeVal(g.estres_medio),
+      safeVal(g.sueno_total_min)||0,
+      safeVal(g.sueno_profundo_min)||0,
+      safeVal(g.sueno_ligero_min)||0,
+      safeVal(g.sueno_rem_min)||0,
+      safeVal(g.sueno_puntuacion),
+      safeVal(g.body_battery_max),
+      safeVal(g.body_battery_min),
+      safeVal(acts),
+      f?safeVal(f.nombre):'',
+      f?safeVal(f.duracion_min):'',
+      f?safeVal(f.calorias):'',
+      f?safeVal(f.fc_media):'',
+      f?safeVal(f.fc_max):'',
+    ]);
+  });
+  var ws3=XLSX_lib.utils.aoa_to_sheet(h3);
+  XLSX_lib.utils.book_append_sheet(wb,ws3,'Garmin');
+
+  try {
+    return XLSX_lib.write(wb,{bookType:'xlsx',type:'array'});
+  } catch(e){
+    console.error('XLSX write error:',e);
+    return null;
+  }
+}
+  var XLSX_lib=typeof XLSX!=='undefined'?XLSX:null;
+  if(!XLSX_lib){console.warn('XLSX not loaded');return null;}
+  var wb=XLSX_lib.utils.book_new();
+
   // HOJA 1 — Historial de sesiones
   var h1=[['Fecha','Día Ciclo','Fase','Semana','Día Boyle Prog','Día Boyle Real','Variación','Ejercicios Sustituidos','Duración (min)']];
   var hist=ST.historialFechas||{};
@@ -3105,67 +3243,22 @@ function buildEntrenoExcel(){
   var sesiones=ST.sesiones||{};
   Object.keys(sesiones).forEach(function(k){
     var s=sesiones[k];
-    if(s&&s.fecha) h1.push([safeVal(s.fecha),safeVal(k.replace('d','')),'','','','','','',safeVal(s.duracion_min)]);
-  });
-  var ws1=XLSX_lib.utils.aoa_to_sheet(h1);
-  XLSX_lib.utils.book_append_sheet(wb,ws1,'Sesiones');
-
-  // HOJA 2 — Sets y pesos
-  var h2=[['Día Ciclo','Día Boyle','Ejercicio','Serie','Peso (kg)','Reps','RPE','Fecha']];
-  var sets=ST.sets||{};
-  var fechaSes=ST.fechaSesiones||{};
-  Object.keys(sets).sort().forEach(function(k){
-    var match=k.match(/^d(\d+)_(.+)$/);
-    if(!match) return;
-    var numDia=parseInt(match[1]);
-    var ej=match[2];
-    var cicloItem=CICLO&&CICLO[(numDia-1)%12];
-    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(cicloItem?cicloItem.b:'');
-    var fecha=safeVal(fechaSes[numDia]);
-    var setsArr=(sets[k]||[]).filter(Boolean);
-    setsArr.forEach(function(s,i){
-      h2.push([numDia, safeVal(dB), safeVal(ej), i+1, safeVal(s.p), safeVal(s.r), safeVal(s.rpe), fecha]);
-    });
-  });
-  var ws2=XLSX_lib.utils.aoa_to_sheet(h2);
-  XLSX_lib.utils.book_append_sheet(wb,ws2,'Sets y Pesos');
-
-  // HOJA 3 — Garmin por día
-  var h3=[['Fecha','Pasos','Kcal Totales','Kcal Activas','Distancia (km)','FC Reposo','Estrés Medio','Sueño Total (min)','Sueño Profundo','Sueño REM','Puntuación Sueño','Body Battery Max','Actividad Fuerza','Duración Fuerza (min)','Kcal Fuerza','FC Media Fuerza']];
-  var garminH=ST.garminHist||{};
-  Object.keys(garminH).sort().forEach(function(fecha){
-    var g=garminH[fecha];
-    if(!g) return;
-    var f=g.fuerza||null;
-    h3.push([
+    if(!s) return;
+    var numDia=parseInt(k.replace('d',''));
+    var fecha=fechaSes[numDia]||'';
+    var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'');
+    if(fecha&&hist[fecha]) return;
+    h1.push([
       safeVal(fecha),
-      safeVal(g.pasos)||0,
-      safeVal(g.calorias_dia)||0,
-      safeVal(g.calorias_activas)||0,
-      safeVal(g.distancia_km)||0,
-      safeVal(g.fc_reposo),
-      safeVal(g.estres_medio),
-      safeVal(g.sueno_total_min)||0,
-      safeVal(g.sueno_profundo_min)||0,
-      safeVal(g.sueno_rem_min)||0,
-      safeVal(g.sueno_puntuacion),
-      safeVal(g.body_battery_max),
-      f?safeVal(f.nombre):'',
-      f?safeVal(f.duracion_min):'',
-      f?safeVal(f.calorias):'',
-      f?safeVal(f.fc_media):'',
+      numDia,
+      '','','',
+      safeVal(dB),safeVal(dB),
+      'No','',
+      safeVal(s.duracion_min),
+      safeVal(s.duracion_str),
+      '','','',
     ]);
   });
-  var ws3=XLSX_lib.utils.aoa_to_sheet(h3);
-  XLSX_lib.utils.book_append_sheet(wb,ws3,'Garmin');
-
-  try {
-    return XLSX_lib.write(wb,{bookType:'xlsx',type:'array'});
-  } catch(e){
-    console.error('XLSX write error:',e);
-    return null;
-  }
-}
 
 async function exportarExcelDrive(silencioso){
   var token=await getGdriveToken();
@@ -4064,7 +4157,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v57';
+const APP_VERSION='v58';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file';
 
 function exportarDrive(){

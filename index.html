@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v66</title>
+<title>Entreno Boyle v67</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -57,7 +57,10 @@ function initFirebase() {
         updateSyncUI("connected", user.displayName || user.email);
         // Siempre cargar desde Firebase al arrancar — es la fuente de verdad
         fbDb.collection("usuarios").doc(user.uid).get().then(function(doc){
-          if(!doc.exists||!doc.data()||!doc.data().datos) return;
+          if(!doc.exists||!doc.data()||!doc.data().datos){
+            _fbLoadReady=true; // no hay datos remotos, permitir save
+            return;
+          }
           try{
             var parsed=JSON.parse(doc.data().datos);
             // Solo sobrescribir si Firebase tiene datos más recientes
@@ -72,13 +75,15 @@ function initFirebase() {
               updateSyncUI("synced-remote");
             }
           }catch(e){console.warn('Firebase load error:',e);}
-        });
+          finally{_fbLoadReady=true;} // permitir save() a partir de aquí
+        }).catch(function(){_fbLoadReady=true;});
         suscribirCambiosRemoto();
         // Cargar sets históricos desde subcolección Firebase
         setTimeout(cargarSetsFirebase, 2000);
       } else {
         fbUser = null;
         fbReady = false;
+        _fbLoadReady=true; // sin Firebase, permitir save local
         if (fbUnsubscribe) { fbUnsubscribe(); fbUnsubscribe = null; }
         updateSyncUI("logged-out");
       }
@@ -113,7 +118,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v66"
+      version: "v67"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -360,7 +365,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=66', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=67', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1793,13 +1798,20 @@ function semaforo(d,f){
 }
 
 let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{}};
+var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
 function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};
     if(ST.sheetsId) _sheetsId=ST.sheetsId;
   // Restaurar variantes custom
   if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}}}catch(e){}}
-function save(){try{ST._localSaveTime=Date.now();localStorage.setItem('jose_v9',JSON.stringify(ST));saveFirebase();}catch(e){}}
+function save(){
+  try{
+    ST._localSaveTime=Date.now();
+    localStorage.setItem('jose_v9',JSON.stringify(ST));
+    if(_fbLoadReady) saveFirebase(); // solo guardar en Firebase si ya cargamos de ahí
+  }catch(e){}
+}
 load();
 
 function getEjs(ses){
@@ -4241,7 +4253,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v66';
+const APP_VERSION='v67';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){

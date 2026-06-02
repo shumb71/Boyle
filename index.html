@@ -4568,7 +4568,7 @@ const GITHUB_WORKFLOW = 'garmin_sync.yml';
 async function triggerGarminSync(){
   var token = (ST.githubToken||GITHUB_TOKEN||'').trim();
   if(!token||token==='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'){
-    alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "tu_token";\nsave();');
+    alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "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";\nsave();');
     return;
   }
   var btn=document.getElementById('btn-trigger-garmin');

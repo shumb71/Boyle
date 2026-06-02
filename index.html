@@ -1775,6 +1775,7 @@ let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1]
 let mEj=null,mSer=null;
 
 function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};
+    if(ST.sheetsId) _sheetsId=ST.sheetsId;
   // Restaurar variantes custom
   if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}}}catch(e){}}
 function save(){try{ST._localSaveTime=Date.now();localStorage.setItem('jose_v9',JSON.stringify(ST));saveFirebase();}catch(e){}}
@@ -4308,14 +4309,15 @@ var _sheetsId = null; // ID de la Google Sheet de Entreno Boyle
 
 async function getSheetsId(){
   if(_sheetsId) return _sheetsId;
-  // Buscar en Drive
   var token=await getGdriveToken();
   if(!token) return null;
+  // Buscar en todo Drive sin restricción de carpeta
   var q=encodeURIComponent('name="Entreno Boyle" and mimeType="application/vnd.google-apps.spreadsheet" and trashed=false');
-  var resp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)',{
+  var resp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&spaces=drive&corpora=user',{
     headers:{'Authorization':'Bearer '+token}
   });
   var data=await resp.json();
+  console.log('getSheetsId result:', data);
   if(data.files&&data.files.length){
     _sheetsId=data.files[0].id;
     return _sheetsId;

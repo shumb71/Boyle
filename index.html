@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v60</title>
+<title>Entreno Boyle v61</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -107,7 +107,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v60"
+      version: "v61"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -354,7 +354,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=60', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=61', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -3518,7 +3518,7 @@ function renderFinalizarStatus(){
   var hoy=new Date().toISOString().slice(0,10);
   var reg=ST.historialFechas&&ST.historialFechas[hoy];
   if(reg&&reg.completado){
-    el.innerHTML='<span style="color:var(--green-text)">✅ Registrada hoy — '+reg.fase+' Sem '+reg.semana+(reg.variacion?' · <span style="color:var(--orange-text)">⚠ Con variación</span>':'')+'</span>';
+    el.innerHTML='<span style="color:var(--green-text)">✅ Registrada hoy — '+reg.fase+' Sem '+reg.semana+(reg.diaBoyleReal&&reg.diaBoyleReal!=='Descanso'?' · '+reg.diaBoyleReal:'')+(reg.variacion?' · <span style="color:var(--orange-text)">⚠ Con variación</span>':'')+'</span>';
     if(btn){btn.style.background='var(--bg3)';btn.style.color='var(--text2)';btn.textContent='✓ Ya registrada — Volver a registrar';}
   } else {
     var dB=getDiaBoyle();
@@ -4136,7 +4136,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v60';
+const APP_VERSION='v61';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
@@ -4613,7 +4613,7 @@ function calSelDia(fecha){
     var sustHtml=histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'';
     htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px">'
       +'<span style="font-size:12px;font-weight:700;color:var(--green-text)">✅ Sesión registrada</span>'
-      +'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">'+histSes.fase+' · Sem '+histSes.semana+'</span>'
+      +'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">'+histSes.fase+' · Sem '+histSes.semana+(histSes.diaBoyleReal&&histSes.diaBoyleReal!=='Descanso'?' · '+histSes.diaBoyleReal:'')+'</span>'
       +varTag+'</div>'+sustHtml+htmlE;
   }
   // Limpiar antes de rellenar para forzar re-render

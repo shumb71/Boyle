@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v62</title>
+<title>Entreno Boyle v63</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -109,7 +109,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v62"
+      version: "v63"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -356,7 +356,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=62', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=63', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -2424,8 +2424,89 @@ function abrirVariantesBoyle(btn){
 }
 var _boyleVarianteEjOrig=null;
 
+// ══════════════════════════════════════
+// EDITAR SESIÓN HISTÓRICA
+// ══════════════════════════════════════
+var _editarFecha = null;
+
+function abrirEditarSesion(fecha){
+  _editarFecha = fecha;
+  var ses = ST.historialFechas[fecha];
+  if(!ses) return;
+  document.getElementById('mo-editar-fecha-lbl').textContent = fecha + ' — ' + (ses.fase||'') + ' · ' + (ses.diaBoyleReal||'—');
+  var contenido = document.getElementById('mo-editar-contenido');
+  var html = '';
+  // Selector día Boyle
+  html += '<div style="margin-bottom:.75rem">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Día Boyle</div>'
+    +'<select id="edit-dia-boyle" style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px">'
+    +['D1','D2','D3','D4','Descanso'].map(function(d){return '<option value="'+d+'"'+(ses.diaBoyleReal===d?' selected':'')+'>'+d+'</option>';}).join('')
+    +'</select></div>';
+  // Ejercicios
+  var ejs = ses.ejerciciosRealizados||[];
+  html += '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Ejercicios y series</div>';
+  html += '<div id="edit-ejs-list">';
+  ejs.forEach(function(e, ei){
+    html += '<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px" data-ei="'+ei+'">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">'+e.ej+'</div>';
+    (e.sets||[]).forEach(function(s,si){
+      html += '<div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px;align-items:center;margin-bottom:4px">'
+        +'<span style="font-size:11px;color:var(--text3)">S'+(si+1)+'</span>'
+        +'<input type="number" value="'+s.p+'" placeholder="kg" data-ei="'+ei+'" data-si="'+si+'" data-field="p" style="padding:4px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">'
+        +'<input type="number" value="'+s.r+'" placeholder="reps" data-ei="'+ei+'" data-si="'+si+'" data-field="r" style="padding:4px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">'
+        +'<input type="number" value="'+s.rpe+'" placeholder="RPE" data-ei="'+ei+'" data-si="'+si+'" data-field="rpe" style="padding:4px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">'
+        +'</div>';
+    });
+    html += '</div>';
+  });
+  // Botón añadir ejercicio
+  html += '</div><button onclick="editAnadirEj()" style="width:100%;padding:8px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:4px">+ Añadir ejercicio</button>';
+  contenido.innerHTML = html;
+  document.getElementById('mo-editar-sesion').classList.add('open');
+}
+
+function editAnadirEj(){
+  var nombre=prompt('Nombre del ejercicio:');
+  if(!nombre) return;
+  var ses=ST.historialFechas[_editarFecha];
+  if(!ses.ejerciciosRealizados) ses.ejerciciosRealizados=[];
+  ses.ejerciciosRealizados.push({ej:nombre,sets:[{p:0,r:0,rpe:7}]});
+  abrirEditarSesion(_editarFecha);
+}
+
+function guardarEdicionSesion(){
+  if(!_editarFecha) return;
+  var ses=ST.historialFechas[_editarFecha];
+  if(!ses) return;
+  // Guardar día Boyle
+  var dB=document.getElementById('edit-dia-boyle').value;
+  ses.diaBoyleReal=dB;
+  // Guardar sets de cada ejercicio
+  var inputs=document.querySelectorAll('#mo-editar-contenido input[data-field]');
+  inputs.forEach(function(inp){
+    var ei=parseInt(inp.dataset.ei);
+    var si=parseInt(inp.dataset.si);
+    var field=inp.dataset.field;
+    if(ses.ejerciciosRealizados[ei]&&ses.ejerciciosRealizados[ei].sets[si]){
+      ses.ejerciciosRealizados[ei].sets[si][field]=parseFloat(inp.value)||0;
+      // También actualizar Firebase sets subcollection
+      var ej=ses.ejerciciosRealizados[ei].ej;
+      var docId=_editarFecha+'_d'+(ses.diaCiclo||0)+'_'+ej.replace(/[^a-zA-Z0-9]/g,'_')+'_s'+(si+1);
+      if(fbReady&&fbUser){
+        var update={};update[field]=parseFloat(inp.value)||0;
+        fbDb.collection('usuarios').doc(fbUser.uid).collection('sets').doc(docId).update(update).catch(function(){});
+      }
+    }
+  });
+  save();
+  document.getElementById('mo-editar-sesion').classList.remove('open');
+  // Refrescar calendario
+  if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
+  var t=document.getElementById('fb-toast');
+  if(t){t.textContent='✅ Sesión actualizada';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},2500);}
+}
+
 function getHistorialDiaBoyle(diaKey, fase){
-  // Busca en historialFechas las sesiones donde se realizó ese día Boyle
   var hist=ST.historialFechas||{};
   var resultado=[];
   Object.keys(hist).sort().forEach(function(fecha){
@@ -4149,7 +4230,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v62';
+const APP_VERSION='v63';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
@@ -4682,10 +4763,26 @@ function calSelDia(fecha){
   if(histSes&&histSes.completado){
     var varTag=histSes.variacion?'<span style="background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">⚠ Variación</span>':'';
     var sustHtml=histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'';
-    htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px">'
+    // Ejercicios realizados con pesos
+    var ejsHtml='';
+    if(histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){
+      ejsHtml='<div style="margin-top:6px">';
+      histSes.ejerciciosRealizados.forEach(function(e){
+        var setsStr=(e.sets||[]).map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
+        ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+e.ej+'</span> — '+setsStr+'</div>';
+      });
+      ejsHtml+='</div>';
+    }
+    var fechaSafe=fecha.replace(/'/g,"\\'");
+    htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;justify-content:space-between">'
+      +'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
       +'<span style="font-size:12px;font-weight:700;color:var(--green-text)">✅ Sesión registrada</span>'
       +'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">'+histSes.fase+' · Sem '+histSes.semana+(histSes.diaBoyleReal&&histSes.diaBoyleReal!=='Descanso'?' · '+histSes.diaBoyleReal:'')+'</span>'
-      +varTag+'</div>'+sustHtml+htmlE;
+      +varTag+'</div>'
+      +'<button onclick="abrirEditarSesion(\''+fechaSafe+'\')" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">✏ Editar</button>'
+      +'</div>'
+      +sustHtml+ejsHtml+'</div>'+htmlE;
   }
   // Limpiar antes de rellenar para forzar re-render
   const garminEl = document.getElementById('cal-det-garmin');
@@ -5510,6 +5607,20 @@ checkBackupReminder();
     </div>
   </div>
 </div>
+<!-- MODAL EDITAR SESION -->
+<div class="mo" id="mo-editar-sesion" onclick="closeMo(event,'mo-editar-sesion')">
+  <div class="ms" style="max-height:85vh;overflow-y:auto">
+    <div class="mh"></div>
+    <div class="mt">✏ Editar sesión</div>
+    <div id="mo-editar-fecha-lbl" style="font-size:13px;color:var(--text2);margin-bottom:.75rem"></div>
+    <div id="mo-editar-contenido"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.75rem">
+      <button onclick="document.getElementById('mo-editar-sesion').classList.remove('open')" class="bcan">Cancelar</button>
+      <button onclick="guardarEdicionSesion()" class="bsav" style="background:var(--blue)">✓ Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="mo" id="mo-var" onclick="if(event.target===this)closeMoVar()">
   <div class="ms">
     <div class="mh"></div>

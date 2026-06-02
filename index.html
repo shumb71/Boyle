@@ -55,21 +55,24 @@ function initFirebase() {
         fbUser = user;
         fbReady = true;
         updateSyncUI("connected", user.displayName || user.email);
-        // Si localStorage está vacío o es versión antigua, forzar carga desde Firebase
-        var localData = localStorage.getItem('jose_v9');
-        if(!localData || !JSON.parse(localData).dia){
-          fbDb.collection("usuarios").doc(user.uid).get().then(function(doc){
-            if(!doc.exists||!doc.data()||!doc.data().datos) return;
-            try{
-              var parsed=JSON.parse(doc.data().datos);
+        // Siempre cargar desde Firebase al arrancar — es la fuente de verdad
+        fbDb.collection("usuarios").doc(user.uid).get().then(function(doc){
+          if(!doc.exists||!doc.data()||!doc.data().datos) return;
+          try{
+            var parsed=JSON.parse(doc.data().datos);
+            // Solo sobrescribir si Firebase tiene datos más recientes
+            var fbTime=parsed._localSaveTime||0;
+            var localData=localStorage.getItem('jose_v9');
+            var localTime=localData?JSON.parse(localData)._localSaveTime||0:0;
+            if(fbTime>=localTime){
               Object.assign(ST, parsed);
               ST._localSaveTime=Date.now();
-              save();
+              localStorage.setItem('jose_v9',JSON.stringify(ST));
               renders.hoy();renders.entreno();renders.ciclo();
               updateSyncUI("synced-remote");
-            }catch(e){}
-          });
-        }
+            }
+          }catch(e){console.warn('Firebase load error:',e);}
+        });
         suscribirCambiosRemoto();
         // Cargar sets históricos desde subcolección Firebase
         setTimeout(cargarSetsFirebase, 2000);

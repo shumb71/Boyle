@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v67</title>
+<title>Entreno Boyle v68</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -98,6 +98,7 @@ function initFirebase() {
 function loginFirebase() {
   if (!fbAuth) return;
   const provider = new firebase.auth.GoogleAuthProvider();
+  if(ST.googleLoginHint) provider.setCustomParameters({login_hint: ST.googleLoginHint});
   fbAuth.signInWithPopup(provider).catch(e => {
     console.error("Login error:", e);
     updateSyncUI("error");
@@ -118,7 +119,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v67"
+      version: "v68"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -365,7 +366,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=67', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=68', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1803,6 +1804,7 @@ let mEj=null,mSer=null;
 
 function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};
     if(ST.sheetsId) _sheetsId=ST.sheetsId;
+    migrarDiaBoyle();
   // Restaurar variantes custom
   if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}}}catch(e){}}
 function save(){
@@ -1826,9 +1828,8 @@ function getEjs(ses){
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
 function getDiaBoyle(){
-  // Devuelve el dia Boyle asignado al dia de ciclo actual (con override manual)
-  if(ST.diaBoyle&&ST.diaBoyle[ST.dia]){
-    var v=ST.diaBoyle[ST.dia];
+  var v=getDiaBoyleVal(ST.dia);
+  if(v!==null){
     if(v==='Descanso') return null;
     return v;
   }
@@ -2912,7 +2913,8 @@ function renderCicloBoyle(){
   if(!cl) return;
   cl.innerHTML=CICLO.map(function(c){
     var hoy=c.d===ST.dia;
-    var dB=ST.diaBoyle&&ST.diaBoyle[c.d]?ST.diaBoyle[c.d]:c.b;
+    var dB=getDiaBoyleVal(c.d)||c.b;
+    var semDia=getSemDia(c.d);
     var nomB=dB?(SES_NOM[dB]||dB):'Descanso / Movilidad';
     var bc=hoy?'dh':c.d<ST.dia?'dp':'df';
     var eColor={Alta:'var(--blue-text)',Media:'var(--orange)',Baja:'var(--text3)'}[c.e]||'var(--text3)';
@@ -2924,7 +2926,7 @@ function renderCicloBoyle(){
       '<div style="font-size:10px;color:var(--text3);margin-top:1px">'+c.h+'</div></div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">' +
       '<span style="font-size:10px;font-weight:700;color:'+eColor+'">'+c.e+'</span>' +
-      (dB&&dB!=='Descanso'?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px">'+dB+' <span style="opacity:.6">S'+ST.sem+'</span></span>':
+      (dB&&dB!=='Descanso'?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px">'+dB+' <span style="opacity:.6">S'+semDia+'</span></span>':
        (dB==='Descanso'?'<span style="font-size:10px;background:var(--bg3);color:var(--text3);border-radius:10px;padding:1px 7px">Descanso</span>':'')) +
       '</div></div>';
   }).join('');
@@ -2954,7 +2956,7 @@ function abrirCambiarDiaEnCiclo(numDia){
   _cdSemTemp = ST.sem||1;
   cdSemRender();
   var list=document.getElementById('mo-cd-list');
-  var actual=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:CICLO[(numDia-1)%12].b;
+  var actual=getDiaBoyleVal(numDia)||CICLO[(numDia-1)%12].b;
   var opciones=[
     {k:'D1',n:'Dia 1 — Explosivo + Hip dom bilateral'},
     {k:'D2',n:'Dia 2 — Hip dom + Rodilla unilateral'},
@@ -2995,7 +2997,38 @@ function cdSemRender(){
 }
 
 // ══════════════════════════════════════
-// PLANIFICADOR INTELIGENTE DE CICLO
+// HELPERS: diaBoyle con semana por día
+// ══════════════════════════════════════
+// Estructura nueva: ST.diaBoyle[d] puede ser string "D1" (legacy) u objeto {b:"D1",sem:2}
+function getDiaBoyleVal(d){
+  var v=ST.diaBoyle&&ST.diaBoyle[d]!==undefined?ST.diaBoyle[d]:null;
+  if(!v) return null;
+  if(typeof v==='object') return v.b||null;
+  return v; // string legacy
+}
+
+function getSemDia(d){
+  var v=ST.diaBoyle&&ST.diaBoyle[d]!==undefined?ST.diaBoyle[d]:null;
+  if(v&&typeof v==='object'&&v.sem) return v.sem;
+  return ST.sem||1; // fallback a semana global
+}
+
+function setDiaBoyleVal(d, dB, sem){
+  if(!ST.diaBoyle) ST.diaBoyle={};
+  if(!dB||dB==='null') { delete ST.diaBoyle[d]; return; }
+  ST.diaBoyle[d]={b:dB, sem:sem||ST.sem||1};
+}
+
+// Migrar estructura legacy (strings) a nueva (objetos)
+function migrarDiaBoyle(){
+  if(!ST.diaBoyle) return;
+  Object.keys(ST.diaBoyle).forEach(function(d){
+    var v=ST.diaBoyle[d];
+    if(typeof v==='string'){
+      ST.diaBoyle[d]={b:v, sem:ST.sem||1};
+    }
+  });
+}
 // ══════════════════════════════════════
 
 // Estado temporal para el recálculo pendiente
@@ -3010,9 +3043,10 @@ function asignarDiaBoyle(numDia, val){
   }
   // Cerrar modal de cambio de día
   document.getElementById('mo-cambiardia').classList.remove('open');
-  // Guardar el cambio
+  // Guardar el cambio con semana específica del día
+  var semParaEste = (_cdSemTemp && _cdSemTemp !== ST.sem && numDia >= ST.dia) ? _cdSemTemp : getSemDia(numDia)||ST.sem||1;
   if(!valReal) delete ST.diaBoyle[numDia];
-  else ST.diaBoyle[numDia]=valReal;
+  else setDiaBoyleVal(numDia, valReal, semParaEste);
   // Si se asigna D4, la siguiente semana sube automáticamente
   if(valReal==='D4'){
     // Buscar siguiente día de entreno y sugerir semana+1 en el recálculo
@@ -3043,7 +3077,7 @@ function calcularRecalculo(desde, diaBoyleAsignado){
   function getTipo(dB){return dB&&dB!=='Descanso'?'E':'D';}
   function getDBAnt(d){
     if(d<1||d>12) return null;
-    return ST.diaBoyle&&ST.diaBoyle[d]!==undefined?ST.diaBoyle[d]:CICLO[d-1].b;
+    return getDiaBoyleVal(d)||CICLO[d-1].b;
   }
 
   var tipoDesde=getTipo(diaBoyleAsignado);
@@ -3060,7 +3094,7 @@ function calcularRecalculo(desde, diaBoyleAsignado){
     // Días bloqueados con registros reales
     var tieneRegistro=Object.keys(ST.sets||{}).some(function(k){return k.startsWith('d'+d+'_');});
     if(tieneRegistro){
-      var dBExist=ST.diaBoyle&&ST.diaBoyle[d]!==undefined?ST.diaBoyle[d]:c.b;
+      var dBExist=getDiaBoyleVal(d)||c.b;
       var tipoExist=getTipo(dBExist);
       if(tipoExist===tipoActual)rachaActual++;else{rachaActual=1;tipoActual=tipoExist;}
       if(dBExist&&dBExist!=='Descanso')nextIdx=(orden.indexOf(dBExist)+1)%4;
@@ -3137,8 +3171,8 @@ function confirmarRecalculo(){
   if(!ST.diaBoyle) ST.diaBoyle={};
   _recalcPendiente.propuesta.forEach(function(p){
     if(p.locked) return;
-    if(!p.dB||p.dB==='Descanso') ST.diaBoyle[p.d]='Descanso';
-    else ST.diaBoyle[p.d]=p.dB;
+    if(!p.dB||p.dB==='Descanso') setDiaBoyleVal(p.d,'Descanso',p.sem||ST.sem);
+    else setDiaBoyleVal(p.d,p.dB,p.sem||ST.sem);
   });
   _recalcPendiente=null;
   save();
@@ -3580,6 +3614,14 @@ function startRestTimer(ej) {
 function finalizarSesion(){
   var dB=getDiaBoyle();
   if(!dB){alert('Día de descanso — no hay sesión que registrar.');return;}
+  // Validar que hay sets con peso real registrados
+  var tieneSetReal=Object.keys(ST.sets||{}).some(function(k){
+    if(!k.startsWith('d'+ST.dia+'_')) return false;
+    return (ST.sets[k]||[]).some(function(s){return s&&(s.p>0||s.r>0);});
+  });
+  if(!tieneSetReal){
+    if(!confirm('No hay ejercicios registrados para hoy. ¿Quieres registrar la sesión igualmente?')) return;
+  }
   var hoy=new Date().toISOString().slice(0,10);
   var fase=getFaseActual(ST.sem);
   var semEnFase=getSemEnFase(ST.sem);
@@ -4253,7 +4295,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v67';
+const APP_VERSION='v68';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){

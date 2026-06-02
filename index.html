@@ -10,8 +10,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v63</title>
-<link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<title>Entreno Boyle v65</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -109,7 +110,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v63"
+      version: "v65"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -356,7 +357,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=63', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=65', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -2361,9 +2362,12 @@ function renderBoyleContenido(){
       +'<div class="card-lbl">📅 Veces realizado ('+diaKey+')</div>';
     html+=historialDia.map(function(h){
       var varTag=h.variacion?'<span style="font-size:10px;background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 6px;margin-left:4px">variación</span>':'';
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:.5px solid var(--border)">'
+      return '<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between">'
         +'<div><span style="font-size:13px;font-weight:600;color:var(--text)">'+h.fecha+'</span>'+varTag+'</div>'
         +'<span style="font-size:11px;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:1px 8px">'+h.fase+' S'+h.semana+'</span>'
+        +'</div>'
+        +(h.ejercicios?'<div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4">'+h.ejercicios+'</div>':'')
         +'</div>';
     }).join('');
     html+='</div>';
@@ -2513,11 +2517,16 @@ function getHistorialDiaBoyle(diaKey, fase){
     var h=hist[fecha];
     if(!h||!h.completado) return;
     if(h.diaBoyleReal===diaKey){
+      var ejsResumen=(h.ejerciciosRealizados||[]).map(function(e){
+        var mejorSet=(e.sets||[]).reduce(function(mx,s){return(s.p||0)>(mx.p||0)?s:mx;},{p:0});
+        return e.ej+(mejorSet.p>0?' ('+mejorSet.p+'kg×'+mejorSet.r+')':'');
+      }).join(', ');
       resultado.push({
         fecha:fecha,
         fase:h.fase||'—',
         semana:h.semana||'—',
         variacion:h.variacion||false,
+        ejercicios:ejsResumen,
       });
     }
   });
@@ -3012,70 +3021,69 @@ function getDiaBoyleLabel(dB, sem){
 function calcularRecalculo(desde, diaBoyleAsignado){
   var resultado=[];
   var orden=['D1','D2','D3','D4'];
-  var idxActual = diaBoyleAsignado&&diaBoyleAsignado!=='Descanso' ? orden.indexOf(diaBoyleAsignado) : -1;
-  var nextIdx = (idxActual+1) % 4;
+  var idxActual=diaBoyleAsignado&&diaBoyleAsignado!=='Descanso'?orden.indexOf(diaBoyleAsignado):-1;
+  if(idxActual<0) idxActual=3; // si Descanso, el siguiente será D1
+  var nextIdx=(idxActual+1)%4;
 
-  // Calcular racha inicial mirando los días anteriores a 'desde'
-  function getTipo(dB){ return dB&&dB!=='Descanso'?'E':'D'; }
+  function getTipo(dB){return dB&&dB!=='Descanso'?'E':'D';}
   function getDBAnt(d){
     if(d<1||d>12) return null;
-    return ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : CICLO[d-1].b;
+    return ST.diaBoyle&&ST.diaBoyle[d]!==undefined?ST.diaBoyle[d]:CICLO[d-1].b;
   }
 
-  var tipoDesde = getTipo(diaBoyleAsignado);
-  // Mirar hasta 2 días atrás para calcular racha real
-  var rachaActual = 1;
-  if(getTipo(getDBAnt(desde-1))===tipoDesde){
-    rachaActual=2;
-  }
-  var tipoActual = tipoDesde;
+  var tipoDesde=getTipo(diaBoyleAsignado);
+  // Calcular racha real mirando atrás
+  var rachaActual=1;
+  if(desde>=2&&getTipo(getDBAnt(desde-1))===tipoDesde) rachaActual=2;
+  var tipoActual=tipoDesde;
+  var semParaEtiqueta=ST.sem||1;
+  if(diaBoyleAsignado==='D4') semParaEtiqueta=Math.min(12,semParaEtiqueta+1);
 
-  var semParaEtiqueta = ST.sem||1;
-  // Si el día asignado es D4, la siguiente semana empieza desde D1
-  if(diaBoyleAsignado==='D4') semParaEtiqueta = Math.min(12, semParaEtiqueta+1);
-
-  for(var d=desde+1; d<=12; d++){
+  for(var d=desde+1;d<=12;d++){
     var c=CICLO[d-1];
 
-    // Días con registros reales — respetar pero actualizar racha
-    var tieneRegistro = Object.keys(ST.sets||{}).some(function(k){ return k.startsWith('d'+d+'_'); });
+    // Días bloqueados con registros reales
+    var tieneRegistro=Object.keys(ST.sets||{}).some(function(k){return k.startsWith('d'+d+'_');});
     if(tieneRegistro){
-      var dBExist = ST.diaBoyle&&ST.diaBoyle[d]!==undefined ? ST.diaBoyle[d] : c.b;
-      var tipoExist = getTipo(dBExist);
-      if(tipoExist===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoExist;}
-      if(dBExist&&dBExist!=='Descanso') nextIdx=(orden.indexOf(dBExist)+1)%4;
-      resultado.push({d:d, dB:dBExist, locked:true});
+      var dBExist=ST.diaBoyle&&ST.diaBoyle[d]!==undefined?ST.diaBoyle[d]:c.b;
+      var tipoExist=getTipo(dBExist);
+      if(tipoExist===tipoActual)rachaActual++;else{rachaActual=1;tipoActual=tipoExist;}
+      if(dBExist&&dBExist!=='Descanso')nextIdx=(orden.indexOf(dBExist)+1)%4;
+      resultado.push({d:d,dB:dBExist,locked:true,sem:semParaEtiqueta});
       continue;
     }
 
-    var esNoche = c.t==='Noche';
-    var puedoEntrenar = !esNoche && (c.e==='Alta' || c.e==='Media');
-
+    var esNoche=c.t==='Noche';
+    var esBaja=c.e==='Baja';
+    var puedoEntrenar=!esNoche&&!esBaja;
     var asignar;
 
-    if(tipoActual==='E' && rachaActual>=2){
+    if(rachaActual>=2&&tipoActual==='E'){
+      // OBLIGATORIO descanso — 2 entrenos seguidos
       asignar='Descanso';
-    } else if(tipoActual==='D' && rachaActual>=2 && puedoEntrenar){
+    } else if(rachaActual>=2&&tipoActual==='D'&&puedoEntrenar){
+      // OBLIGATORIO entreno — 2 descansos seguidos y podemos
       asignar=orden[nextIdx];
       if(asignar==='D4') semParaEtiqueta=Math.min(12,semParaEtiqueta+1);
       nextIdx=(nextIdx+1)%4;
-    } else if(tipoActual==='D' && rachaActual>=2 && !puedoEntrenar){
+    } else if(rachaActual>=2&&tipoActual==='D'&&!puedoEntrenar){
+      // 2 descansos pero no podemos entrenar — descanso forzado
+      // Marcar para que el siguiente día disponible sea obligatorio entreno
       asignar='Descanso';
-    } else if(esNoche || c.e==='Baja'){
+    } else if(esNoche||esBaja){
       asignar='Descanso';
-    } else if(puedoEntrenar && c.e==='Alta'){
+    } else if(c.e==='Alta'){
       asignar=orden[nextIdx];
       if(asignar==='D4') semParaEtiqueta=Math.min(12,semParaEtiqueta+1);
       nextIdx=(nextIdx+1)%4;
     } else {
+      // Media y no forzado → descanso preferente
       asignar='Descanso';
     }
 
-    // Actualizar racha
-    var tipoAsig = getTipo(asignar);
-    if(tipoAsig===tipoActual) rachaActual++; else{rachaActual=1;tipoActual=tipoAsig;}
-
-    resultado.push({d:d, dB:asignar, locked:false, sem:semParaEtiqueta});
+    var tipoAsig=getTipo(asignar);
+    if(tipoAsig===tipoActual)rachaActual++;else{rachaActual=1;tipoActual=tipoAsig;}
+    resultado.push({d:d,dB:asignar,locked:false,sem:semParaEtiqueta});
   }
   return resultado;
 }
@@ -4230,7 +4238,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v63';
+const APP_VERSION='v65';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
@@ -4243,6 +4251,7 @@ function exportarDrive(){
     if(resp.error){status.textContent='Error: '+resp.error;btn.disabled=false;return;}
     window._gdriveToken=resp.access_token; // cachear para exportarExcelDrive
     subirDrive(resp.access_token,btn,status);
+    actualizarCabeceraSesiones();
   }});
   client.requestAccessToken();
 }
@@ -4379,17 +4388,18 @@ async function fetchGarminAuto(manual) {
 
     // Siempre sobreescribir — Garmin actualiza datos progresivamente durante el día
     if (!ST.garminHist) ST.garminHist = {};
+    var diasAntes=Object.keys(ST.garminHist);
     Object.assign(ST.garminHist, data.dias);
     if (!ST.garmin) ST.garmin = {};
     Object.assign(ST.garmin, data.dias);
     // Append días nuevos a Google Sheets Garmin
-    var hoy2=new Date().toISOString().slice(0,10);
-    if(data.dias&&data.dias[hoy2]){
-      var g2=data.dias[hoy2];
+    Object.keys(data.dias||{}).forEach(function(fecha){
+      if(diasAntes.indexOf(fecha)>=0) return; // ya existía, no duplicar
+      var g2=data.dias[fecha];
       var f2=g2.fuerza||null;
       var acts2=(g2.actividades||[]).map(function(a){return a.nombre+'('+a.duracion_min+'min)';}).join(' | ');
-      sheetsAppend('Garmin',[hoy2,g2.pasos||0,g2.calorias_dia||0,g2.calorias_activas||0,g2.distancia_km||0,g2.minutos_activos||0,g2.fc_reposo||'',g2.estres_medio||'',g2.sueno_total_min||0,g2.sueno_profundo_min||0,g2.sueno_ligero_min||0,g2.sueno_rem_min||0,g2.sueno_puntuacion||'',g2.body_battery_max||'',g2.body_battery_min||'',acts2,f2?f2.nombre:'',f2?f2.duracion_min:'',f2?f2.calorias:'',f2?f2.fc_media:'',f2?f2.fc_max:'']).catch(function(){});
-    }
+      sheetsAppend('Garmin',[fecha,g2.pasos||0,g2.calorias_dia||0,g2.calorias_activas||0,g2.distancia_km||0,g2.minutos_activos||0,g2.fc_reposo||'',g2.estres_medio||'',g2.sueno_total_min||0,g2.sueno_profundo_min||0,g2.sueno_ligero_min||0,g2.sueno_rem_min||0,g2.sueno_puntuacion||'',g2.body_battery_max||'',g2.body_battery_min||'',acts2,f2?f2.nombre:'',f2?f2.duracion_min:'',f2?f2.calorias:'',f2?f2.fc_media:'',f2?f2.fc_max:'']).catch(function(){});
+    });
     // Guardar con hora
     var ahora = new Date();
     var horaLocal = ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
@@ -4470,8 +4480,20 @@ function cargarSetsFirebase(){
 // ══════════════════════════════════════
 var _sheetsId = null; // ID de la Google Sheet de Entreno Boyle
 
+async function actualizarCabeceraSesiones(){
+  var token=await getGdriveToken();
+  if(!token) return;
+  var sheetId=await getSheetsId();
+  if(!sheetId) return;
+  var range=encodeURIComponent('Sesiones!A1:P1');
+  await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+'?valueInputOption=USER_ENTERED',{
+    method:'PUT',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({values:[['Fecha','Día Ciclo','Día Boyle Real','Día Boyle Prog','Fase','Semana','Sem en Fase','Variación','Ejs Sustituidos','Ejercicios Realizados','Duración (min)','Duración (hms)','Descanso','Fatiga','Sueño','Origen']]})
+  }).catch(function(){});
+}
+
 async function getSheetsId(){
-  if(_sheetsId) return _sheetsId;
   var token=await getGdriveToken();
   if(!token) return null;
   // Buscar en todo Drive sin restricción de carpeta

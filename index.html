@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v61</title>
+<title>Entreno Boyle v62</title>
 <link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -70,6 +70,8 @@ function initFirebase() {
           });
         }
         suscribirCambiosRemoto();
+        // Cargar sets históricos desde subcolección Firebase
+        setTimeout(cargarSetsFirebase, 2000);
       } else {
         fbUser = null;
         fbReady = false;
@@ -107,7 +109,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v61"
+      version: "v62"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -354,7 +356,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=61', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=62', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -2696,9 +2698,20 @@ function guardar(){
     ST.sets[key][mSer]=setData;
   }
   if(!ST.fechaSesiones) ST.fechaSesiones={};
-  ST.fechaSesiones[ST.dia]=new Date().toISOString().slice(0,10);
+  var fechaHoy=new Date().toISOString().slice(0,10);
+  ST.fechaSesiones[ST.dia]=fechaHoy;
   save();
-  // Append a Google Sheets si está disponible
+  // Guardar en Firebase sets subcollection (permanente)
+  var serieIdx=document.getElementById('m-all').checked?'T':mSer+1;
+  if(document.getElementById('m-all').checked){
+    var pr2=PROG[(ST.sem-1)%12];
+    var info2=EJ_INFO[ejClean]||{};
+    var num2=info2.tipo==='fijo'?(parseInt(info2.series)||3):pr2.n;
+    for(var si=0;si<num2;si++) saveSetFirebase(ST.dia,ejClean,si+1,setData,fechaHoy);
+  } else {
+    saveSetFirebase(ST.dia,ejClean,mSer+1,setData,fechaHoy);
+  }
+  // Append a Google Sheets
   var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
   appendSetToSheets(ST.dia, ejClean, serie, peso, reps, rpe, nota);
   document.getElementById('mo-set').classList.remove('open');
@@ -4136,7 +4149,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v61';
+const APP_VERSION='v62';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
@@ -4288,6 +4301,14 @@ async function fetchGarminAuto(manual) {
     Object.assign(ST.garminHist, data.dias);
     if (!ST.garmin) ST.garmin = {};
     Object.assign(ST.garmin, data.dias);
+    // Append días nuevos a Google Sheets Garmin
+    var hoy2=new Date().toISOString().slice(0,10);
+    if(data.dias&&data.dias[hoy2]){
+      var g2=data.dias[hoy2];
+      var f2=g2.fuerza||null;
+      var acts2=(g2.actividades||[]).map(function(a){return a.nombre+'('+a.duracion_min+'min)';}).join(' | ');
+      sheetsAppend('Garmin',[hoy2,g2.pasos||0,g2.calorias_dia||0,g2.calorias_activas||0,g2.distancia_km||0,g2.minutos_activos||0,g2.fc_reposo||'',g2.estres_medio||'',g2.sueno_total_min||0,g2.sueno_profundo_min||0,g2.sueno_ligero_min||0,g2.sueno_rem_min||0,g2.sueno_puntuacion||'',g2.body_battery_max||'',g2.body_battery_min||'',acts2,f2?f2.nombre:'',f2?f2.duracion_min:'',f2?f2.calorias:'',f2?f2.fc_media:'',f2?f2.fc_max:'']).catch(function(){});
+    }
     // Guardar con hora
     var ahora = new Date();
     var horaLocal = ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
@@ -4318,7 +4339,53 @@ async function fetchGarminAuto(manual) {
 }
 
 // ══════════════════════════════════════
-// GOOGLE SHEETS — APPEND INCREMENTAL
+// SETS PERMANENTES — FIREBASE SEPARADO
+// ══════════════════════════════════════
+function saveSetFirebase(numDia, ej, serie, setData, fechaSesion){
+  if(!fbReady||!fbUser) return;
+  var fecha=fechaSesion||new Date().toISOString().slice(0,10);
+  var fase=getFaseActual(ST.sem);
+  var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'—');
+  var docId=fecha+'_d'+numDia+'_'+ej.replace(/[^a-zA-Z0-9]/g,'_')+'_s'+serie;
+  fbDb.collection('usuarios').doc(fbUser.uid)
+    .collection('sets').doc(docId)
+    .set({
+      fecha:fecha,
+      diaCiclo:numDia,
+      diaBoyle:dB,
+      fase:fase,
+      semana:ST.sem,
+      semEnFase:getSemEnFase(ST.sem),
+      ejercicio:ej,
+      serie:serie,
+      peso:setData.p||0,
+      reps:setData.r||0,
+      rpe:setData.rpe||0,
+      nota:setData.n||'',
+      timestamp:Date.now()
+    }).catch(function(e){console.warn('saveSetFirebase error:',e);});
+}
+
+// Cargar sets históricos desde Firebase al arrancar
+function cargarSetsFirebase(){
+  if(!fbReady||!fbUser) return;
+  fbDb.collection('usuarios').doc(fbUser.uid)
+    .collection('sets').orderBy('fecha').get()
+    .then(function(snap){
+      if(snap.empty) return;
+      snap.forEach(function(doc){
+        var d=doc.data();
+        if(!d||!d.ejercicio) return;
+        var key='d'+d.diaCiclo+'_'+d.ejercicio;
+        if(!ST.sets[key]) ST.sets[key]=[];
+        var idx=(d.serie||1)-1;
+        ST.sets[key][idx]={p:d.peso||0,r:d.reps||0,rpe:d.rpe||0,n:d.nota||''};
+      });
+      save();
+      renders.entreno();
+      console.log('Sets cargados desde Firebase:',snap.size);
+    }).catch(function(e){console.warn('cargarSetsFirebase error:',e);});
+}
 // ══════════════════════════════════════
 var _sheetsId = null; // ID de la Google Sheet de Entreno Boyle
 
@@ -4368,15 +4435,19 @@ async function appendSetToSheets(numDia, ej, serie, peso, reps, rpe, nota){
 
 // Llamar al finalizar sesión
 async function appendSesionToSheets(sesionData){
+  if(!sesionData) return;
+  var ejsStr=(sesionData.ejerciciosRealizados||[]).map(function(e){return e.ej;}).join(', ');
   var values=[
     sesionData.fecha||'',
     sesionData.diaCiclo||'',
     sesionData.diaBoyleReal||'—',
+    sesionData.diaBoyleProg||'—',
     sesionData.fase||'',
     'Sem '+(sesionData.semana||ST.sem),
-    'Sem '+getSemEnFase(sesionData.semana||ST.sem)+' de 3',
-    '',
-    '',
+    'Sem '+(sesionData.semEnFase||getSemEnFase(sesionData.semana||ST.sem))+' de 3',
+    sesionData.variacion?'Sí':'No',
+    (sesionData.ejsSustituidos||[]).join(', '),
+    ejsStr,
     sesionData.duracion_min||'',
     '',
     (ST.sliders||{}).d||'',

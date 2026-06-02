@@ -4561,13 +4561,13 @@ async function appendSesionToSheets(sesionData){
   sheetsAppend('Sesiones', values).catch(function(){});
 }
 // ══════════════════════════════════════
-const GITHUB_TOKEN = 'TU_TOKEN_AQUI'; // Se sobreescribe con ST.githubToken si existe
+const GITHUB_TOKEN = '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'; // Se sobreescribe con ST.githubToken si existe
 const GITHUB_REPO  = 'shumb71/Boyle';
 const GITHUB_WORKFLOW = 'garmin_sync.yml';
 
 async function triggerGarminSync(){
   var token = (ST.githubToken||GITHUB_TOKEN||'').trim();
-  if(!token||token==='TU_TOKEN_AQUI'){
+  if(!token||token==='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'){
     alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "tu_token";\nsave();');
     return;
   }

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v65</title>
+<title>Entreno Boyle v66</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -110,7 +110,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v65"
+      version: "v66"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -357,7 +357,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=65', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=66', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -4238,7 +4238,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v65';
+const APP_VERSION='v66';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
@@ -4561,14 +4561,14 @@ async function appendSesionToSheets(sesionData){
   sheetsAppend('Sesiones', values).catch(function(){});
 }
 // ══════════════════════════════════════
-const GITHUB_TOKEN = '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'; // Se sobreescribe con ST.githubToken si existe
+const GITHUB_TOKEN = 'TU_TOKEN_AQUI'; // Se sobreescribe con ST.githubToken si existe
 const GITHUB_REPO  = 'shumb71/Boyle';
 const GITHUB_WORKFLOW = 'garmin_sync.yml';
 
 async function triggerGarminSync(){
   var token = (ST.githubToken||GITHUB_TOKEN||'').trim();
-  if(!token||token==='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'){
-    alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "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";\nsave();');
+  if(!token||token==='TU_TOKEN_AQUI'){
+    alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "tu_token";\nsave();');
     return;
   }
   var btn=document.getElementById('btn-trigger-garmin');
@@ -4780,20 +4780,34 @@ function calSelDia(fecha){
     }
   }
   if(!htmlE) htmlE=`<div style="color:var(--text3);font-size:12px;margin-top:4px">Sin entreno registrado este día</div>`;
-  // Info de historialFechas si existe
+  // Info de historialFechas si existe — es la fuente principal
   var histSes=ST.historialFechas&&ST.historialFechas[fecha];
   if(histSes&&histSes.completado){
     var varTag=histSes.variacion?'<span style="background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">⚠ Variación</span>':'';
     var sustHtml=histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'';
-    // Ejercicios realizados con pesos
+    // Ejercicios de historialFechas
     var ejsHtml='';
     if(histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){
       ejsHtml='<div style="margin-top:6px">';
       histSes.ejerciciosRealizados.forEach(function(e){
         var setsStr=(e.sets||[]).map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
-        ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+e.ej+'</span> — '+setsStr+'</div>';
+        ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+e.ej+'</span>'+(setsStr?' — '+setsStr:'')+'</div>';
       });
       ejsHtml+='</div>';
+    } else if(diaNum){
+      // Fallback: usar sets de ST.sets si historial no tiene ejercicios
+      var sesKeys2=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
+      if(sesKeys2.length){
+        ejsHtml='<div style="margin-top:6px">';
+        sesKeys2.forEach(function(k){
+          var ej=k.replace(/^d\d+_/,'');
+          var sets=(ST.sets[k]||[]).filter(Boolean);
+          if(!sets.length) return;
+          var setsStr=sets.map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
+          ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+ej+'</span> — '+setsStr+'</div>';
+        });
+        ejsHtml+='</div>';
+      }
     }
     var fechaSafe=fecha.replace(/'/g,"\\'");
     htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
@@ -4804,7 +4818,7 @@ function calSelDia(fecha){
       +varTag+'</div>'
       +'<button onclick="abrirEditarSesion(\''+fechaSafe+'\')" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">✏ Editar</button>'
       +'</div>'
-      +sustHtml+ejsHtml+'</div>'+htmlE;
+      +sustHtml+ejsHtml+'</div>';
   }
   // Limpiar antes de rellenar para forzar re-render
   const garminEl = document.getElementById('cal-det-garmin');

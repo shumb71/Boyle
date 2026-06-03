@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v72</title>
+<title>Entreno Boyle v74</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -119,7 +119,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v72"
+      version: "v74"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -763,8 +763,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="bkbtn" id="btn-drive" style="background:#1a6f3a;color:#fff;border-color:#1a6f3a;border:none" onclick="exportarDrive()"><i class="ti ti-brand-google-drive" aria-hidden="true"></i> Guardar en Google Drive</button>
       <button class="bkbtn" style="background:var(--blue);color:#fff;border:none" onclick="exportarExcelDrive(false)"><i class="ti ti-table-export" aria-hidden="true"></i> Excel Entreno → Google Drive</button>
       <div id="drive-status" style="font-size:12px;color:var(--text2);margin-top:.25rem;display:none"></div>
-      <button class="bkbtn" style="background:#0f4c81;color:#fff;border:none" onclick="sincronizarDrive()"><i class="ti ti-cloud-download"></i> Sincronizar desde Drive</button>
-      <div id="sync-status" style="font-size:12px;margin-top:.25rem;display:none;border-radius:var(--rs);padding:8px 12px"></div>
       <button class="bkbtn bkimp" onclick="document.getElementById('imp-input').click()"><i class="ti ti-upload" aria-hidden="true"></i> Importar datos desde JSON</button>
       <input type="file" id="imp-input" accept=".json" style="display:none" onchange="importar(this)">
     </div>
@@ -2744,6 +2742,8 @@ function guardar(){
   var rpe=parseInt(document.getElementById('m-rpe').value)||7;
   var nota=document.getElementById('m-n').value||'';
   var setData={p:peso,r:reps,rpe:rpe,n:nota};
+  var varActiva=ST.variantes&&ST.variantes[ejClean];
+  if(varActiva&&varActiva!==ejClean) setData.v=varActiva;
   if(document.getElementById('m-all').checked){
     var pr=PROG[(ST.sem-1)%12];
     var info=EJ_INFO[ejClean]||{};
@@ -4398,7 +4398,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v72';
+const APP_VERSION='v74';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){
@@ -4925,16 +4925,24 @@ function calSelDia(fecha){
           const rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
           return`<span style="color:${rpeCol}">S${i+1}: ${s.p}kg×${s.r} R${s.rpe}</span>`;
         }).join(' · ');
+        // Variante: primero del set, luego ST.variantes, luego nombre base
+        const varMostrar=sets[0]&&sets[0].v?sets[0].v:(ST.variantes&&ST.variantes[ej]&&ST.variantes[ej]!==ej?ST.variantes[ej]:ej);
+        const varTag=varMostrar!==ej?`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px;margin-left:4px">${varMostrar}</span>`:'';
         return `<div class="prow" style="flex-direction:column;align-items:flex-start;gap:2px">
-          <span style="font-size:12px;font-weight:600;color:${ejColor}">${typeof varianteEj==='function'?varianteEj(ej):ej}</span>
+          <span style="font-size:12px;font-weight:600;color:${ejColor}">${ej}${varTag}</span>
           <span style="font-size:11px">${setsStr}</span>
         </div>`;
       }).filter(Boolean).join('');
-      // Buscar qué dia Boyle fue ese día
-      var dBoyle=ST.diaBoyle&&ST.diaBoyle[diaNum]?ST.diaBoyle[diaNum]:CICLO[(parseInt(diaNum)-1)%12].b;
-      var nomBoyle=dBoyle?(SES_NOM[dBoyle]||dBoyle):'';
+      // Dia Boyle y semana — ST.diaBoyle[diaNum] puede ser objeto {b,sem} o string legacy
+      var dBraw=ST.diaBoyle&&ST.diaBoyle[diaNum]!=null?ST.diaBoyle[diaNum]:(CICLO[(parseInt(diaNum)-1)%12]||{});
+      var dBkey=typeof dBraw==='object'?(dBraw.b||''):dBraw;
+      var dBsem=typeof dBraw==='object'&&dBraw.sem?dBraw.sem:(ST.sem||1);
+      var nomBoyle=dBkey?(BOYLE_DIAS[dBkey]?BOYLE_DIAS[dBkey].n:dBkey):'';
+      var semBoyle=dBsem?'S'+dBsem:'';
+      var badgesBoyle=(nomBoyle?'<span style="color:var(--blue-text);background:var(--blue-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+nomBoyle+'</span>':'')+
+        (semBoyle?' <span style="color:var(--orange-text);background:var(--orange-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+semBoyle+'</span>':'');
       if(ejsHTML) htmlE=`<div>
-        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${nomBoyle?' · <span style="color:var(--blue-text);background:var(--blue-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+nomBoyle+'</span>':''}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${badgesBoyle?' · '+badgesBoyle:''}</div>
         ${ejsHTML}
       </div>`;
     }
@@ -5394,8 +5402,7 @@ function mostrarSelectorBackups(archivos,token){
     (function(id,fs){
       row.onclick=function(){
         document.getElementById('mo-backups').classList.remove('open');
-        setSyncPanel('⬇️','Cargando backup...','Drive: '+fs,'blue');
-        cargarDesdeDrive(token,id,fs);
+        setSyncPanel('ℹ️','Carga desde Drive desactivada','Usa Firebase para sincronizar entre dispositivos','blue');
       };
     })(archivo.id,fechaStr);
 
@@ -5403,27 +5410,6 @@ function mostrarSelectorBackups(archivos,token){
   });
 
   document.getElementById('mo-backups').classList.add('open');
-}
-
-function cargarDesdeDrive(token,fileId,fechaStr){
-  fetch('https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media',
-    {headers:{Authorization:'Bearer '+token}})
-  .then(function(r){return r.json();})
-  .then(function(data){
-    ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};
-  // Restaurar variantes custom
-  if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}
-    if(!ST.eval)ST.eval=[];
-    save();
-    renders.hoy();
-    updateTopbarSem();
-    checkBackupReminder();
-    setSyncPanel('✅','Datos actualizados desde Drive','Sincronizado: '+fechaStr,'green');
-  })
-  .catch(function(){
-    setSyncPanel('⚠️','Error al cargar desde Drive','Intenta de nuevo mas tarde','orange');
-  });
 }
 
 function subirSilencioso(token){
@@ -5708,82 +5694,6 @@ renders.historial=function(){
 // ══════════════════════════════════════
 // SINCRONIZAR DESDE DRIVE
 // ══════════════════════════════════════
-function sincronizarDrive(){
-  var syncEl=document.getElementById('sync-status');
-  syncEl.style.display='block';
-  syncEl.style.background='var(--blue-bg)';
-  syncEl.style.color='var(--blue-text)';
-  syncEl.textContent='Conectando con Google Drive...';
-  if(typeof google==='undefined'||!google.accounts){
-    syncEl.style.background='var(--red-bg)';syncEl.style.color='var(--red-text)';
-    syncEl.textContent='Error: libreria Google no cargada.';return;
-  }
-  var client=google.accounts.oauth2.initTokenClient({
-    client_id:GDRIVE_CLIENT_ID,scope:GDRIVE_SCOPE,
-    callback:function(resp){
-      if(resp.error){syncEl.textContent='Error: '+resp.error;return;}
-      driveTokenCached=resp.access_token;
-      window._gdriveToken=resp.access_token;
-      leerDesdeD(resp.access_token,syncEl);
-    }
-  });
-  client.requestAccessToken();
-}
-
-function leerDesdeD(token,syncEl){
-  syncEl.textContent='Buscando carpeta Entreno PRO...';
-  fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',
-    {headers:{Authorization:'Bearer '+token}})
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data.files||!data.files.length){
-      syncEl.style.background='var(--orange-bg)';syncEl.style.color='var(--orange-text)';
-      syncEl.textContent='No se encontro carpeta "Entreno PRO". Haz primero un backup.';return;
-    }
-    var folderId=data.files[0].id;
-    syncEl.textContent='Buscando backups JSON...';
-    return fetch('https://www.googleapis.com/drive/v3/files?q=%27'+folderId+'%27+in+parents+and+name+contains+%22entreno_jose%22+and+mimeType%3D%22application%2Fjson%22+and+trashed%3Dfalse&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime)&pageSize=5',
-      {headers:{Authorization:'Bearer '+token}});
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data.files||!data.files.length){
-      syncEl.style.background='var(--orange-bg)';syncEl.style.color='var(--orange-text)';
-      syncEl.textContent='No hay backups JSON en Drive. Exporta uno primero.';return;
-    }
-    var archivo=data.files[0];
-    var fechaDrive=new Date(archivo.modifiedTime);
-    var fechaLocal=ST.ultimoBackup?new Date(ST.ultimoBackup):null;
-    if(fechaLocal&&fechaDrive<=fechaLocal){
-      syncEl.style.background='var(--green-bg)';syncEl.style.color='var(--green-text)';
-      syncEl.textContent='Tus datos locales ya son los mas recientes.';return;
-    }
-    var fechaStr=fechaDrive.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
-    if(!confirm('Drive tiene un backup mas reciente:\n'+archivo.name+'\nFecha: '+fechaStr+'\n\nCargar estos datos?')){
-      syncEl.textContent='Cancelado.';return;
-    }
-    syncEl.textContent='Descargando desde Drive...';
-    return fetch('https://www.googleapis.com/drive/v3/files/'+archivo.id+'?alt=media',
-      {headers:{Authorization:'Bearer '+token}});
-  })
-  .then(function(r){if(r) return r.json();})
-  .then(function(data){
-    if(!data) return;
-    ST=Object.assign(ST,data);
-    if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};
-  // Restaurar variantes custom
-  if(ST.variantesCustom){Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});}
-    if(!ST.eval)ST.eval=[];
-    save();renders.hoy();checkBackupReminder();
-    syncEl.style.background='var(--green-bg)';syncEl.style.color='var(--green-text)';
-    syncEl.textContent='Datos sincronizados desde Drive correctamente.';
-  })
-  .catch(function(err){
-    syncEl.style.background='var(--red-bg)';syncEl.style.color='var(--red-text)';
-    syncEl.textContent='Error: '+err.message;
-  });
-}
-
 // ══════════════════════════════════════
 // INIT EXTRAS
 // ══════════════════════════════════════

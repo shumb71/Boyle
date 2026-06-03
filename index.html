@@ -2888,27 +2888,62 @@ function verDiaBoyle(d){
   if(!dia) return;
   var el=document.getElementById('p-dia-detail');
   if(!el) return;
-  var html='<div style="margin-bottom:.75rem">' +
-    '<span style="font-size:11px;font-weight:700;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:2px 10px">'+dia.tipo+'</span>' +
-    '<div style="font-size:13px;color:var(--text2);margin-top:.4rem;line-height:1.5">'+dia.desc+'</div></div>' +
-    '<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.75rem;line-height:1.5">🔥 <strong>Cal:</strong> '+dia.calentamiento+'</div>';
-  dia.pares.forEach(function(par){
-    html+='<div style="margin-bottom:.6rem;padding:.6rem .75rem;background:var(--bg2);border-radius:var(--rs);border:.5px solid var(--border)">';
-    html+='<div style="font-size:11px;font-weight:700;color:var(--blue-text);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.04em">'+par.lbl+'</div>';
-    par.ejs.forEach(function(ej){
-      var info=EJ_INFO[ej]||{};
-      var vars=VARIANTES[ej]||[];
-      html+='<div style="padding:.3rem 0;border-bottom:.5px solid var(--border)">';
-      html+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+ej+'</div>';
+
+  // Fase y semana actuales
+  var fase=getFaseActual(ST.sem);
+  var semEnFase=getSemEnFase(ST.sem);
+  var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
+  var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
+  var faseNoms={F1:'F1 — 3x8 · 60-77%',F2:'F2 — 4-6x3 · 90-97%',F3:'F3 — 3-5x5 · 80-87%',F4:'F4 — 4-6x3 · 90-97%'};
+  var faseTempo={F1:' · Tempo 3/1/1',F2:'',F3:' · Tempo 3/1/1',F4:''};
+  // Ejercicios de EJS_FASES para esta fase y dia
+  var ejsFase=(EJS_FASES[fase]&&EJS_FASES[fase][d])||[];
+
+  var html='';
+  // Banner fase
+  html+='<div style="background:'+faseBgs[fase]+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between">';
+  html+='<span style="font-size:11px;font-weight:700;color:'+faseTexts[fase]+'">'+faseNoms[fase]+faseTempo[fase]+'</span>';
+  html+='<span style="font-size:11px;color:'+faseTexts[fase]+'">Sem '+semEnFase+' de 3</span>';
+  html+='</div>';
+  // Tipo dia + desc
+  html+='<div style="margin-bottom:.5rem">';
+  html+='<span style="font-size:11px;font-weight:700;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:2px 10px">'+dia.tipo+'</span>';
+  html+='<div style="font-size:12px;color:var(--text2);margin-top:.4rem;line-height:1.5">'+dia.desc+'</div></div>';
+  // Calentamiento
+  html+='<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.6rem;line-height:1.5">🔥 <strong>Cal:</strong> '+dia.calentamiento+'</div>';
+  // Pares
+  dia.pares.forEach(function(par,pi){
+    var esBloqueTriset=par.tipo==='triset';
+    var colorPar=esBloqueTriset?'var(--blue-text)':'var(--green-text)';
+    var bgPar=esBloqueTriset?'var(--blue-bg)':'var(--green-bg)';
+    html+='<div style="margin-bottom:.6rem;border-radius:var(--rs);border:.5px solid var(--border);overflow:hidden">';
+    html+='<div style="background:'+bgPar+';padding:.35rem .75rem">';
+    html+='<span style="font-size:11px;font-weight:700;color:'+colorPar+';text-transform:uppercase;letter-spacing:.04em">'+par.lbl+'</span>';
+    html+='</div><div style="padding:.2rem .75rem">';
+    par.ejs.forEach(function(ejBase,ei){
+      // Ejercicio real de EJS_FASES (por posicion flat)
+      var idx=0;
+      for(var pp=0;pp<pi;pp++) idx+=dia.pares[pp].ejs.length;
+      idx+=ei;
+      var ejReal=ejsFase[idx]||ejBase;
+      var info=EJ_INFO[ejReal]||EJ_INFO[ejBase]||{};
+      var vars=VARIANTES[ejReal]||VARIANTES[ejBase]||[];
+      html+='<div style="padding:.35rem 0;border-bottom:.5px solid var(--border)">';
+      html+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+ejReal+'</div>';
+      if(ejReal!==ejBase) html+='<div style="font-size:10px;color:var(--text3)">patron: '+ejBase+'</div>';
       if(info.tecnica) html+='<div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4">'+info.tecnica+'</div>';
-      if(vars.length>1){
-        html+='<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">';
-        vars.slice(1).forEach(function(v){html+='<span style="font-size:10px;background:var(--bg3);color:var(--text2);border-radius:12px;padding:2px 8px">'+v+'</span>';});
+      if(vars.length>0){
+        html+='<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">';
+        vars.forEach(function(v,vi){
+          var esBase=vi===0;
+          html+='<span style="font-size:10px;background:'+(esBase?'var(--blue-bg)':'var(--bg3)')+';color:'+(esBase?'var(--blue-text)':'var(--text2)')+';border-radius:12px;padding:2px 7px">'+(esBase?'✓ ':'')+v+'</span>';
+        });
         html+='</div>';
       }
       html+='</div>';
     });
-    if(par.nota) html+='<div style="font-size:11px;color:var(--orange);margin-top:.3rem">📌 '+par.nota+'</div>';
+    html+='</div>';
+    if(par.nota) html+='<div style="font-size:11px;color:var(--orange);padding:.3rem .75rem;font-style:italic">📌 '+par.nota+'</div>';
     html+='</div>';
   });
   if(dia.notas) html+='<div style="font-size:12px;color:var(--text2);background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;line-height:1.5">💡 '+dia.notas+'</div>';
@@ -4391,7 +4426,7 @@ function confirmarCambioEj(el){
 }
 
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();exportarExcelDrive(true);}
-function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ciclo();renders.entreno();updateTopbarSem();}
+function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ciclo();renders.entreno();updateTopbarSem();if(_tabDiaActivo)verDiaBoyle(_tabDiaActivo);}
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';

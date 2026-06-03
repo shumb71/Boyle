@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v69</title>
+<title>Entreno Boyle v70</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -119,7 +119,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v69"
+      version: "v70"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -913,75 +913,78 @@ const BOYLE_FASES=[
   {id:'F4', n:'Fase 4 — Peaking 2',    desc:'4-6x3 al 90-97%. Segundo pico de intensidad.',      sems:'Sem 10-12',color:'var(--red-text)'},
 ];
 
-// PROGRAMA DE 4 DIAS BOYLE
+// PROGRAMA DE 4 DIAS BOYLE — fiel al Excel boyle24.xlsx (la biblia)
+// D1/D3: Linear, warm-up lineal, plyos lineales, chest pass + sprint
+// D2/D4: Multidireccional, warm-up multi-dir, lateral plyos, rotatory/overhead medball
+// Regla clave: SIEMPRE unilateral antes que bilateral dentro del mismo par
 const BOYLE_DIAS={
   D1:{
     n:'Dia 1', tipo:'Linear', color:'var(--blue)',
-    desc:'Explosive/Olympic lift + Hip dominante bilateral + Traccion vertical. Dias 1 y 3 son lineales.',
-    calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up LINEAR + Linear Plyos + Chest Pass Linear Sprint',
+    desc:'Explosive/Olympic lift · Core antirotacion (CHOP) · Press horizontal · Press vertical. Dias 1 y 3 son lineales.',
+    calentamiento:'LINEAR: Foam roll → Static stretch → Mobility/Activation → Warm-up lineal → Linear Plyos → Chest Pass + Sprint',
     pares:[
-      {lbl:'TRISET 1 — Explosivo + Core antirotacion + Movilidad',tipo:'triset',
-       ejs:['Hang Clean','Plancha antirotacion (Chop)','Hip hinge sin peso'],
-       descanso:90,nota:'Explosivo primero. Core y movilidad usan el descanso del SNC.'},
-      {lbl:'PAR 2 — Hip dominante bilateral + Press horizontal',tipo:'par',
-       ejs:['Trap Bar Deadlift','Press banca (Bench Press)'],
-       descanso:120,nota:'Unilateral antes que bilateral si hay ambos en el dia.'},
-      {lbl:'PAR 3 — Press vertical + Hip dominante slide',tipo:'par',
+      {lbl:'PAR 1 — Explosivo + Core Antirotacion (CHOP)',tipo:'par',
+       ejs:['Hang Clean','In-line Chop'],
+       descanso:90,nota:'Explosivo primero. El CHOP usa el descanso del SNC. Tempo 3/1/1 en fases de volumen.'},
+      {lbl:'PAR 2 — Press Horizontal + Estiramiento Superior',tipo:'par',
+       ejs:['Press banca (Bench Press)','Upper Stretch (lat/pecho)'],
+       descanso:120,nota:'Bench Press: barra o mancuernas. El estiramiento superior ocupa el descanso.'},
+      {lbl:'PAR 3 — Press Vertical + Rehab Cadera',tipo:'par',
        ejs:['Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-       descanso:90,nota:'Trabajo especial de cadera y rehab al final.'},
+       descanso:90,nota:'Press vertical: half-kneeling KB. Rehab de cadera y trabajo especial al final.'},
     ],
-    notas:'Trineo: empujes como finalizador o en calentamiento. 3-4 series de 20-30m.',
+    notas:'Dias 1 y 3: 10 segundos cronometrados en los ejercicios explosivos. Trineo opcional como finalizador.',
   },
   D2:{
     n:'Dia 2', tipo:'Multidireccional', color:'var(--orange)',
-    desc:'Hip dominante bilateral (Hex Bar) + Rodilla dominante unilateral. Traccion horizontal.',
-    calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up MULTI-DIRECTION + Lateral Plyos + Rotary/Overhead Medball',
+    desc:'Hip dominante bilateral (Hex Bar) · Core antilateral · Rodilla unilateral · Traccion. Dias 2 y 4 son multidireccionales.',
+    calentamiento:'MULTI-DIRECTION: Foam roll → Static stretch → Mobility/Activation → Warm-up multidireccional → Lateral Plyos → Rotary/Overhead Medball',
     pares:[
-      {lbl:'TRISET 1 — Hip dom bilateral + Core antilateral + Movilidad',tipo:'triset',
-       ejs:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Equilibrio unipodal'],
-       descanso:120,nota:'Hex Bar como motor principal. Core y movilidad en el descanso.'},
-      {lbl:'PAR 2 — Rodilla unilateral + Traccion horizontal',tipo:'par',
+      {lbl:'PAR 1 — Hip Dominante Bilateral (Hex Bar) + Core Antilateral + Traccion Vertical',tipo:'triset',
+       ejs:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up / Pull-up'],
+       descanso:120,nota:'Hex Bar es el motor. Antilateral y traccion vertical en el descanso. Unilateral antes que bilateral.'},
+      {lbl:'PAR 2 — Rodilla Dominante Unilateral + Traccion Horizontal',tipo:'par',
        ejs:['Split Squat (Bottoms-up KB)','DB Row / TRX Row'],
-       descanso:90,nota:'Bottoms-up KB activa estabilizadores del hombro.'},
-      {lbl:'PAR 3 — Hip dom slide + Core antiextension',tipo:'par',
+       descanso:90,nota:'Split Squat primero (unilateral). Traccion horizontal pareja.'},
+      {lbl:'PAR 3 — Hip Dominante Slide Board + Core Antiextension',tipo:'par',
        ejs:['Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-       descanso:90,nota:''},
+       descanso:90,nota:'Slide Board Lunge o Ham ISO segun nivel. Core antiextension al final.'},
     ],
-    notas:'Traccion horizontal: DB Row unilateral preferido. Minimo 3 sets.',
+    notas:'Traccion vertical va con el Par 1 segun la biblia. DB Row unilateral preferido en Par 2.',
   },
   D3:{
     n:'Dia 3', tipo:'Linear', color:'var(--blue)',
-    desc:'Explosivo + Rodilla unilateral + Press horizontal variante. Dia simetrico al Dia 1.',
-    calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up LINEAR + Linear Plyos + Chest Pass Linear Sprint',
+    desc:'Explosive · Core antirotacion (LIFT) · Press Horizontal variante · Push-up. Espejo del Dia 1.',
+    calentamiento:'LINEAR: Foam roll → Static stretch → Mobility/Activation → Warm-up lineal → Linear Plyos → Chest Pass + Sprint',
     pares:[
-      {lbl:'TRISET 1 — Explosivo + Core antirotacion + Movilidad',tipo:'triset',
-       ejs:['Hang Clean / DB Snatch','Chop/Lift (standing)','Rotaciones toracicas en suelo'],
-       descanso:90,nota:'Variante del explosivo: DB Snatch o KB Swing si menos frescura.'},
-      {lbl:'PAR 2 — Press horizontal + Rodilla unilateral',tipo:'par',
-       ejs:['Incline Bench / Close Grip Bench','Split Squat / RFESS'],
-       descanso:90,nota:'RFESS = Rear Foot Elevated Split Squat. Unilateral primero.'},
-      {lbl:'PAR 3 — Push-up variante + Hip dom slide',tipo:'par',
-       ejs:['Push-up variante (TRX/lastrada)','Slide Board Lunge / Ham ISO'],
-       descanso:90,nota:'Specialty work o rehab rotatorio al final.'},
+      {lbl:'PAR 1 — Explosivo + Core Antirotacion (LIFT)',tipo:'par',
+       ejs:['Hang Clean / DB Snatch','In-line Lift'],
+       descanso:90,nota:'El CHOP del D1 se convierte en LIFT en D3 para equilibrar patron de core. Tempo 3/1/1 en fases de volumen.'},
+      {lbl:'PAR 2 — Press Horizontal Variante + Estiramiento Superior',tipo:'par',
+       ejs:['Incline Bench / Close Grip Bench','Upper Stretch (lat/pecho)'],
+       descanso:120,nota:'Variante de press: incline o close grip. Unilateral antes bilateral si hay ambos.'},
+      {lbl:'PAR 3 — Push-up Variacion + Trabajo Rotatorio/Rehab',tipo:'par',
+       ejs:['Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
+       descanso:90,nota:'Push-up progression como alternativa al press. Trabajo rotatorio o rehab especifico al final.'},
     ],
-    notas:'Front Squat se puede introducir en Dia 3 cuando el patron esta consolidado.',
+    notas:'Front Squat se puede introducir en D3 cuando el patron esta consolidado. 10 seg cronometrado en explosivos.',
   },
   D4:{
     n:'Dia 4', tipo:'Multidireccional', color:'var(--orange)',
-    desc:'Rodilla unilateral + Hip dom unilateral. Traccion vertical. El dia mas exigente.',
-    calentamiento:'Foam roll + Static stretch + Mobility/Activation + Warm-up MULTI-DIRECTION + Lateral Plyos + Rotary/Overhead Medball',
+    desc:'Rodilla unilateral · Core antilateral · Hip dominante unilateral · Traccion vertical. El dia mas exigente.',
+    calentamiento:'MULTI-DIRECTION: Foam roll → Static stretch → Mobility/Activation → Warm-up multidireccional → Lateral Plyos → Rotary/Overhead Medball',
     pares:[
-      {lbl:'TRISET 1 — Rodilla unilateral + Core antilateral + Movilidad',tipo:'triset',
-       ejs:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Movilidad tobillo en pared'],
-       descanso:90,nota:'Maxima exigencia de estabilidad unilateral.'},
-      {lbl:'PAR 2 — Hip dom unilateral + Traccion vertical',tipo:'par',
+      {lbl:'PAR 1 — Rodilla Dominante Unilateral + Core Antilateral',tipo:'par',
+       ejs:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row'],
+       descanso:90,nota:'Maxima exigencia unilateral. RFESS = Bulgarian Split Squat. Core antilateral en el descanso.'},
+      {lbl:'PAR 2 — Hip Dominante Unilateral + Traccion Vertical',tipo:'par',
        ejs:['Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up'],
-       descanso:120,nota:'Chin-up: cuando llegues a 10 reps, lastre +10kg.'},
-      {lbl:'PAR 3 — Hip dom slide + Core antiextension',tipo:'par',
+       descanso:120,nota:'SLDL primero (unilateral de cadera). Chin-up: al llegar a 10 reps anadir lastre +10 kg.'},
+      {lbl:'PAR 3 — Hip Dominante Slide Board + Core Antiextension',tipo:'par',
        ejs:['Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
-       descanso:90,nota:''},
+       descanso:90,nota:'Slide board o Ham ISO segun disponibilidad. Ab Wheel o Valslide al final.'},
     ],
-    notas:'Pliometricos opcionales: Box Jump (25 contactos max/sesion). Solo si hay frescura.',
+    notas:'Dia mas exigente del ciclo. Pliometricos opcionales: max 25 contactos totales si hay frescura.',
   },
 };
 
@@ -1264,36 +1267,39 @@ const VARIANTES={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
+// EJS_FASES — fiel al Excel boyle24.xlsx
+// D1/D3: explosivo + press + core antirotacion
+// D2/D4: hip dom bilateral/unilateral + rodilla unilateral + traccion
 const EJS_FASES={
   F1:{
-    D1:['Hang Clean','Front Plank','Trap Bar Deadlift','Chin-up / Pull-up','Split Squat (Bottoms-up KB)','DB Row / TRX Row','In-line Chop'],
-    D2:['Bench Press','Spiderman pos. lat stretch','Standing Overhead Press','Supine Floor Slide','Push-up progression','Half-kneeling push-pull','Suitcase Carry'],
-    D3:['Hang Clean','Front Plank','Rear-foot-elevated Split Squat','Ring Row','Single-leg RDL (Straight-leg DL)','X-pull-down','In-line Lift'],
-    D4:['Dumbbell Incline Bench','Spiderman pos. lat stretch','Push-up progression','Toe Touch Squat with medicine ball','Turkish Get-Up','Half-kneeling antirotation hold','Farmer Carry'],
+    D1:['Hang Clean','In-line Chop','Press banca (Bench Press)','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
+    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up / Pull-up','Split Squat (Bottoms-up KB)','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
+    D3:['Hang Clean / DB Snatch','In-line Lift','Incline Bench / Close Grip Bench','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
+    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
     Descanso:[],
     Mov:['Movilidad activa (Daily Mob)'],
   },
   F2:{
-    D1:['Hang Clean','Hard-style Front Plank','Trap Bar Deadlift','Chin-up / Pull-up','One-leg Squat','DB Row / TRX Row','In-line Iso Hold Chop'],
-    D2:['Bench Press','Spiderman pos. lat stretch','Standing Overhead Press','Supine Floor Slide','Push-up progression','Half-kneeling push-pull','Suitcase Carry'],
-    D3:['Hang Clean','Hard-style Front Plank','Rear-foot-elevated Split Squat','Ring Row','Single-leg RDL (Straight-leg DL)','X-pull-down','In-line Iso Hold Lift'],
-    D4:['Dumbbell Incline Bench','Spiderman pos. lat stretch','Push-up progression','Toe Touch Squat with medicine ball','Turkish Get-Up','Half-kneeling antirotation hold','Farmer Carry'],
+    D1:['Hang Clean','In-line Iso Hold Chop','Press banca (Bench Press)','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
+    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up / Pull-up','Split Squat (Bottoms-up KB)','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
+    D3:['Hang Clean / DB Snatch','In-line Iso Hold Lift','Incline Bench / Close Grip Bench','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
+    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
     Descanso:[],
     Mov:['Movilidad activa (Daily Mob)'],
   },
   F3:{
-    D1:['Hang Clean','Stability Ball Roll-out','Trap Bar Deadlift + Hurdle Jump','Chin-up + Med Ball Slam','One-leg Squat','DB Row / TRX Row','Dynamic Chop'],
-    D2:['Bench Press + Med Ball Bench','Spiderman pos. lat stretch','Standing Overhead Press','Supine Floor Slide','Push-up progression','Dynamic push-pull','Suitcase Carry'],
-    D3:['Hang Clean (65-75%)','Stability Ball Roll-out','RFESS + Hurdle Hops','Ring Row + Med Ball Slam','Single-leg RDL (Straight-leg DL)','X-pull-down','Dynamic Lift'],
-    D4:['Dumbbell Incline Bench + Med Ball','Spiderman pos. lat stretch','Push-up progression','Toe Touch Squat with medicine ball','Turkish Get-Up (1st roll to elbow)','Standing antirotation hold','Farmer Carry'],
+    D1:['Hang Clean','Dynamic Chop','Trap Bar Deadlift + Hurdle Jump','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
+    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up + Med Ball Slam','One-leg Squat','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
+    D3:['Hang Clean (65-75%)','Dynamic Lift','RFESS + Hurdle Hops','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
+    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
     Descanso:[],
     Mov:['Movilidad activa (Daily Mob)'],
   },
   F4:{
-    D1:['Hang Clean','Stability Ball Roll-out','Trap Bar Deadlift + Hurdle Jump','Chin-up + Med Ball Slam','One-leg Squat','DB Row / TRX Row','Dynamic Chop'],
-    D2:['Bench Press + Med Ball Bench','Spiderman pos. lat stretch','Standing Overhead Press','Supine Floor Slide','Push-up progression','Dynamic push-pull','Suitcase Carry'],
-    D3:['Hang Clean (65-75%)','Stability Ball Roll-out','RFESS + Hurdle Hops','Ring Row + Med Ball Slam','Single-leg RDL (Straight-leg DL)','X-pull-down','Dynamic Lift'],
-    D4:['Dumbbell Incline Bench + Med Ball','Spiderman pos. lat stretch','Push-up progression','Toe Touch Squat with medicine ball','Turkish Get-Up (full)','Standing antirotation hold','Farmer Carry'],
+    D1:['Hang Clean','Dynamic Chop','Trap Bar Deadlift + Hurdle Jump','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
+    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up + Med Ball Slam','One-leg Squat','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
+    D3:['Hang Clean (65-75%)','Dynamic Lift','RFESS + Hurdle Hops','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
+    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up (con lastre)','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
     Descanso:[],
     Mov:['Movilidad activa (Daily Mob)'],
   },
@@ -1798,11 +1804,11 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{}};
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};
     if(ST.sheetsId) _sheetsId=ST.sheetsId;
     migrarDiaBoyle();
   // Restaurar variantes custom
@@ -2206,6 +2212,7 @@ const renders={
     renderEnf(dB||'Mov','e-enf','e-enf-card');
     renderFaseBanner();
     renderFinalizarStatus();
+    actualizarWarmupBadge();
     // calentamiento en e-warmup-card
     const hist=document.getElementById('e-hist');
     const all=Object.entries(ST.sets).filter(([k])=>!k.startsWith('d'+ST.dia+'_')).slice(-6).reverse();
@@ -3697,7 +3704,16 @@ function renderFinalizarStatus(){
 function renderFaseBanner(){
   var fase=getFaseActual(ST.sem);
   var semEnFase=getSemEnFase(ST.sem);
-  var faseNoms={F1:'F1 — Acumulación (3×8)',F2:'F2 — Peaking (3×5)',F3:'F3 — Fuerza+Complejos',F4:'F4 — Peaking 2'};
+  // Nombres y datos EXACTOS del Excel boyle24.xlsx
+  var faseNoms={
+    F1:'F1 — Acumulación · 3×8 · 60-77%',
+    F2:'F2 — Peaking · 4-6×3 · 90-97%',
+    F3:'F3 — Fuerza · 3-5×5 · 80-87%',
+    F4:'F4 — Peaking 2 · 4-6×3 · 90-97%'
+  };
+  var faseReps={F1:'3×8',F2:'4-6×3',F3:'3-5×5',F4:'4-6×3'};
+  var fasePct={F1:'60-77%',F2:'90-97%',F3:'80-87%',F4:'90-97%'};
+  var faseTempo={F1:'Tempo 3/1/1',F2:'',F3:'Tempo 3/1/1',F4:''};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
@@ -3708,9 +3724,14 @@ function renderFaseBanner(){
   if(!banner) return;
   banner.style.background=faseBgs[fase]||'var(--blue-bg)';
   if(lblFase){lblFase.style.color=faseTexts[fase]||'var(--blue-text)';lblFase.textContent=faseNoms[fase]||fase;}
-  if(lblSemFase){lblSemFase.style.color=faseTexts[fase]||'var(--blue-text)';lblSemFase.textContent='Sem '+semEnFase+' de 3';}
+  var semTxt='Sem '+semEnFase+' de 3';
+  if(faseTempo[fase]) semTxt+=' · '+faseTempo[fase];
+  if(lblSemFase){lblSemFase.style.color=faseTexts[fase]||'var(--blue-text)';lblSemFase.textContent=semTxt;}
   var base=REPS_FASE[fase]&&REPS_FASE[fase].base;
-  if(lblReps&&base){lblReps.textContent=base.n+'×'+base.r;}
+  if(lblReps){
+    lblReps.style.color=faseTexts[fase]||'var(--blue-text)';
+    lblReps.textContent=(base?base.n+'×'+base.r:faseReps[fase]||'3×8')+' · '+(fasePct[fase]||'');
+  }
 }
 
 function setNutTipo(tipo){
@@ -3752,29 +3773,100 @@ function renderWarmupBody(){
   if(!body||!dB) return;
   var cal=CAL_BOYLE[dB];
   if(!cal||!cal.length){body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay calentamiento para este dia.</div>";return;}
+
+  // Calcular total de items y cuántos están marcados
+  var totalItems=0,doneItems=0;
+  cal.forEach(function(fase){totalItems+=fase.items.length;});
+  var checkKey='wu_d'+ST.dia;
+  var checks=ST.warmupCheck[checkKey]||{};
+  Object.values(checks).forEach(function(v){if(v)doneItems++;});
+
+  // Cabecera de progreso
+  var pct=totalItems>0?Math.round(doneItems/totalItems*100):0;
+  var isLinear=dB==='D1'||dB==='D3';
+  var tipoDia=isLinear?'⚡ LINEAR — Chest Pass + Sprint Lineal':'🔄 MULTI-DIRECTION — Rotatory / Overhead Med Ball';
+  var colorTipo=isLinear?'var(--blue)':'var(--orange)';
+  var bgTipo=isLinear?'var(--blue-bg)':'var(--orange-bg,#faeeda)';
+
   var out=[];
-  cal.forEach(function(fase){
-    var faseDiv=["<div style=\"margin-bottom:.75rem\">"];
-    faseDiv.push("<div style=\"display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem\">");
-    faseDiv.push("<span style=\"font-size:12px;font-weight:700;color:var(--orange)\">"+fase.fase+"</span>");
-    faseDiv.push("<span style=\"font-size:11px;color:var(--text3)\">"+fase.tiempo+"</span></div>");
-    fase.items.forEach(function(item){
+  // Badge tipo de día
+  out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between">');
+  out.push('<span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+tipoDia+'</span>');
+  out.push('<span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+doneItems+'/'+totalItems+'</span>');
+  out.push('</div>');
+  // Barra de progreso
+  out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.75rem;overflow:hidden">');
+  out.push('<div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div>');
+  out.push('</div>');
+
+  // Secuencia Boyle del Excel — labels de fase
+  cal.forEach(function(fase,fi){
+    if(fi>0) out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
+    out.push('<div style="margin-bottom:.4rem">');
+    out.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">');
+    out.push('<span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span>');
+    out.push('<span style="font-size:11px;color:var(--text3)">'+fase.tiempo+'</span></div>');
+
+    fase.items.forEach(function(item,ii){
+      var itemKey='f'+fi+'_i'+ii;
+      var isDone=checks[itemKey]||false;
       var ejImgs=getEjImgs(item.n);
-      faseDiv.push("<div style=\"padding:.4rem 0;border-bottom:.5px solid var(--border)\">");
-      faseDiv.push("<div style=\"display:flex;align-items:flex-start;gap:8px\">");
+      out.push('<div style="padding:.45rem 0;border-bottom:.5px solid var(--border)">');
+      out.push('<div style="display:flex;align-items:flex-start;gap:10px">');
+      // Checkbox
+      out.push('<div onclick="toggleWarmupCheck(\''+checkKey+'\',\''+itemKey+'\')" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">');
+      if(isDone) out.push('<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>');
+      out.push('</div>');
+      // Imagen si existe
       if(ejImgs.length){
-        faseDiv.push("<img src=\""+ejImgs[0]+"\" style=\"width:56px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0\" onerror=\"this.style.display='none'\">");
+        out.push('<img src="'+ejImgs[0]+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">');
       }
-      faseDiv.push("<div style=\"flex:1\">");
-      faseDiv.push("<div style=\"font-size:13px;font-weight:600;color:var(--text)\">"+item.n+"</div>");
-      if(item.d) faseDiv.push("<div style=\"font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px\">"+item.d+"</div>");
-      if(item.t) faseDiv.push("<span style=\"font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block\">"+item.t+"</span>");
-      faseDiv.push("</div></div></div>");
+      out.push('<div style="flex:1">');
+      out.push('<div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+item.n+'</div>');
+      if(item.d) out.push('<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+item.d+'</div>');
+      if(item.t) out.push('<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+item.t+'</span>');
+      out.push('</div></div></div>');
     });
-    faseDiv.push("</div>");
-    out.push(faseDiv.join(""));
+    out.push('</div>');
   });
-  body.innerHTML=out.join("");
+
+  // Botón resetear warm-up
+  out.push('<button onclick="resetWarmup(\''+checkKey+'\')" style="width:100%;margin-top:.6rem;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">↺ Resetear calentamiento</button>');
+  body.innerHTML=out.join('');
+}
+
+function toggleWarmupCheck(checkKey,itemKey){
+  if(!ST.warmupCheck) ST.warmupCheck={};
+  if(!ST.warmupCheck[checkKey]) ST.warmupCheck[checkKey]={};
+  ST.warmupCheck[checkKey][itemKey]=!ST.warmupCheck[checkKey][itemKey];
+  save();
+  renderWarmupBody();
+  // Actualizar badge del card header
+  actualizarWarmupBadge();
+}
+
+function resetWarmup(checkKey){
+  if(!ST.warmupCheck) ST.warmupCheck={};
+  ST.warmupCheck[checkKey]={};
+  save();
+  renderWarmupBody();
+  actualizarWarmupBadge();
+}
+
+function actualizarWarmupBadge(){
+  var dB=getDiaBoyle();
+  if(!dB) return;
+  var cal=CAL_BOYLE[dB];
+  if(!cal) return;
+  var total=0,done=0;
+  var checkKey='wu_d'+ST.dia;
+  var checks=(ST.warmupCheck&&ST.warmupCheck[checkKey])||{};
+  cal.forEach(function(f){total+=f.items.length;});
+  Object.values(checks).forEach(function(v){if(v)done++;});
+  var lbl=document.querySelector('#e-warmup-card .card-lbl');
+  if(lbl){
+    lbl.innerHTML='🔥 Calentamiento'+(total>0?' <span style="font-size:10px;background:'+(done===total?'var(--green-bg)':'var(--bg3)')+';color:'+(done===total?'var(--green-text)':'var(--text2)')+';border-radius:10px;padding:1px 7px;font-weight:700">'+done+'/'+total+'</span>':'');
+  }
 }
 
 function renderEnfBody(){
@@ -4303,7 +4395,7 @@ function cSem(d){ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));save();renders.ci
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v69';
+const APP_VERSION='v70';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){

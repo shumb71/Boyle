@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v71</title>
+<title>Entreno Boyle v72</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -119,7 +119,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v71"
+      version: "v72"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -3166,16 +3166,17 @@ function confirmarRecalculo(){
   if(!ST.diaBoyle) ST.diaBoyle={};
   _recalcPendiente.propuesta.forEach(function(p){
     if(p.locked) return;
-    if(p.d < ST.dia) return; // nunca tocar días anteriores al actual
-    if(!p.dB||p.dB==='Descanso') setDiaBoyleVal(p.d,'Descanso',p.sem||ST.sem);
-    else setDiaBoyleVal(p.d,p.dB,p.sem||ST.sem);
+    if(p.d < ST.dia) return;
+    if(!p.dB||p.dB==='Descanso') setDiaBoyleVal(p.d,'Descanso',ST.sem);
+    else setDiaBoyleVal(p.d,p.dB,ST.sem);
   });
   _recalcPendiente=null;
   save();
   document.getElementById('mo-recalcular').classList.remove('open');
   renders.hoy(); renders.entreno(); renderCicloBoyle();
+  if(document.getElementById('p-fases')) renderPrograma();
   var t=document.getElementById('fb-toast');
-  if(t){t.textContent='✅ Ciclo recalculado';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+  if(t){t.textContent='✅ Ciclo recalculado — Sem '+ST.sem;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
 }
 
 // ══════════════════════════════════════
@@ -4374,23 +4375,30 @@ function confirmarCambioEj(el){
 function cDia(d){ST.dia=((ST.dia-1+d+12)%12)+1;save();renders.ciclo();renders.hoy();exportarExcelDrive(true);}
 function cSem(d){
   ST.sem=Math.max(1,Math.min(12,(ST.sem||1)+d));
+  // Actualizar la semana en todos los días futuros de ST.diaBoyle
+  if(ST.diaBoyle){
+    Object.keys(ST.diaBoyle).forEach(function(dia){
+      var numDia=parseInt(dia);
+      if(numDia>=ST.dia){
+        var v=ST.diaBoyle[dia];
+        if(v&&typeof v==='object') v.sem=ST.sem;
+        else if(v&&typeof v==='string') ST.diaBoyle[dia]={b:v,sem:ST.sem};
+      }
+    });
+  }
   save();
-  // Actualizar label semana
   var semlbl=document.getElementById('c-semlbl');
   if(semlbl) semlbl.textContent='Sem '+ST.sem;
-  // Actualizar card de carga
   renderCicloBoyle();
-  // Actualizar detalle del dia activo en Programa SIN regenerar tabs
   var detalle=document.getElementById('p-dia-detail');
   if(detalle&&_tabDiaActivo) verDiaBoyle(_tabDiaActivo);
-  // Actualizar banner fase en pantalla Entreno
   renders.entreno();
   updateTopbarSem();
 }
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v71';
+const APP_VERSION='v72';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarDrive(){

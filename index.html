@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v74</title>
+<title>Entreno Boyle v75</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -119,7 +119,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v74"
+      version: "v75"
     }).then(() => {
       updateSyncUI("saved");
     }).catch(e => {
@@ -757,12 +757,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
     <div class="card">
       <div class="card-lbl">Backup de datos</div>
-      <div class="info-box ib"><i class="ti ti-info-circle" aria-hidden="true"></i> Exporta a Excel para ver tus datos, guarda en Drive o haz backup JSON.</div>
+      <div class="info-box ib"><i class="ti ti-info-circle" aria-hidden="true"></i> Exporta a Excel para ver tus datos o descarga un backup JSON.</div>
       <button class="bkbtn bkexp" onclick="exportar()"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar a Excel (.xlsx)</button>
       <button class="bkbtn" style="background:var(--bg2);color:var(--text2);border-color:var(--border2)" onclick="exportarJSON()"><i class="ti ti-download" aria-hidden="true"></i> Exportar backup JSON</button>
-      <button class="bkbtn" id="btn-drive" style="background:#1a6f3a;color:#fff;border-color:#1a6f3a;border:none" onclick="exportarDrive()"><i class="ti ti-brand-google-drive" aria-hidden="true"></i> Guardar en Google Drive</button>
       <button class="bkbtn" style="background:var(--blue);color:#fff;border:none" onclick="exportarExcelDrive(false)"><i class="ti ti-table-export" aria-hidden="true"></i> Excel Entreno → Google Drive</button>
-      <div id="drive-status" style="font-size:12px;color:var(--text2);margin-top:.25rem;display:none"></div>
       <button class="bkbtn bkimp" onclick="document.getElementById('imp-input').click()"><i class="ti ti-upload" aria-hidden="true"></i> Importar datos desde JSON</button>
       <input type="file" id="imp-input" accept=".json" style="display:none" onchange="importar(this)">
     </div>
@@ -4398,46 +4396,8 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v74';
+const APP_VERSION='v75';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
-
-function exportarDrive(){
-  const btn=document.getElementById('btn-drive');
-  const status=document.getElementById('drive-status');
-  status.style.display='block';status.style.color='var(--text2)';
-  status.textContent='Conectando con Google...';btn.disabled=true;
-  if(typeof google==='undefined'||!google.accounts){status.textContent='Error: libreria Google no cargada. Necesitas conexion a internet.';btn.disabled=false;return;}
-  const client=google.accounts.oauth2.initTokenClient({client_id:GDRIVE_CLIENT_ID,scope:GDRIVE_SCOPE,callback:(resp)=>{
-    if(resp.error){status.textContent='Error: '+resp.error;btn.disabled=false;return;}
-    window._gdriveToken=resp.access_token; // cachear para exportarExcelDrive
-    subirDrive(resp.access_token,btn,status);
-    actualizarCabeceraSesiones();
-  }});
-  client.requestAccessToken();
-}
-async function subirDrive(token,btn,status){
-  try{
-    status.textContent='Generando JSON...';
-    const fecha=new Date().toISOString().slice(0,10);
-    const blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
-    const fileName='entreno_jose_backup_'+fecha+'.json';
-        status.textContent='Buscando carpeta en Drive...';
-    const searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',{headers:{Authorization:'Bearer '+token}});
-    const searchData=await searchResp.json();
-    let folderId;
-    if(searchData.files&&searchData.files.length>0){folderId=searchData.files[0].id;}
-    else{const cr=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({name:'Entreno PRO',mimeType:'application/vnd.google-apps.folder'})});const cd=await cr.json();folderId=cd.id;}
-    status.textContent='Subiendo archivo...';
-    const form=new FormData();
-    form.append('metadata',new Blob([JSON.stringify({name:fileName,parents:[folderId]})],{type:'application/json'}));
-    form.append('file',blob);
-    const up=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{Authorization:'Bearer '+token},body:form});
-    const upData=await up.json();
-    if(upData.id){status.style.color='var(--green)';status.textContent='✅ Guardado en Drive: '+fileName;ST.ultimoBackup=new Date().toISOString();save();checkBackupReminder();}
-    else throw new Error('Error al subir');
-  }catch(err){status.style.color='var(--red)';status.textContent='Error: '+err.message;}
-  finally{btn.disabled=false;}
-}
 
 function exportarJSON(){
   const data=JSON.stringify(ST,null,2);

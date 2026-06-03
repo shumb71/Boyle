@@ -2868,11 +2868,12 @@ function renderPrograma(){
   }
   const tabsEl=document.getElementById('p-tabs');
   if(tabsEl){
-    tabsEl.innerHTML=['D1','D2','D3','D4'].map(function(d,i){
+    tabsEl.innerHTML=['D1','D2','D3','D4'].map(function(d){
       var dia=BOYLE_DIAS[d];
-      return '<button onclick="verDiaBoyle(\''+d+'\')" id="ptab-'+d+'" style="border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;background:'+(i===0?'var(--blue)':'var(--bg3)')+';color:'+(i===0?'#fff':'var(--text2)')+';transition:all .15s">'+dia.n+'</button>';
+      return '<button onclick="verDiaBoyle(\''+d+'\')" id="ptab-'+d+'" style="border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s">'+dia.n+'</button>';
     }).join('');
-    verDiaBoyle('D1');
+    // Respetar el tab activo; si no hay ninguno, usar D1
+    verDiaBoyle(_tabDiaActivo||'D1');
   }
   renderCicloBoyle();
 }

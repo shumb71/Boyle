@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v78</title>
+<title>Entreno Boyle v79</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v78"
+      version: "v79"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -3045,24 +3045,19 @@ var _recalcPendiente = null;
 function asignarDiaBoyle(numDia, val){
   if(!ST.diaBoyle) ST.diaBoyle={};
   var valReal = val==='' ? 'Descanso' : (val||null);
-  // Guardar semana solo si es el día actual o futuro (no tocar días pasados)
-  if(_cdSemTemp && _cdSemTemp !== ST.sem && numDia >= ST.dia){
-    ST.sem = _cdSemTemp;
-  }
-  // Cerrar modal de cambio de día
+  // Capturar semana ANTES de actualizar ST.sem
+  var semParaEste = _cdSemTemp||ST.sem||1;
+  // Actualizar semana global si es día actual o futuro
+  if(numDia >= ST.dia) ST.sem = semParaEste;
+  // Cerrar modal
   document.getElementById('mo-cambiardia').classList.remove('open');
-  // Guardar el cambio con semana específica del día
-  var semParaEste = (_cdSemTemp && _cdSemTemp !== ST.sem && numDia >= ST.dia) ? _cdSemTemp : getSemDia(numDia)||ST.sem||1;
+  // Guardar el cambio con la semana correcta
   if(!valReal) delete ST.diaBoyle[numDia];
   else setDiaBoyleVal(numDia, valReal, semParaEste);
   // Si se asigna D4, la siguiente semana sube automáticamente
-  if(valReal==='D4'){
-    // Buscar siguiente día de entreno y sugerir semana+1 en el recálculo
-    ST._nextSemAfterD4 = (ST.sem||1)+1;
-  }
+  if(valReal==='D4') ST._nextSemAfterD4 = semParaEste+1;
   save();
   renders.hoy(); renders.entreno(); renderCicloBoyle();
-  // Refrescar pantalla Programa si está visible
   if(document.getElementById('p-fases')) renderPrograma();
   if(document.getElementById('p-dia-detail')&&_tabDiaActivo) verDiaBoyle(_tabDiaActivo);
   // Proponer recálculo hacia adelante
@@ -4414,7 +4409,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v78';
+const APP_VERSION='v79';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

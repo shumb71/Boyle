@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v83</title>
+<title>Entreno Boyle v84</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v83"
+      version: "v84"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -480,6 +480,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="stbox"><div class="stval" id="e-vol">0</div><div class="stlbl">kg volumen</div></div>
       <div class="stbox"><div class="stval" id="e-ser">0/0</div><div class="stlbl">series</div></div>
     </div>
+    <!-- DELOAD BANNER -->
+    <div id="e-deload-banner" style="display:none;margin-bottom:.75rem"></div>
     <!-- ALERTA RECUPERACION -->
     <div id="e-alerta-recuperacion" style="display:none;margin-bottom:.75rem"></div>
     <!-- CALENTAMIENTO EXPANDIBLE -->
@@ -2224,6 +2226,7 @@ const renders={
     renderFaseBanner();
     renderFinalizarStatus();
     actualizarWarmupBadge();
+    checkDeload();
     calcularAlertaRecuperacion();
     // calentamiento en e-warmup-card
     const hist=document.getElementById('e-hist');
@@ -3816,6 +3819,19 @@ function toggleSection(id){
   }
 }
 
+function checkDeload(){
+  var el=document.getElementById('e-deload-banner');
+  if(!el) return;
+  var pr=PROG[(ST.sem-1)%12];
+  if(!pr||!pr.d){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="background:var(--blue-bg);border-radius:var(--rs);padding:.5rem .75rem;display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:18px">🔄</span>'
+    +'<div><div style="font-size:12px;font-weight:700;color:var(--blue-text)">Semana de descarga — Sem '+ST.sem+'</div>'
+    +'<div style="font-size:11px;color:var(--blue-text);opacity:.8">'+pr.n+'×'+pr.r+' al '+pr.p+'% · Recuperación activa, no fuerces</div></div>'
+    +'</div>';
+}
+
 function calcularAlertaRecuperacion(){
   var el=document.getElementById('e-alerta-recuperacion');
   if(!el) return;
@@ -4517,6 +4533,7 @@ function cSem(d){
   var semlbl=document.getElementById('c-semlbl');
   if(semlbl) semlbl.textContent='Sem '+ST.sem;
   renderCicloBoyle();
+  checkDeload();
   var detalle=document.getElementById('p-dia-detail');
   if(detalle&&_tabDiaActivo) verDiaBoyle(_tabDiaActivo);
   renders.entreno();
@@ -4525,7 +4542,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v83';
+const APP_VERSION='v84';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5616,37 +5633,45 @@ renders.historial=function(){
     // SVG grafica
     var svgHtml='';
     if(sesiones.length>1){
-      var datos=sesiones.slice(-10);
-      var W=320,H=80,PL=30,PR=8,PT=16,PB=20;
+      var datos=sesiones.slice(-12);
+      var W=320,H=95,PL=32,PR=8,PT=16,PB=24;
       var cW=W-PL-PR,cH=H-PT-PB;
       var pesos=datos.map(function(s){return s.maxPeso;});
       var minP=Math.min.apply(null,pesos),maxP=Math.max.apply(null,pesos);
       var rangoP=maxP-minP||1;
+      // Línea de tendencia (regresión lineal)
+      var nn=datos.length,sumX=0,sumY=0,sumXY=0,sumX2=0;
+      datos.forEach(function(s,i){sumX+=i;sumY+=s.maxPeso;sumXY+=i*s.maxPeso;sumX2+=i*i;});
+      var slope=(nn*sumXY-sumX*sumY)/(nn*sumX2-sumX*sumX);
+      var intercept=(sumY-slope*sumX)/nn;
+      var tx0=PL,ty0=PT+cH-Math.round((intercept-minP)/rangoP*cH);
+      var txN=PL+cW,tyN=PT+cH-Math.round(((slope*(nn-1)+intercept)-minP)/rangoP*cH);
+      ty0=Math.max(PT,Math.min(PT+cH,ty0));tyN=Math.max(PT,Math.min(PT+cH,tyN));
+      var tendCol=slope>=0?'#2A9D5C':'#C0392B';
+      var tendTag=slope>=0?'\u2197 +'+Math.abs(Math.round(slope*10)/10)+'kg/ses':'\u2198 -'+Math.abs(Math.round(slope*10)/10)+'kg/ses';
       var pts=datos.map(function(s,i){
         var x=PL+Math.round(i/(datos.length-1)*cW);
         var y=PT+cH-Math.round((s.maxPeso-minP)/rangoP*cH);
         return x+','+y;
       }).join(' ');
-      var circles='';
-      var labels='';
-      var xlabels='';
+      var circles='',labels='',xlabels='';
       datos.forEach(function(s,i){
         var x=PL+Math.round(i/(datos.length-1)*cW);
         var y=PT+cH-Math.round((s.maxPeso-minP)/rangoP*cH);
         circles+='<circle cx="'+x+'" cy="'+y+'" r="4" fill="#185FA5" stroke="white" stroke-width="2"><title>'+(s.fechaFull||s.fecha)+': '+s.maxPeso+'kg</title></circle>';
         labels+='<text x="'+x+'" y="'+(y-8)+'" text-anchor="middle" font-size="9" fill="#185FA5" font-weight="bold">'+s.maxPeso+'</text>';
-        var lbl=s.fecha?s.fecha:'D'+s.dia;
-        xlabels+='<text x="'+x+'" y="'+(H-2)+'" text-anchor="middle" font-size="8" fill="#9a9aaa">'+lbl+'</text>';
+        xlabels+='<text x="'+x+'" y="'+(H-4)+'" text-anchor="middle" font-size="8" fill="#9a9aaa">'+(s.fecha||'D'+s.dia)+'</text>';
       });
       var areaPath='M'+PL+','+(PT+cH)+' L'+datos.map(function(s,i){var x=PL+Math.round(i/(datos.length-1)*cW);var y=PT+cH-Math.round((s.maxPeso-minP)/rangoP*cH);return x+','+y;}).join(' L')+' L'+(PL+cW)+','+(PT+cH)+' Z';
-      svgHtml='<div style="margin-bottom:.5rem"><div style="font-size:11px;color:var(--text2);margin-bottom:4px">Progresion peso maximo (kg)</div>';
+      svgHtml='<div style="margin-bottom:.5rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="font-size:11px;color:var(--text2)">Progresión peso máximo (kg)</div><div style="font-size:10px;font-weight:700;color:'+tendCol+'">'+tendTag+'</div></div>';
       svgHtml+='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto">';
       svgHtml+='<line x1="'+PL+'" y1="'+(PT)+'" x2="'+PL+'" y2="'+(PT+cH)+'" stroke="#e8e8ea" stroke-width="0.5"/>';
       svgHtml+='<line x1="'+PL+'" y1="'+(PT+cH)+'" x2="'+(PL+cW)+'" y2="'+(PT+cH)+'" stroke="#e8e8ea" stroke-width="0.5"/>';
       svgHtml+='<text x="'+(PL-3)+'" y="'+(PT+4)+'" text-anchor="end" font-size="9" fill="#9a9aaa">'+maxP+'</text>';
       svgHtml+='<text x="'+(PL-3)+'" y="'+(PT+cH)+'" text-anchor="end" font-size="9" fill="#9a9aaa">'+minP+'</text>';
-      svgHtml+='<path d="'+areaPath+'" fill="#185FA5" fill-opacity="0.08"/>';
+      svgHtml+='<path d="'+areaPath+'" fill="#185FA5" fill-opacity="0.07"/>';
       svgHtml+='<polyline points="'+pts+'" fill="none" stroke="#185FA5" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+      svgHtml+='<line x1="'+tx0+'" y1="'+ty0+'" x2="'+txN+'" y2="'+tyN+'" stroke="'+tendCol+'" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>';
       svgHtml+=labels+circles+xlabels;
       svgHtml+='</svg></div>';
     }

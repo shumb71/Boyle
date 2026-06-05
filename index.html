@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v75</title>
+<title>Entreno Boyle v76</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -63,29 +63,39 @@ function initFirebase() {
           }
           try{
             var parsed=JSON.parse(doc.data().datos);
-            // Solo sobrescribir si Firebase tiene datos más recientes
+            // Comparar timestamps — Firebase siempre gana si es >= local
             var fbTime=parsed._localSaveTime||0;
             var localData=localStorage.getItem('jose_v9');
             var localTime=localData?JSON.parse(localData)._localSaveTime||0:0;
             if(fbTime>=localTime){
-              Object.assign(ST, parsed);
+              ST=Object.assign({},ST,parsed);
+              // Migraciones de seguridad
+              if(!ST.warmupCheck) ST.warmupCheck={};
+              if(!ST.fechaSesiones) ST.fechaSesiones={};
+              if(!ST.variantes) ST.variantes={};
+              if(!ST.diaBoyle) ST.diaBoyle={};
+              if(!ST.variantesCustom) ST.variantesCustom={};
               ST._localSaveTime=Date.now();
               localStorage.setItem('jose_v9',JSON.stringify(ST));
               renders.hoy();renders.entreno();renders.ciclo();
               updateSyncUI("synced-remote");
+              actualizarDotSync('ok');
+            } else {
+              // Local más reciente — subir a Firebase
+              actualizarDotSync('ok');
+              saveFirebase();
             }
-          }catch(e){console.warn('Firebase load error:',e);}
-          finally{_fbLoadReady=true;} // permitir save() a partir de aquí
+          }catch(e){console.warn('Firebase load error:',e);actualizarDotSync('error');}
+          finally{_fbLoadReady=true;}
         }).catch(function(){_fbLoadReady=true;});
         suscribirCambiosRemoto();
-        // Cargar sets históricos desde subcolección Firebase
-        setTimeout(cargarSetsFirebase, 2000);
       } else {
         fbUser = null;
         fbReady = false;
-        _fbLoadReady=true; // sin Firebase, permitir save local
+        _fbLoadReady=true;
         if (fbUnsubscribe) { fbUnsubscribe(); fbUnsubscribe = null; }
         updateSyncUI("logged-out");
+        actualizarDotSync('error');
       }
     });
   } catch(e) {
@@ -112,19 +122,25 @@ function logoutFirebase() {
 
 // Guardar datos en Firestore (con debounce 2s para no saturar)
 function saveFirebase() {
-  if (!fbReady || !fbUser) return;
+  if (!fbReady || !fbUser) {
+    actualizarDotSync('error');
+    return;
+  }
   clearTimeout(syncDebounceTimer);
   syncDebounceTimer = setTimeout(() => {
     updateSyncUI("saving");
+    actualizarDotSync('saving');
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v75"
+      version: "v76"
     }).then(() => {
       updateSyncUI("saved");
+      actualizarDotSync('ok');
     }).catch(e => {
       console.error("Firestore save error:", e);
       updateSyncUI("error");
+      actualizarDotSync('error');
     });
   }, 2000);
 }
@@ -143,11 +159,16 @@ function suscribirCambiosRemoto() {
       if (remoto > local + 3000) { // margen 3s para evitar loop
         try {
           const parsed = JSON.parse(data.datos);
-          Object.assign(ST, parsed);
+          ST = Object.assign({}, ST, parsed);
+          if(!ST.warmupCheck) ST.warmupCheck={};
+          if(!ST.fechaSesiones) ST.fechaSesiones={};
+          if(!ST.variantes) ST.variantes={};
+          if(!ST.diaBoyle) ST.diaBoyle={};
           ST._localSaveTime = Date.now();
-          save(); // actualizar localStorage también
-          if (typeof renderHoy === 'function') renderHoy();
+          save();
+          renders.hoy(); renders.entreno(); renders.ciclo();
           updateSyncUI("synced-remote");
+          actualizarDotSync('ok');
           mostrarToastSync();
         } catch(e) { console.error("Parse remoto:", e); }
       }
@@ -407,7 +428,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
     </div>
     <div class="card">
-      <div class="card-lbl">Semaforo lumbar</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+        <div class="card-lbl" style="margin-bottom:0">Semaforo lumbar</div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <div id="sync-dot" style="width:10px;height:10px;border-radius:50%;background:#adadad;flex-shrink:0" title="Estado Firebase"></div>
+          <span id="sync-dot-lbl" style="font-size:10px;color:var(--text3)">—</span>
+        </div>
+      </div>
       <div class="slw"><div class="sll">Dolor lumbar (0-5)<strong id="vd">0</strong></div><input type="range" min="0" max="5" step="1" value="0" id="sl-d"></div>
       <div class="slw"><div class="sll">Fatiga (1-5)<strong id="vf">1</strong></div><input type="range" min="1" max="5" step="1" value="1" id="sl-f"></div>
       <div class="slw" style="margin-bottom:0"><div class="sll">Sueno anoche (1-5)<strong id="vs">3</strong></div><input type="range" min="1" max="5" step="1" value="3" id="sl-s"></div>
@@ -1803,8 +1830,9 @@ function save(){
   try{
     ST._localSaveTime=Date.now();
     localStorage.setItem('jose_v9',JSON.stringify(ST));
-    if(_fbLoadReady) saveFirebase(); // solo guardar en Firebase si ya cargamos de ahí
-  }catch(e){}
+    if(_fbLoadReady) saveFirebase();
+    else actualizarDotSync('offline');
+  }catch(e){actualizarDotSync('error');}
 }
 load();
 
@@ -2754,16 +2782,6 @@ function guardar(){
   var fechaHoy=new Date().toISOString().slice(0,10);
   ST.fechaSesiones[ST.dia]=fechaHoy;
   save();
-  // Guardar en Firebase sets subcollection (permanente)
-  var serieIdx=document.getElementById('m-all').checked?'T':mSer+1;
-  if(document.getElementById('m-all').checked){
-    var pr2=PROG[(ST.sem-1)%12];
-    var info2=EJ_INFO[ejClean]||{};
-    var num2=info2.tipo==='fijo'?(parseInt(info2.series)||3):pr2.n;
-    for(var si=0;si<num2;si++) saveSetFirebase(ST.dia,ejClean,si+1,setData,fechaHoy);
-  } else {
-    saveSetFirebase(ST.dia,ejClean,mSer+1,setData,fechaHoy);
-  }
   // Append a Google Sheets
   var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
   appendSetToSheets(ST.dia, ejClean, serie, peso, reps, rpe, nota);
@@ -4396,7 +4414,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v75';
+const APP_VERSION='v76';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -4552,51 +4570,6 @@ async function fetchGarminAuto(manual) {
 // ══════════════════════════════════════
 // SETS PERMANENTES — FIREBASE SEPARADO
 // ══════════════════════════════════════
-function saveSetFirebase(numDia, ej, serie, setData, fechaSesion){
-  if(!fbReady||!fbUser) return;
-  var fecha=fechaSesion||new Date().toISOString().slice(0,10);
-  var fase=getFaseActual(ST.sem);
-  var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'—');
-  var docId=fecha+'_d'+numDia+'_'+ej.replace(/[^a-zA-Z0-9]/g,'_')+'_s'+serie;
-  fbDb.collection('usuarios').doc(fbUser.uid)
-    .collection('sets').doc(docId)
-    .set({
-      fecha:fecha,
-      diaCiclo:numDia,
-      diaBoyle:dB,
-      fase:fase,
-      semana:ST.sem,
-      semEnFase:getSemEnFase(ST.sem),
-      ejercicio:ej,
-      serie:serie,
-      peso:setData.p||0,
-      reps:setData.r||0,
-      rpe:setData.rpe||0,
-      nota:setData.n||'',
-      timestamp:Date.now()
-    }).catch(function(e){console.warn('saveSetFirebase error:',e);});
-}
-
-// Cargar sets históricos desde Firebase al arrancar
-function cargarSetsFirebase(){
-  if(!fbReady||!fbUser) return;
-  fbDb.collection('usuarios').doc(fbUser.uid)
-    .collection('sets').orderBy('fecha').get()
-    .then(function(snap){
-      if(snap.empty) return;
-      snap.forEach(function(doc){
-        var d=doc.data();
-        if(!d||!d.ejercicio) return;
-        var key='d'+d.diaCiclo+'_'+d.ejercicio;
-        if(!ST.sets[key]) ST.sets[key]=[];
-        var idx=(d.serie||1)-1;
-        ST.sets[key][idx]={p:d.peso||0,r:d.reps||0,rpe:d.rpe||0,n:d.nota||''};
-      });
-      save();
-      renders.entreno();
-      console.log('Sets cargados desde Firebase:',snap.size);
-    }).catch(function(e){console.warn('cargarSetsFirebase error:',e);});
-}
 // ══════════════════════════════════════
 var _sheetsId = null; // ID de la Google Sheet de Entreno Boyle
 
@@ -5229,7 +5202,7 @@ renders.hoy();
 updateTopbarSem();
 renderGarminHoy();
 checkBackupReminder();
-setTimeout(function(){autoSyncDrive();},2000);
+// Drive auto-sync eliminado — Firebase es la fuente de verdad
 
 // ══════════════════════════════════════
 // BACKUP REMINDER
@@ -5257,71 +5230,14 @@ function setSyncPanel(icon,msg,sub,color){
 
 
 function syncManual(){
-  if(driveTokenCached){
-    comprobarVersionDrive(driveTokenCached);
-  } else if(typeof google!=='undefined'&&google.accounts){
-    setSyncPanel('🔄','Conectando con Drive...','','blue');
-    var client=google.accounts.oauth2.initTokenClient({
-      client_id:GDRIVE_CLIENT_ID,scope:GDRIVE_SCOPE,
-      callback:function(resp){
-        if(resp.error){setSyncPanel('☁️','No autorizado','Ve a Config para conectar Drive','orange');return;}
-        driveTokenCached=resp.access_token;
-        window._gdriveToken=resp.access_token;
-        comprobarVersionDrive(resp.access_token);
-      }
-    });
-    client.requestAccessToken();
-  }
-}
-
-function autoSyncDrive(){
-  // Solo sincroniza si ya hay un token cacheado de sesion anterior
-  if(driveTokenCached){
-    setSyncPanel('🔄','Sincronizando con Drive...','Comprobando version','blue');
-    comprobarVersionDrive(driveTokenCached);
+  if(fbReady&&fbUser){
+    saveFirebase();
+    setSyncPanel('🔄','Guardando en Firebase...','','blue');
   } else {
-    // Mostrar estado sin intentar OAuth silencioso
-    var ultimoBackup=ST.ultimoBackup?new Date(ST.ultimoBackup):null;
-    if(ultimoBackup){
-      var fechaStr=ultimoBackup.toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-      setSyncPanel('☁️','Drive no conectado','Ultimo backup local: '+fechaStr,'orange');
-    } else {
-      setSyncPanel('☁️','Drive no conectado','Ve a Config para conectar Drive','orange');
-    }
+    setSyncPanel('⚠️','Sin conexión Firebase','Inicia sesión en Config','orange');
+    actualizarDotSync('error');
   }
 }
-
-function comprobarVersionDrive(token){
-  setSyncPanel('🔄','Buscando backups en Drive...','','blue');
-  fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',
-    {headers:{Authorization:'Bearer '+token}})
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data.files||!data.files.length){
-      setSyncPanel('☁️','Carpeta Drive no encontrada','Usa Config > Guardar en Drive','orange');
-      return Promise.reject('no_folder');
-    }
-    var folderId=data.files[0].id;
-    return fetch('https://www.googleapis.com/drive/v3/files?q=%27'+folderId+'%27+in+parents+and+name+contains+%22entreno_jose%22+and+mimeType%3D%22application%2Fjson%22+and+trashed%3Dfalse&orderBy=modifiedTime+desc&fields=files(id,name,modifiedTime,size)&pageSize=5',
-      {headers:{Authorization:'Bearer '+token}});
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
-    if(!data.files||!data.files.length){
-      setSyncPanel('☁️','Sin backups en Drive','Usa Config > Guardar en Drive','orange');
-      return;
-    }
-    // Siempre mostrar selector con los ultimos 5
-    setSyncPanel('☁️','Elige un backup para cargar',''+data.files.length+' backups disponibles','blue');
-    mostrarSelectorBackups(data.files,token);
-  })
-  .catch(function(err){
-    if(err!=='no_folder'){
-      setSyncPanel('⚠️','Error al sincronizar','Comprueba la conexion','orange');
-    }
-  });
-}
-
 
 function mostrarSelectorBackups(archivos,token){
   var listEl=document.getElementById('mo-backups-list');
@@ -5399,6 +5315,21 @@ function subirSilencioso(token){
     }
   })
   .catch(function(){});
+}
+
+function actualizarDotSync(estado){
+  var dot=document.getElementById('sync-dot');
+  var lbl=document.getElementById('sync-dot-lbl');
+  if(!dot) return;
+  var cfg={
+    ok:     {color:'#185FA5', txt:'Sincronizado'},
+    saving: {color:'#BA7517', txt:'Guardando…'},
+    error:  {color:'#A32D2D', txt:'Sin sync'},
+    offline:{color:'#adadad', txt:'Sin conexión'}
+  };
+  var e=cfg[estado]||cfg.offline;
+  dot.style.background=e.color;
+  if(lbl) lbl.textContent=e.txt;
 }
 
 function checkBackupReminder(){

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v76</title>
+<title>Entreno Boyle v77</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v76"
+      version: "v77"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -404,9 +404,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div style="text-align:right">
         <div id="f-fecha" style="font-size:13px;color:var(--text2)"></div>
         <div id="f-version" style="font-size:10px;color:var(--text3);margin-top:1px"></div>
-        <button id="backup-status-btn" onclick="hacerBackupAhora()" style="border:none;background:transparent;padding:0;cursor:pointer;margin-top:2px">
-          <span id="backup-status-lbl" style="font-size:11px;font-weight:600"></span>
-        </button>
       </div>
     </div>
     <div id="backup-ok" style="display:none;background:var(--green-bg);border:.5px solid rgba(99,153,34,.25);border-radius:var(--rs);padding:6px 12px;margin-bottom:.75rem;font-size:12px;color:var(--green-text);font-weight:600;text-align:center">Backup guardado correctamente</div>
@@ -453,7 +450,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   <!-- ENTRENO -->
   <div class="screen" id="s-entreno">
-    <div class="ph"><h1>Entreno</h1><span id="e-sem" style="font-size:13px;color:var(--text2)">Semana 1</span></div>
+    <div class="ph"><h1>Entreno</h1><span id="e-sem" style="font-size:13px;color:var(--text2)">Semana 1</span><div id="fb-dot-entreno" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <!-- FASE ACTUAL -->
     <div id="e-fase-banner" style="margin-bottom:.75rem;padding:.5rem .75rem;border-radius:var(--rs);background:var(--blue-bg);border:.5px solid rgba(91,143,255,.2);display:flex;align-items:center;justify-content:space-between">
       <div>
@@ -568,11 +565,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 
   <div class="screen" id="s-historial">
-    <div class="ph"><h1>Historial</h1><span style="font-size:13px;color:var(--text2)" id="hist-total"></span></div>
+    <div class="ph"><h1>Historial</h1><span style="font-size:13px;color:var(--text2)" id="hist-total"></span><div id="fb-dot-ejs" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"><div id="fb-dot-hist" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div></div>
     <div id="hist-content"></div>
   </div>
   <!-- CICLO -->
-  <div class="screen" id="s-ciclo">    <div class="ph"><h1>Programa</h1><span style="font-size:13px;color:var(--text2)">Boyle 4 dias</span></div>
+  <div class="screen" id="s-ciclo">    <div class="ph"><h1>Programa</h1><span style="font-size:13px;color:var(--text2)">Boyle 4 dias</span><div id="fb-dot-ciclo" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
 
     <!-- CICLO DE TURNOS + DIA BOYLE -->
     <div class="card">
@@ -601,34 +598,22 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button onclick="recalcularTodoCiclo()" style="width:100%;margin-top:.75rem;padding:10px;border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🔄 Recalcular todo el ciclo</button>
     </div>
 
-    <!-- FASES BOYLE -->
+    <!-- ENTRENO BOYLE DETALLE — integrado en Programa -->
     <div class="card">
-      <div class="card-lbl">Fases del programa</div>
-      <div id="p-fases"></div>
-    </div>
-
-    <!-- DIAS BOYLE DETALLE — tabs -->
-    <div class="card">
-      <div class="card-lbl">Detalle por dia</div>
-      <div style="display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap" id="p-tabs"></div>
-      <div id="p-dia-detail"></div>
+      <div class="card-lbl">Guia de Entreno Boyle</div>
+      <!-- Selector de fase -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.5rem" id="boyle-fase-tabs"></div>
+      <!-- Selector de día -->
+      <div style="display:flex;gap:6px;margin-bottom:.75rem" id="boyle-dia-tabs"></div>
+      <!-- Contenido completo -->
+      <div id="boyle-content"></div>
     </div>
   </div>
 
   <!-- NUTRICION -->
-  <!-- ENTRENAMIENTO BOYLE -->
-  <div class="screen" id="s-boyle">
-    <div class="ph"><h1>Entrenamiento Boyle</h1></div>
-    <!-- Selector de fase -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 .75rem .5rem" id="boyle-fase-tabs"></div>
-    <!-- Selector de día dentro de la fase -->
-    <div style="display:flex;gap:6px;padding:0 .75rem .75rem" id="boyle-dia-tabs"></div>
-    <!-- Contenido -->
-    <div id="boyle-content"></div>
-  </div>
 
   <div class="screen" id="s-nut">
-    <div class="ph"><h1>Nutricion</h1><span id="n-ttag" class="tag tb">—</span></div>
+    <div class="ph"><h1>Nutricion</h1><span id="n-ttag" class="tag tb">—</span><div id="fb-dot-nut" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <div class="card" style="margin-bottom:.75rem">
       <div class="card-lbl" style="margin-bottom:.5rem">Tipo de dia</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="n-tipo-btns">
@@ -654,7 +639,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   <!-- EVALUACION -->
   <div class="screen" id="s-eval">
-    <div class="ph"><h1>Evaluacion</h1><span style="font-size:13px;color:var(--text2)" id="eval-fecha-lbl"></span></div>
+    <div class="ph"><h1>Evaluacion</h1><span style="font-size:13px;color:var(--text2)" id="eval-fecha-lbl"></span><div id="fb-dot-eval" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <div class="card">
       <div class="card-lbl">Tests funcionales — puntua cada lado</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">0=Dolor · 1=No puede · 2=Compensacion · 3=Perfecto</div>
@@ -680,7 +665,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   <!-- CALENDARIO -->
   <div class="screen" id="s-cal">
-    <div class="ph"><h1>Calendario</h1></div>
+    <div class="ph"><h1>Calendario</h1><div id="fb-dot-cal" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <!-- Nav mes -->
     <div class="card" style="padding:.75rem 1rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -736,7 +721,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <button onclick="garminNavDia(-1)" style="border:none;background:var(--bg3);color:var(--text);font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="ti ti-chevron-left"></i></button>
         <span style="font-size:13px;color:var(--text2)" id="g-fecha-lbl">Sin datos</span>
         <button onclick="garminNavDia(1)" id="g-nav-next" style="border:none;background:var(--bg3);color:var(--text);font-size:18px;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="ti ti-chevron-right"></i></button>
-      </div>
+      <div id="fb-dot-garmin" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     </div>
     <div class="card">
       <div class="card-lbl">Resumen del dia</div>
@@ -770,7 +755,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
   </div>
   <div class="screen" id="s-config">
-    <div class="ph"><h1>Config</h1></div>
+    <div class="ph"><h1>Config</h1><div id="fb-dot-config" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <!-- FIREBASE SYNC PANEL -->
     <div class="card" style="border:.5px solid rgba(99,153,34,.3)">
       <div class="card-lbl" style="color:var(--green)">☁️ Sync en tiempo real</div>
@@ -824,9 +809,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="dnav-item" id="dnav-ciclo" onclick="navTo('ciclo','Programa')">
         <i class="ti ti-calendar dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa</span>
       </button>
-      <button class="dnav-item" id="dnav-boyle" onclick="navTo('boyle','Entrenamiento Boyle')">
-        <i class="ti ti-books dnav-icon" aria-hidden="true"></i><span class="dnav-label">Entrenamiento Boyle</span>
-      </button>
+
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-nut" onclick="navTo('nut','Nutricion')">
         <i class="ti ti-salad dnav-icon" aria-hidden="true"></i><span class="dnav-label">Nutricion</span>
@@ -1504,7 +1487,7 @@ function setVariante(ejOrig,variante){
   renders.entreno();
   closeMoVar();
   // Refrescar Boyle si está activo
-  var sBoyle=document.getElementById('s-boyle');
+  // s-boyle integrado en s-ciclo
   if(sBoyle&&sBoyle.classList.contains('active')) renderBoyleContenido();
 }
 
@@ -2096,6 +2079,9 @@ const renders={
     document.getElementById('sem-s').textContent=sv.s;
     const pr=PROG[(ST.sem-1)%12];
     renderGarminHoy();
+    // Estado sync Firebase — indicador en Hoy
+    if(typeof fbReady!=='undefined'&&fbReady&&fbUser) actualizarDotSync('ok');
+    else actualizarDotSync('error');
     // Sincronizar sliders con ST.sliders al renderizar
     ['d','f','s'].forEach(function(id){
       var sl=document.getElementById('sl-'+id);
@@ -2239,6 +2225,7 @@ const renders={
   ciclo(){
     renderCicloBoyle();
     if(document.getElementById('p-fases')) renderPrograma();
+    if(typeof renderBoyleFaseTabs==='function'){renderBoyleFaseTabs();renderBoyleDiaTabs();renderBoyleContenido();}
   },
   nut(){
     const c=CICLO[(ST.dia-1)%12];
@@ -4414,7 +4401,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v76';
+const APP_VERSION='v77';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5318,9 +5305,6 @@ function subirSilencioso(token){
 }
 
 function actualizarDotSync(estado){
-  var dot=document.getElementById('sync-dot');
-  var lbl=document.getElementById('sync-dot-lbl');
-  if(!dot) return;
   var cfg={
     ok:     {color:'#185FA5', txt:'Sincronizado'},
     saving: {color:'#BA7517', txt:'Guardando…'},
@@ -5328,8 +5312,16 @@ function actualizarDotSync(estado){
     offline:{color:'#adadad', txt:'Sin conexión'}
   };
   var e=cfg[estado]||cfg.offline;
-  dot.style.background=e.color;
+  // Dot principal en Hoy (junto al semaforo)
+  var dot=document.getElementById('sync-dot');
+  var lbl=document.getElementById('sync-dot-lbl');
+  if(dot) dot.style.background=e.color;
   if(lbl) lbl.textContent=e.txt;
+  // Dots en cabeceras de todas las pantallas
+  ['entreno','ciclo','nut','eval','cal','garmin','config','ejs','hist'].forEach(function(id){
+    var d=document.getElementById('fb-dot-'+id);
+    if(d) d.style.background=e.color;
+  });
 }
 
 function checkBackupReminder(){

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v77</title>
+<title>Entreno Boyle v78</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v77"
+      version: "v78"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -598,19 +598,31 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button onclick="recalcularTodoCiclo()" style="width:100%;margin-top:.75rem;padding:10px;border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🔄 Recalcular todo el ciclo</button>
     </div>
 
-    <!-- ENTRENO BOYLE DETALLE — integrado en Programa -->
+    <!-- FASES BOYLE -->
     <div class="card">
-      <div class="card-lbl">Guia de Entreno Boyle</div>
-      <!-- Selector de fase -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.5rem" id="boyle-fase-tabs"></div>
-      <!-- Selector de día -->
-      <div style="display:flex;gap:6px;margin-bottom:.75rem" id="boyle-dia-tabs"></div>
-      <!-- Contenido completo -->
-      <div id="boyle-content"></div>
+      <div class="card-lbl">Fases del programa</div>
+      <div id="p-fases"></div>
+    </div>
+
+    <!-- DIAS BOYLE DETALLE — tabs -->
+    <div class="card">
+      <div class="card-lbl">Detalle por dia</div>
+      <div style="display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap" id="p-tabs"></div>
+      <div id="p-dia-detail"></div>
     </div>
   </div>
 
   <!-- NUTRICION -->
+  <!-- ENTRENAMIENTO BOYLE -->
+  <div class="screen" id="s-boyle">
+    <div class="ph"><h1>Entrenamiento Boyle</h1><div id="fb-dot-boyle" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
+    <!-- Selector de fase -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 .75rem .5rem" id="boyle-fase-tabs"></div>
+    <!-- Selector de día dentro de la fase -->
+    <div style="display:flex;gap:6px;padding:0 .75rem .75rem" id="boyle-dia-tabs"></div>
+    <!-- Contenido -->
+    <div id="boyle-content"></div>
+  </div>
 
   <div class="screen" id="s-nut">
     <div class="ph"><h1>Nutricion</h1><span id="n-ttag" class="tag tb">—</span><div id="fb-dot-nut" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
@@ -809,7 +821,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="dnav-item" id="dnav-ciclo" onclick="navTo('ciclo','Programa')">
         <i class="ti ti-calendar dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa</span>
       </button>
-
+      <button class="dnav-item" id="dnav-boyle" onclick="navTo('boyle','Entrenamiento Boyle')">
+        <i class="ti ti-books dnav-icon" aria-hidden="true"></i><span class="dnav-label">Entrenamiento Boyle</span>
+      </button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-nut" onclick="navTo('nut','Nutricion')">
         <i class="ti ti-salad dnav-icon" aria-hidden="true"></i><span class="dnav-label">Nutricion</span>
@@ -1487,7 +1501,7 @@ function setVariante(ejOrig,variante){
   renders.entreno();
   closeMoVar();
   // Refrescar Boyle si está activo
-  // s-boyle integrado en s-ciclo
+  var sBoyle=document.getElementById('s-boyle');
   if(sBoyle&&sBoyle.classList.contains('active')) renderBoyleContenido();
 }
 
@@ -2225,7 +2239,6 @@ const renders={
   ciclo(){
     renderCicloBoyle();
     if(document.getElementById('p-fases')) renderPrograma();
-    if(typeof renderBoyleFaseTabs==='function'){renderBoyleFaseTabs();renderBoyleDiaTabs();renderBoyleContenido();}
   },
   nut(){
     const c=CICLO[(ST.dia-1)%12];
@@ -4401,7 +4414,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v77';
+const APP_VERSION='v78';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5312,13 +5325,11 @@ function actualizarDotSync(estado){
     offline:{color:'#adadad', txt:'Sin conexión'}
   };
   var e=cfg[estado]||cfg.offline;
-  // Dot principal en Hoy (junto al semaforo)
   var dot=document.getElementById('sync-dot');
   var lbl=document.getElementById('sync-dot-lbl');
   if(dot) dot.style.background=e.color;
   if(lbl) lbl.textContent=e.txt;
-  // Dots en cabeceras de todas las pantallas
-  ['entreno','ciclo','nut','eval','cal','garmin','config','ejs','hist'].forEach(function(id){
+  ['entreno','ciclo','boyle','nut','eval','cal','garmin','config','ejs','hist'].forEach(function(id){
     var d=document.getElementById('fb-dot-'+id);
     if(d) d.style.background=e.color;
   });

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v80</title>
+<title>Entreno Boyle v81</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v80"
+      version: "v81"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -4405,7 +4405,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v80';
+const APP_VERSION='v81';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5450,8 +5450,10 @@ renders.historial=function(){
     var maxPeso=Math.max.apply(null,setsValidos.map(function(s){return s.p;}));
     var volSesion=setsValidos.reduce(function(a,s){return a+s.p*s.r;},0);
     var rpeMedia=Math.round(setsValidos.reduce(function(a,s){return a+s.rpe;},0)/setsValidos.length);
-    var fecha=setsValidos[0].fecha||('Dia '+dia);
-    ejMap[ej].sesiones.push({dia:dia,sets:setsValidos,maxPeso:maxPeso,volSesion:volSesion,rpeMedia:rpeMedia,fecha:fecha});
+    // Fecha real desde fechaSesiones, fallback a fecha del set, fallback a dia
+    var fechaReal=ST.fechaSesiones&&ST.fechaSesiones[dia]?ST.fechaSesiones[dia]:(setsValidos[0].fecha||null);
+    var fechaLabel=fechaReal?fechaReal.slice(5).replace('-','/'):'D'+dia; // formato MM/DD
+    ejMap[ej].sesiones.push({dia:dia,sets:setsValidos,maxPeso:maxPeso,volSesion:volSesion,rpeMedia:rpeMedia,fecha:fechaLabel,fechaFull:fechaReal||('Dia '+dia)});
     ejMap[ej].totalVol+=volSesion;
     if(maxPeso>ejMap[ej].mejorPeso) ejMap[ej].mejorPeso=maxPeso;
   });
@@ -5511,9 +5513,9 @@ renders.historial=function(){
       datos.forEach(function(s,i){
         var x=PL+Math.round(i/(datos.length-1)*cW);
         var y=PT+cH-Math.round((s.maxPeso-minP)/rangoP*cH);
-        circles+='<circle cx="'+x+'" cy="'+y+'" r="4" fill="#185FA5" stroke="white" stroke-width="2"><title>'+s.fecha+': '+s.maxPeso+'kg</title></circle>';
+        circles+='<circle cx="'+x+'" cy="'+y+'" r="4" fill="#185FA5" stroke="white" stroke-width="2"><title>'+(s.fechaFull||s.fecha)+': '+s.maxPeso+'kg</title></circle>';
         labels+='<text x="'+x+'" y="'+(y-8)+'" text-anchor="middle" font-size="9" fill="#185FA5" font-weight="bold">'+s.maxPeso+'</text>';
-        var lbl=s.fecha?s.fecha.split(' ').slice(0,2).join(' '):'D'+s.dia;
+        var lbl=s.fecha?s.fecha:'D'+s.dia;
         xlabels+='<text x="'+x+'" y="'+(H-2)+'" text-anchor="middle" font-size="8" fill="#9a9aaa">'+lbl+'</text>';
       });
       var areaPath='M'+PL+','+(PT+cH)+' L'+datos.map(function(s,i){var x=PL+Math.round(i/(datos.length-1)*cW);var y=PT+cH-Math.round((s.maxPeso-minP)/rangoP*cH);return x+','+y;}).join(' L')+' L'+(PL+cW)+','+(PT+cH)+' Z';

@@ -407,7 +407,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
     </div>
     <div id="backup-ok" style="display:none;background:var(--green-bg);border:.5px solid rgba(99,153,34,.25);border-radius:var(--rs);padding:6px 12px;margin-bottom:.75rem;font-size:12px;color:var(--green-text);font-weight:600;text-align:center">Backup guardado correctamente</div>
-
+    <div id="sync-panel" style="display:none;border-radius:var(--rs);padding:8px 12px;margin-bottom:.75rem;font-size:12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="sync-icon" style="font-size:16px">☁️</span>
+        <div style="flex:1">
+          <div id="sync-msg" style="font-weight:600;color:var(--text)"></div>
           <div id="sync-sub" style="font-size:11px;color:var(--text2);margin-top:1px"></div>
         </div>
         <button id="sync-btn" onclick="syncManual()" style="border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px;flex-shrink:0" title="Sincronizar ahora">🔄</button>
@@ -4404,6 +4408,961 @@ const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googl
 const APP_VERSION='v80';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
+function exportarJSON(){
+  const data=JSON.stringify(ST,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download='entreno_jose_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(url);
+}
+
+function exportar(){
+  if(typeof XLSX==='undefined'){alert('Cargando... espera 3 seg e intentalo de nuevo.');const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>exportar();document.head.appendChild(s);return;}
+  const wb=XLSX.utils.book_new();
+  const fecha=new Date().toISOString().slice(0,10);
+  function hdr(v){return{v,t:'s',s:{font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'185FA5'}},alignment:{horizontal:'center'}}};}
+  function cel(v,bold){return{v:v??'',t:typeof v==='number'?'n':'s',s:{font:{bold:!!bold}}};}
+  // Series
+  const sRows=[[hdr('Dia'),hdr('Sesion'),hdr('Ejercicio'),hdr('Serie'),hdr('Peso kg'),hdr('Reps'),hdr('Volumen'),hdr('RPE'),hdr('Nota')]];
+  Object.entries(ST.sets).sort((a,b)=>parseInt(a[0].replace('d',''))-parseInt(b[0].replace('d',''))).forEach(([key,sets])=>{
+    const dia=key.split('_')[0].replace('d','');
+    const ej=key.split('_').slice(1).join(' ');
+    const ci=CICLO[(parseInt(dia)-1)%12]||{};
+    const sesNom=SES_NOM[ci.s]||ci.s||'—';
+    (sets||[]).forEach((s,i)=>{if(!s)return;sRows.push([cel('D'+dia),cel(sesNom),cel(ej,true),cel('S'+(i+1)),{v:s.p,t:'n'},{v:s.r,t:'n'},{v:Math.round(s.p*s.r),t:'n'},{v:s.rpe,t:'n'},cel(s.n||'')]);});
+  });
+  if(sRows.length===1)sRows.push([cel('Sin datos aun'),'','','','','','','','']);
+  const wsSets=XLSX.utils.aoa_to_sheet(sRows);wsSets['!cols']=[{wch:6},{wch:20},{wch:24},{wch:7},{wch:10},{wch:7},{wch:10},{wch:7},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsSets,'Series registradas');
+  // Progresion ejercicios
+  const ejMap={};
+  Object.entries(ST.sets).forEach(([key,sets])=>{
+    const ej=key.split('_').slice(1).join(' ');
+    if(!ejMap[ej])ejMap[ej]={dias:0,mejorPeso:0,mejorVol:0,ultimo:null};
+    ejMap[ej].dias++;
+    (sets||[]).forEach(s=>{if(!s)return;if(s.p>ejMap[ej].mejorPeso)ejMap[ej].mejorPeso=s.p;if(s.p*s.r>ejMap[ej].mejorVol)ejMap[ej].mejorVol=s.p*s.r;ejMap[ej].ultimo=s;});
+  });
+  const pRows=[[hdr('Ejercicio'),hdr('Dias'),hdr('Mejor peso kg'),hdr('Mejor volumen'),hdr('Ultimo peso'),hdr('Ultimas reps'),hdr('Ultimo RPE')]];
+  Object.entries(ejMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([ej,d])=>{
+    pRows.push([cel(ej,true),{v:d.dias,t:'n'},{v:d.mejorPeso,t:'n'},{v:Math.round(d.mejorVol),t:'n'},{v:d.ultimo?d.ultimo.p:0,t:'n'},{v:d.ultimo?d.ultimo.r:0,t:'n'},{v:d.ultimo?d.ultimo.rpe:0,t:'n'}]);
+  });
+  if(pRows.length===1)pRows.push([cel('Sin datos'),'','','','','','']);
+  const wsProg=XLSX.utils.aoa_to_sheet(pRows);wsProg['!cols']=[{wch:26},{wch:8},{wch:14},{wch:14},{wch:12},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,wsProg,'Progresion ejercicios');
+  // Evaluaciones
+  const evRows=[[hdr('Fecha'),hdr('Puntuacion'),hdr('Porcentaje'),hdr('Notas')]];
+  (ST.eval||[]).forEach(ev=>{
+    const total=EVAL_TESTS.reduce((a,t)=>a+(ev.scores&&ev.scores[t.id]!==undefined?ev.scores[t.id]:0),0);
+    const max=EVAL_TESTS.length*3;
+    evRows.push([cel(ev.fecha),{v:total,t:'n'},{v:Math.round(total/max*100),t:'n'},cel(ev.notas||'')]);
+  });
+  if(evRows.length===1)evRows.push([cel('Sin evaluaciones'),'','','']);
+  const wsEv=XLSX.utils.aoa_to_sheet(evRows);wsEv['!cols']=[{wch:18},{wch:12},{wch:12},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,wsEv,'Evaluaciones');
+  // Ciclo
+  const cRows=[[hdr('Dia'),hdr('Turno'),hdr('Hora'),hdr('Sesion'),hdr('Energia')]];
+  CICLO.forEach(c=>cRows.push([cel('Dia '+c.d),cel(tnom(c.t)),cel(c.h),cel(SES_NOM[c.s]||c.s),cel(c.e)]));
+  const wsCiclo=XLSX.utils.aoa_to_sheet(cRows);wsCiclo['!cols']=[{wch:8},{wch:18},{wch:16},{wch:24},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsCiclo,'Ciclo');
+  // Progresion 12 semanas
+  const prRows=[[hdr('Semana'),hdr('Series'),hdr('Reps'),hdr('Intensidad %'),hdr('Pausa'),hdr('Descarga')]];
+  PROG.forEach(p=>prRows.push([{v:p.s,t:'n'},{v:p.n,t:'n'},{v:p.r,t:'n'},{v:p.p,t:'n'},cel(p.pa),cel(p.d?'SI':'')]));
+  const wsPr=XLSX.utils.aoa_to_sheet(prRows);wsPr['!cols']=[{wch:10},{wch:8},{wch:8},{wch:14},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsPr,'Progresion 12 semanas');
+  const wbOut=XLSX.write(wb,{bookType:'xlsx',type:'binary',cellStyles:true});
+  function s2ab(s){const b=new ArrayBuffer(s.length);const v=new Uint8Array(b);for(let i=0;i<s.length;i++)v[i]=s.charCodeAt(i)&0xFF;return b;}
+  const blob=new Blob([s2ab(wbOut)],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='entreno_jose_'+fecha+'.xlsx';a.click();URL.revokeObjectURL(url);
+}
+
+function importarGarmin(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const g=JSON.parse(e.target.result);
+      ST.garmin=g;
+      // Acumular historial por fecha
+      if(!ST.garminHist) ST.garminHist={};
+      if(g.fecha) ST.garminHist[g.fecha]=g;
+      save();
+      renders.garmin();
+      renderGarminHoy();
+      if(document.getElementById('s-cal').classList.contains('active')) renders.cal();
+      alert('Datos Garmin importados: '+g.fecha);
+    }catch(err){alert('Error al importar el JSON de Garmin.');}
+  };
+  reader.readAsText(file);input.value='';
+}
+
+// ============================================================
+// GARMIN AUTO-FETCH desde GitHub Pages
+// ============================================================
+const GARMIN_JSON_URL = 'https://shumb71.github.io/Boyle/garmin_historial.json';
+
+async function fetchGarminAuto(manual) {
+  const statusEl = document.getElementById('garmin-auto-status');
+  if (statusEl) {
+    statusEl.style.background = 'var(--blue-bg)';
+    statusEl.style.color = 'var(--blue-text)';
+    statusEl.textContent = '⏳ Descargando historial desde GitHub...';
+  }
+  try {
+    const resp = await fetch(GARMIN_JSON_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.dias) throw new Error('Formato incorrecto');
+
+    // Siempre sobreescribir — Garmin actualiza datos progresivamente durante el día
+    if (!ST.garminHist) ST.garminHist = {};
+    var diasAntes=Object.keys(ST.garminHist);
+    Object.assign(ST.garminHist, data.dias);
+    if (!ST.garmin) ST.garmin = {};
+    Object.assign(ST.garmin, data.dias);
+    // Append días nuevos a Google Sheets Garmin
+    Object.keys(data.dias||{}).forEach(function(fecha){
+      if(diasAntes.indexOf(fecha)>=0) return; // ya existía, no duplicar
+      var g2=data.dias[fecha];
+      var f2=g2.fuerza||null;
+      var acts2=(g2.actividades||[]).map(function(a){return a.nombre+'('+a.duracion_min+'min)';}).join(' | ');
+      sheetsAppend('Garmin',[fecha,g2.pasos||0,g2.calorias_dia||0,g2.calorias_activas||0,g2.distancia_km||0,g2.minutos_activos||0,g2.fc_reposo||'',g2.estres_medio||'',g2.sueno_total_min||0,g2.sueno_profundo_min||0,g2.sueno_ligero_min||0,g2.sueno_rem_min||0,g2.sueno_puntuacion||'',g2.body_battery_max||'',g2.body_battery_min||'',acts2,f2?f2.nombre:'',f2?f2.duracion_min:'',f2?f2.calorias:'',f2?f2.fc_media:'',f2?f2.fc_max:'']).catch(function(){});
+    });
+    // Guardar con hora
+    var ahora = new Date();
+    var horaLocal = ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    var fechaLocal = ahora.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    ST.garminActualizado = (data.actualizado||fechaLocal) + ' · ' + horaLocal;
+    save();
+    if (typeof renderGarminHoy === 'function') renderGarminHoy();
+    if (typeof renderHoy === 'function') renderHoy();
+
+    const total = Object.keys(ST.garmin).length;
+    if (statusEl) {
+      statusEl.style.background = 'var(--green-bg)';
+      statusEl.style.color = 'var(--green-text)';
+      statusEl.textContent = '✅ ' + total + ' días cargados · Actualizado: ' + (ST.garminActualizado || '');
+    }
+    if (manual) {
+      const t = document.getElementById('fb-toast');
+      if (t) { t.textContent = '✅ Garmin actualizado · ' + total + ' días'; t.style.opacity='1'; setTimeout(()=>{t.style.opacity='0';},3000); }
+    }
+  } catch(e) {
+    if (statusEl) {
+      statusEl.style.background = 'var(--orange-bg)';
+      statusEl.style.color = 'var(--orange-text)';
+      statusEl.textContent = '⚠️ No se pudo cargar automáticamente. Usa importación manual.';
+    }
+    console.warn('Garmin auto-fetch error:', e);
+  }
+}
+
+// ══════════════════════════════════════
+// SETS PERMANENTES — FIREBASE SEPARADO
+// ══════════════════════════════════════
+// ══════════════════════════════════════
+var _sheetsId = null; // ID de la Google Sheet de Entreno Boyle
+
+async function actualizarCabeceraSesiones(){
+  var token=await getGdriveToken();
+  if(!token) return;
+  var sheetId=await getSheetsId();
+  if(!sheetId) return;
+  var range=encodeURIComponent('Sesiones!A1:P1');
+  await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+'?valueInputOption=USER_ENTERED',{
+    method:'PUT',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({values:[['Fecha','Día Ciclo','Día Boyle Real','Día Boyle Prog','Fase','Semana','Sem en Fase','Variación','Ejs Sustituidos','Ejercicios Realizados','Duración (min)','Duración (hms)','Descanso','Fatiga','Sueño','Origen']]})
+  }).catch(function(){});
+}
+
+async function getSheetsId(){
+  var token=await getGdriveToken();
+  if(!token) return null;
+  // Buscar en todo Drive sin restricción de carpeta
+  var q=encodeURIComponent('name="Entreno Boyle" and mimeType="application/vnd.google-apps.spreadsheet" and trashed=false');
+  var resp=await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)&spaces=drive&corpora=user',{
+    headers:{'Authorization':'Bearer '+token}
+  });
+  var data=await resp.json();
+  console.log('getSheetsId result:', data);
+  if(data.files&&data.files.length){
+    _sheetsId=data.files[0].id;
+    return _sheetsId;
+  }
+  return null;
+}
+
+async function sheetsAppend(sheetName, values){
+  // Añade una fila al final de la hoja indicada
+  var token=await getGdriveToken();
+  if(!token) return false;
+  var sheetId=await getSheetsId();
+  if(!sheetId) return false;
+  var range=encodeURIComponent(sheetName+'!A:Z');
+  var resp=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({values:[values]})
+  });
+  return resp.ok;
+}
+
+// Llamar al registrar un set
+async function appendSetToSheets(numDia, ej, variante, serie, peso, reps, rpe, nota){
+  var fecha=new Date().toISOString().slice(0,10);
+  var fase=getFaseActual(ST.sem);
+  var sem='Sem '+ST.sem;
+  var semEnFase='Sem '+getSemEnFase(ST.sem)+' de 3';
+  var dBraw=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'—');
+  var dB=typeof dBraw==='object'?(dBraw.b||'—'):dBraw;
+  var varMostrar=variante&&variante!==ej?variante:'';
+  var values=[fecha,numDia,dB,fase,sem,semEnFase,ej,varMostrar,serie,peso,reps,rpe,nota||''];
+  sheetsAppend('Sets y Pesos', values).catch(function(){});
+}
+
+// Llamar al finalizar sesión
+async function appendSesionToSheets(sesionData){
+  if(!sesionData) return;
+  var ejsStr=(sesionData.ejerciciosRealizados||[]).map(function(e){return e.ej;}).join(', ');
+  var values=[
+    sesionData.fecha||'',
+    sesionData.diaCiclo||'',
+    sesionData.diaBoyleReal||'—',
+    sesionData.diaBoyleProg||'—',
+    sesionData.fase||'',
+    'Sem '+(sesionData.semana||ST.sem),
+    'Sem '+(sesionData.semEnFase||getSemEnFase(sesionData.semana||ST.sem))+' de 3',
+    sesionData.variacion?'Sí':'No',
+    (sesionData.ejsSustituidos||[]).join(', '),
+    ejsStr,
+    sesionData.duracion_min||'',
+    '',
+    (ST.sliders||{}).d||'',
+    (ST.sliders||{}).f||'',
+    (ST.sliders||{}).s||'',
+    'Registrada'
+  ];
+  sheetsAppend('Sesiones', values).catch(function(){});
+}
+// ══════════════════════════════════════
+const GITHUB_TOKEN = 'TU_TOKEN_AQUI'; // Se sobreescribe con ST.githubToken si existe
+const GITHUB_REPO  = 'shumb71/Boyle';
+const GITHUB_WORKFLOW = 'garmin_sync.yml';
+
+async function triggerGarminSync(){
+  var token = (ST.githubToken||GITHUB_TOKEN||'').trim();
+  if(!token||token==='TU_TOKEN_AQUI'){
+    alert('No hay token de GitHub configurado. Ejecuta en consola:\nST.githubToken = "tu_token";\nsave();');
+    return;
+  }
+  var btn=document.getElementById('btn-trigger-garmin');
+  var statusEl=document.getElementById('garmin-trigger-status');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Lanzando...';}
+  if(statusEl){statusEl.style.display='block';statusEl.style.background='var(--blue-bg)';statusEl.style.color='var(--blue-text)';statusEl.textContent='⏳ Lanzando sync en GitHub...';}
+  try {
+    var resp = await fetch('https://api.github.com/repos/'+GITHUB_REPO+'/actions/workflows/'+GITHUB_WORKFLOW+'/dispatches', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer '+token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ref: 'main'})
+    });
+    if(resp.status===204||resp.ok){
+      if(statusEl){statusEl.style.background='var(--orange-bg)';statusEl.style.color='var(--orange-text)';statusEl.textContent='✅ Sync lanzado — esperando 90s para descargar datos...';}
+      // Esperar 90 segundos y luego hacer fetch del JSON
+      setTimeout(async function(){
+        if(statusEl){statusEl.textContent='🔄 Descargando datos actualizados...';}
+        await fetchGarminAuto(true);
+        if(statusEl){statusEl.style.background='var(--green-bg)';statusEl.style.color='var(--green-text)';statusEl.textContent='✅ Datos Garmin actualizados';}
+        if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar Garmin ahora';}
+      }, 90000);
+    } else {
+      var err=await resp.text();
+      if(statusEl){statusEl.style.background='var(--red-bg)';statusEl.style.color='var(--red-text)';statusEl.textContent='❌ Error '+resp.status+': '+err.slice(0,80);}
+      if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar Garmin ahora';}
+    }
+  } catch(e){
+    if(statusEl){statusEl.style.background='var(--red-bg)';statusEl.style.color='var(--red-text)';statusEl.textContent='❌ Error de red: '+e.message;}
+    if(btn){btn.disabled=false;btn.textContent='🔄 Actualizar Garmin ahora';}
+  }
+}
+// Cargar automáticamente al iniciar la app (esperar a que todo esté listo)
+window.addEventListener('load', () => {
+  // Merge ST.garmin (estructura plana) → ST.garminHist (por fecha) al arrancar
+  if (ST.garmin && typeof ST.garmin === 'object') {
+    if (!ST.garminHist) ST.garminHist = {};
+    // Si ST.garmin es un dict de fechas (del auto-fetch)
+    const keys = Object.keys(ST.garmin);
+    if (keys.length > 0 && keys[0].match(/^\d{4}-\d{2}-\d{2}$/)) {
+      Object.assign(ST.garminHist, ST.garmin);
+    }
+  }
+  setTimeout(fetchGarminAuto, 3000); // 3s después de cargar completo
+  setTimeout(function(){ exportarExcelDrive(true); }, 8000); // 8s — volcado inicial al Drive
+});
+
+function importarGarminHistorial(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      const dias=data.dias||{};
+      if(!Object.keys(dias).length){alert('El fichero no contiene días.');return;}
+      if(!ST.garminHist) ST.garminHist={};
+      let nuevos=0,existentes=0;
+      Object.entries(dias).forEach(([fecha,g])=>{
+        if(ST.garminHist[fecha]) existentes++;
+        else nuevos++;
+        ST.garminHist[fecha]=g; // siempre sobreescribir
+        if(!ST.garmin||fecha>ST.garmin.fecha) ST.garmin=g;
+      });
+      save();
+      renders.garmin();
+      renderGarminHoy();
+      if(document.getElementById('s-cal').classList.contains('active')) renders.cal();
+      const status=document.getElementById('garmin-import-status');
+      status.style.display='block';
+      status.textContent='✅ '+nuevos+' día(s) nuevos importados · '+existentes+' ya existían';
+      setTimeout(()=>{status.style.display='none';},4000);
+    }catch(err){alert('Error al importar el historial Garmin. Asegúrate de usar garmin_sync_v7.py');}
+  };
+  reader.readAsText(file);input.value='';
+}
+
+// ── CALENDARIO ──────────────────────────────────────────────
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth(); // 0-based
+let calDiaSeleccionado=null;
+
+function calMes(delta){
+  calMonth+=delta;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  renders.cal();
+  renderCalStats(calYear,calMonth);
+  renderCumplimiento(calYear,calMonth);
+}
+
+function calFechaKey(y,m,d){
+  return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+
+// Obtener entrenos del día (desde ST.sets, claves d{n}_ejercicio)
+// Mapeamos dia numérico a fecha real si hay garminHist, si no usamos índice relativo
+function calGetEntrenosDia(fecha){
+  // Buscamos en garminHist si hay datos de ese día
+  const hist=ST.garminHist||{};
+  // Entrenos: buscamos en ST.sets claves que coincidan con el día de sesión
+  // Como los sets usan "d{dia}" (número de día de programa), no fecha real,
+  // intentamos correlacionar por fecha si está en garminHist
+  const entrenos=[];
+  // Recorremos sets buscando sesiones que tengan fecha guardada
+  const sesKeys=Object.keys(ST.sets||{});
+  // Agrupar por día de programa
+  const dias={};
+  sesKeys.forEach(k=>{
+    const m=k.match(/^d(\d+)_/);
+    if(m){const d=m[1];if(!dias[d])dias[d]=[];dias[d].push(k);}
+  });
+  // Para el calendario, buscamos si existe fecha_sesion en ST.fechaSesiones
+  const fechaSesiones=ST.fechaSesiones||{};
+  // Si existe mapeo fecha→dia, lo usamos
+  const diaNum=Object.keys(fechaSesiones).find(d=>fechaSesiones[d]===fecha);
+  if(diaNum&&dias[diaNum]){
+    dias[diaNum].forEach(k=>{
+      const ej=k.replace(/^d\d+_/,'');
+      const sets=(ST.sets[k]||[]).filter(Boolean);
+      if(sets.length) entrenos.push({ej,sets});
+    });
+  }
+  return entrenos;
+}
+
+function calSelDia(fecha){
+  calDiaSeleccionado=fecha;
+  // Remarcar celda activa
+  document.querySelectorAll('.cal-cell').forEach(c=>c.classList.remove('cal-sel'));
+  const cel=document.querySelector('.cal-cell[data-fecha="'+fecha+'"]');
+  if(cel) cel.classList.add('cal-sel');
+  // Mostrar detalle
+  const hist=ST.garminHist||{};
+  const g=hist[fecha];
+  const det=document.getElementById('cal-detalle');
+  const vacio=document.getElementById('cal-vacio');
+  const [y,m,d]=fecha.split('-');
+  const fechaStr=new Date(parseInt(y),parseInt(m)-1,parseInt(d)).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('cal-det-titulo').textContent=fechaStr.charAt(0).toUpperCase()+fechaStr.slice(1);
+  let htmlG='',htmlE='';
+  if(g){
+    const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+(g.sueno_total_min%60)+'min':'—';
+    htmlG=`<div style="margin-bottom:.5rem">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:6px">⌚ GARMIN</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--blue)">${(g.pasos||0).toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--text2)">pasos</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--orange)">${g.calorias_dia||0}</div>
+          <div style="font-size:10px;color:var(--text2)">kcal</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--green)">${suenoh}</div>
+          <div style="font-size:10px;color:var(--text2)">sueño</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center">
+          <div style="font-size:18px;font-weight:700;color:var(--red)">${g.fc_reposo||'—'}</div>
+          <div style="font-size:10px;color:var(--text2)">FC reposo</div>
+        </div>
+      </div>
+      ${g.body_battery_max?`<div class="prow" style="background:var(--bg3);border-radius:var(--rs);padding:.4rem .6rem;margin-bottom:4px"><span class="plbl">⚡ Body Battery</span><span class="pval">${g.body_battery_min||0} → ${g.body_battery_max}</span></div>`:''}
+      ${(function(){
+        if(g.actividades&&g.actividades.length){
+          return g.actividades.map(function(act){
+            var t=(act.tipo||'').toLowerCase();
+            var icono=t.includes('strength')||t.includes('weight')||t.includes('fuerza')?'💪':t.includes('walk')||t.includes('hik')?'🚶':t.includes('cycl')||t.includes('bik')?'🚴':t.includes('swim')?'🏊':t.includes('yoga')?'🧘':'🏃';
+            return '<div style="background:var(--green-bg);border-radius:var(--rs);padding:.4rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">'+icono+' '+(act.nombre||act.tipo)+'</span><span style="font-size:12px;color:var(--green-text)">'+act.duracion_min+' min · '+act.calorias+' kcal</span></div>';
+          }).join('');
+        }
+        return g.fuerza?`<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal</span></div>`:'';
+      })()}
+    </div>`;
+  } else {
+    htmlG=`<div style="color:var(--text3);font-size:12px;margin-bottom:.75rem">Sin datos Garmin este día</div>`;
+  }
+  // Entrenos (sets del programa)
+  const fechaSesiones=ST.fechaSesiones||{};
+  const diaNum=Object.keys(fechaSesiones).find(dd=>fechaSesiones[dd]===fecha);
+  if(diaNum){
+    const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
+    if(sesKeys.length){
+      const ejsHTML=sesKeys.map(k=>{
+        const ej=k.replace(/^d\d+_/,'');
+        const sets=(ST.sets[k]||[]).filter(Boolean);
+        if(!sets.length) return '';
+        const maxRpe=sets.reduce((a,s)=>Math.max(a,s.rpe||0),0);
+        const ejColor=maxRpe>=9?'var(--red)':maxRpe>=8?'var(--orange)':'var(--text)';
+        const setsStr=sets.map((s,i)=>{
+          const rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
+          return`<span style="color:${rpeCol}">S${i+1}: ${s.p}kg×${s.r} R${s.rpe}</span>`;
+        }).join(' · ');
+        // Variante: primero del set, luego ST.variantes, luego nombre base
+        const varMostrar=sets[0]&&sets[0].v?sets[0].v:(ST.variantes&&ST.variantes[ej]&&ST.variantes[ej]!==ej?ST.variantes[ej]:ej);
+        const varTag=varMostrar!==ej?`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px;margin-left:4px">${varMostrar}</span>`:'';
+        return `<div class="prow" style="flex-direction:column;align-items:flex-start;gap:2px">
+          <span style="font-size:12px;font-weight:600;color:${ejColor}">${ej}${varTag}</span>
+          <span style="font-size:11px">${setsStr}</span>
+        </div>`;
+      }).filter(Boolean).join('');
+      // Dia Boyle y semana — ST.diaBoyle[diaNum] puede ser objeto {b,sem} o string legacy
+      var dBraw=ST.diaBoyle&&ST.diaBoyle[diaNum]!=null?ST.diaBoyle[diaNum]:(CICLO[(parseInt(diaNum)-1)%12]||{});
+      var dBkey=typeof dBraw==='object'?(dBraw.b||''):dBraw;
+      var dBsem=typeof dBraw==='object'&&dBraw.sem?dBraw.sem:(ST.sem||1);
+      var nomBoyle=dBkey?(BOYLE_DIAS[dBkey]?BOYLE_DIAS[dBkey].n:dBkey):'';
+      var semBoyle=dBsem?'S'+dBsem:'';
+      var badgesBoyle=(nomBoyle?'<span style="color:var(--blue-text);background:var(--blue-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+nomBoyle+'</span>':'')+
+        (semBoyle?' <span style="color:var(--orange-text);background:var(--orange-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+semBoyle+'</span>':'');
+      if(ejsHTML) htmlE=`<div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${badgesBoyle?' · '+badgesBoyle:''}</div>
+        ${ejsHTML}
+      </div>`;
+    }
+  }
+  if(!htmlE) htmlE=`<div style="color:var(--text3);font-size:12px;margin-top:4px">Sin entreno registrado este día</div>`;
+  // Info de historialFechas si existe — es la fuente principal
+  var histSes=ST.historialFechas&&ST.historialFechas[fecha];
+  if(histSes&&histSes.completado){
+    var varTag=histSes.variacion?'<span style="background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">⚠ Variación</span>':'';
+    var sustHtml=histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'';
+    // Ejercicios de historialFechas
+    var ejsHtml='';
+    if(histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){
+      ejsHtml='<div style="margin-top:6px">';
+      histSes.ejerciciosRealizados.forEach(function(e){
+        var setsStr=(e.sets||[]).map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
+        ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+e.ej+'</span>'+(setsStr?' — '+setsStr:'')+'</div>';
+      });
+      ejsHtml+='</div>';
+    } else if(diaNum){
+      // Fallback: usar sets de ST.sets si historial no tiene ejercicios
+      var sesKeys2=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
+      if(sesKeys2.length){
+        ejsHtml='<div style="margin-top:6px">';
+        sesKeys2.forEach(function(k){
+          var ej=k.replace(/^d\d+_/,'');
+          var sets=(ST.sets[k]||[]).filter(Boolean);
+          if(!sets.length) return;
+          var setsStr=sets.map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
+          ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+ej+'</span> — '+setsStr+'</div>';
+        });
+        ejsHtml+='</div>';
+      }
+    }
+    var fechaSafe=fecha.replace(/'/g,"\\'");
+    htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;justify-content:space-between">'
+      +'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
+      +'<span style="font-size:12px;font-weight:700;color:var(--green-text)">✅ Sesión registrada</span>'
+      +'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">'+histSes.fase+' · Sem '+histSes.semana+(histSes.diaBoyleReal&&histSes.diaBoyleReal!=='Descanso'?' · '+histSes.diaBoyleReal:'')+'</span>'
+      +varTag+'</div>'
+      +'<button onclick="abrirEditarSesion(\''+fechaSafe+'\')" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">✏ Editar</button>'
+      +'</div>'
+      +sustHtml+ejsHtml+'</div>';
+  }
+  // Limpiar antes de rellenar para forzar re-render
+  const garminEl = document.getElementById('cal-det-garmin');
+  const entrenoEl = document.getElementById('cal-det-entreno');
+  garminEl.innerHTML = '';
+  entrenoEl.innerHTML = '';
+  // Forzar reflow
+  garminEl.offsetHeight;
+  garminEl.innerHTML = htmlG;
+  entrenoEl.innerHTML = htmlE;
+  det.style.display='block';
+  vacio.style.display='none';
+  det.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderCumplimiento(year,month){
+  var el=document.getElementById('cal-cumpl-stats');
+  var card=document.getElementById('cal-cumplimiento');
+  if(!el||!card) return;
+  var hist=ST.historialFechas||{};
+  var diasMes=new Date(year,month+1,0).getDate();
+  var sesionesDelMes=[];
+  for(var d=1;d<=diasMes;d++){
+    var f=calFechaKey(year,month,d);
+    if(hist[f]&&hist[f].completado) sesionesDelMes.push(hist[f]);
+  }
+  if(!sesionesDelMes.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3)">Sin sesiones registradas este mes.</div>';
+    card.style.display='block';return;
+  }
+  var total=sesionesDelMes.length;
+  var conVariacion=sesionesDelMes.filter(function(s){return s.variacion;}).length;
+  var sinVariacion=total-conVariacion;
+  var pctVariacion=total?Math.round(conVariacion/total*100):0;
+  var porFase={};
+  sesionesDelMes.forEach(function(s){
+    if(!porFase[s.fase]) porFase[s.fase]=0;
+    porFase[s.fase]++;
+  });
+  var faseTags=Object.keys(porFase).map(function(f){
+    return '<span style="font-size:10px;font-weight:700;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:1px 7px">'+f+': '+porFase[f]+'</span>';
+  }).join(' ');
+  el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.5rem">'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--green)">'+total+'</div><div style="font-size:10px;color:var(--text2)">sesiones</div></div>'
+    +'<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:22px;font-weight:700;color:'+(conVariacion>0?'var(--orange)':'var(--green)')+'">'+sinVariacion+'/'+total+'</div><div style="font-size:10px;color:var(--text2)">según programa</div></div>'
+    +'</div>'
+    +(faseTags?'<div style="display:flex;gap:4px;flex-wrap:wrap">'+faseTags+'</div>':'');
+  card.style.display='block';
+}
+
+renders.cal=function(){
+  renderCalStats(calYear,calMonth);
+  renderCumplimiento(calYear,calMonth);
+  const hist=ST.garminHist||{};
+  const tieneHist=Object.keys(hist).length>0;
+  // Título mes
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-titulo').textContent=meses[calMonth]+' '+calYear;
+  // Primer día del mes (0=dom … 6=sab → convertir a lunes=0)
+  const primerDia=new Date(calYear,calMonth,1).getDay();
+  const offset=(primerDia===0?6:primerDia-1); // lunes como primer día
+  const diasMes=new Date(calYear,calMonth+1,0).getDate();
+  const hoy=new Date();
+  const hoyKey=calFechaKey(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
+  const grid=document.getElementById('cal-grid');
+  let html='';
+  // Celdas vacías iniciales
+  for(let i=0;i<offset;i++) html+=`<div></div>`;
+  for(let d=1;d<=diasMes;d++){
+    const fecha=calFechaKey(calYear,calMonth,d);
+    const g=hist[fecha];
+    const esFuturo=fecha>hoyKey;
+    const esHoy=fecha===hoyKey;
+    const esSel=fecha===calDiaSeleccionado;
+    const histSes=ST.historialFechas&&ST.historialFechas[fecha];
+    // Indicadores
+    let dots='';
+    if(g){
+      dots+=`<div style="width:5px;height:5px;border-radius:50%;background:var(--blue);margin:0 1px"></div>`;
+      if(g.fuerza) dots+=`<div style="width:5px;height:5px;border-radius:50%;background:var(--green);margin:0 1px"></div>`;
+    }
+    if(histSes&&histSes.completado){
+      var dotColor=histSes.variacion?'var(--orange)':'var(--green)';
+      dots+=`<div style="width:6px;height:6px;border-radius:50%;background:${dotColor};margin:0 1px"></div>`;
+    }
+    // Color fondo
+    let bg=esHoy?'var(--bg3)':'var(--bg2)';
+    let border=esHoy?'1.5px solid var(--blue)':'1px solid var(--border)';
+    let txtColor=esFuturo?'var(--text3)':'var(--text)';
+    var hoyDot=esHoy?'<div style="position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--blue)"></div>':'';
+    html+=`<div class="cal-cell${esSel?' cal-sel':''}" data-fecha="${fecha}" onclick="calSelDia('${fecha}')"
+      style="position:relative;background:${bg};border:${border};border-radius:8px;padding:6px 4px;text-align:center;cursor:pointer;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:space-between">
+      ${hoyDot}
+      <span style="font-size:13px;font-weight:${esHoy?'700':'500'};color:${txtColor}">${d}</span>
+      <div style="display:flex;justify-content:center;flex-wrap:wrap">${dots}</div>
+    </div>`;
+  }
+  grid.innerHTML=html;
+  // Vacio/detalle
+  if(!tieneHist){
+    document.getElementById('cal-vacio').style.display='block';
+    document.getElementById('cal-detalle').style.display='none';
+  } else {
+    document.getElementById('cal-vacio').style.display='none';
+    // Si hay día seleccionado, reseleccionar
+    if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
+  }
+};
+
+function renderGarminHoy(){
+  const hoy=new Date().toISOString().slice(0,10);
+  var g=null;
+  // Buscar en garminHist (fuente principal)
+  if(ST.garminHist&&ST.garminHist[hoy]) g=ST.garminHist[hoy];
+  // Fallback: día más reciente disponible en garminHist
+  if(!g&&ST.garminHist){
+    var fechas=Object.keys(ST.garminHist).filter(function(f){return f.match(/^\d{4}-\d{2}-\d{2}$/);}).sort();
+    if(fechas.length) g=ST.garminHist[fechas[fechas.length-1]];
+  }
+  // Fallback: ST.garmin solo si es un objeto de un único día (tiene campo 'pasos' directamente)
+  if(!g&&ST.garmin&&ST.garmin.pasos!==undefined) g=ST.garmin;
+  const card=document.getElementById('f-garmin-card');
+  const el=document.getElementById('f-garmin-data');
+  const felEl=document.getElementById('f-garmin-fecha');
+  if(!g){card.style.display='none';return;}
+  card.style.display='block';
+  // Mostrar hora del sync para el día actual
+  var esHoy = g.fecha===hoy;
+  var syncInfo = esHoy&&ST.garminActualizado ? '📡 '+ST.garminActualizado.split(' · ')[1]||ST.garminActualizado : g.fecha||hoy;
+  if(felEl) felEl.textContent=syncInfo;
+  const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+( g.sueno_total_min%60)+'min':'—';
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--blue)">${(g.pasos||0).toLocaleString()}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:1px">pasos</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--orange)">${g.calorias_dia||0}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:1px">kcal totales</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--green)">${suenoh}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:1px">sueño</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--red)">${g.fc_reposo||'—'}</div>
+        <div style="font-size:10px;color:var(--text2);margin-top:1px">FC reposo</div>
+      </div>
+    </div>
+    ${g.body_battery_max?`<div style="margin-top:8px;background:var(--bg3);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">Body Battery</span><span style="font-size:15px;font-weight:700;color:var(--blue)">${g.body_battery_min||0} → ${g.body_battery_max} ⚡</span></div>`:''}
+    ${g.fuerza?`<div style="margin-top:8px;background:var(--green-bg);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal · FC ${g.fuerza.fc_media}/${g.fuerza.fc_max}</span></div>`:''}
+  `;
+}
+
+// ── GARMIN NAV ────────────────────────────────────────────
+var garminFechaActual=null; // fecha seleccionada en la pestaña garmin
+
+function garminNavDia(delta){
+  const hist=ST.garminHist||{};
+  const fechas=Object.keys(hist).sort();
+  if(!fechas.length) return;
+  if(!garminFechaActual) garminFechaActual=fechas[fechas.length-1];
+  const idx=fechas.indexOf(garminFechaActual);
+  const newIdx=Math.max(0,Math.min(fechas.length-1,idx+delta));
+  garminFechaActual=fechas[newIdx];
+  renders.garmin();
+}
+
+renders.garmin=function(){
+  const hist=ST.garminHist||{};
+  const fechas=Object.keys(hist).sort();
+  // Determinar fecha a mostrar
+  if(!garminFechaActual||!hist[garminFechaActual]){
+    garminFechaActual=fechas.length?fechas[fechas.length-1]:null;
+  }
+  const g=garminFechaActual?hist[garminFechaActual]:ST.garmin;
+  const fechaEl=document.getElementById('g-fecha-lbl');
+  const nextBtn=document.getElementById('g-nav-next');
+  // Actualizar botón siguiente (desactivar si es el último día)
+  if(nextBtn && fechas.length){
+    const idx=fechas.indexOf(garminFechaActual);
+    nextBtn.style.opacity=idx>=fechas.length-1?'0.3':'1';
+    nextBtn.disabled=idx>=fechas.length-1;
+  }
+  if(!g){if(fechaEl)fechaEl.textContent='Sin datos';return;}
+  if(fechaEl) fechaEl.textContent=(g.fecha||garminFechaActual||'');
+  // Resumen
+  const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+(g.sueno_total_min%60)+'min':'—';
+  document.getElementById('g-resumen').innerHTML=`
+    <div class="prow"><span class="plbl">👣 Pasos</span><span class="pval">${(g.pasos||0).toLocaleString()}</span></div>
+    <div class="prow"><span class="plbl">🔥 Calorias totales</span><span class="pval">${g.calorias_dia||0} kcal</span></div>
+    <div class="prow"><span class="plbl">⚡ Calorias activas</span><span class="pval">${g.calorias_activas||0} kcal</span></div>
+    <div class="prow"><span class="plbl">❤️ FC reposo</span><span class="pval">${g.fc_reposo||'—'} ppm</span></div>
+    <div class="prow"><span class="plbl">🏃 Distancia</span><span class="pval">${g.distancia_km||0} km</span></div>
+    <div class="prow"><span class="plbl">⏱️ Min activos</span><span class="pval">${g.minutos_activos||0} min</span></div>
+    ${g.estres_medio?`<div class="prow"><span class="plbl">😤 Estres medio</span><span class="pval">${g.estres_medio}/100</span></div>`:''}
+    ${g.body_battery_max?`<div class="prow"><span class="plbl">⚡ Body Battery</span><span class="pval">${g.body_battery_min||0} → ${g.body_battery_max}</span></div>`:''}
+  `;
+  // Resetear cards antes de rellenar
+  document.getElementById('g-sueno-card').style.display='none';
+  document.getElementById('g-fuerza-card').style.display='none';
+  document.getElementById('g-acts-card').style.display='none';
+  document.getElementById('g-sueno').innerHTML='';
+  document.getElementById('g-fuerza').innerHTML='';
+  document.getElementById('g-acts').innerHTML='';
+  // Sueño
+  if(g.sueno_total_min){
+    document.getElementById('g-sueno-card').style.display='block';
+    const puntuacion=g.sueno_puntuacion||0;
+    const pcls=puntuacion>=80?'tg':puntuacion>=60?'to':'tr';
+    document.getElementById('g-sueno').innerHTML=`
+      <div class="prow"><span class="plbl">Total</span><span class="pval">${suenoh}</span></div>
+      <div class="prow"><span class="plbl">Profundo</span><span class="pval">${Math.floor((g.sueno_profundo_min||0)/60)}h ${(g.sueno_profundo_min||0)%60}min</span></div>
+      <div class="prow"><span class="plbl">Ligero</span><span class="pval">${Math.floor((g.sueno_ligero_min||0)/60)}h ${(g.sueno_ligero_min||0)%60}min</span></div>
+      <div class="prow"><span class="plbl">REM</span><span class="pval">${Math.floor((g.sueno_rem_min||0)/60)}h ${(g.sueno_rem_min||0)%60}min</span></div>
+      ${puntuacion?`<div class="prow"><span class="plbl">Puntuacion</span><span class="tag ${pcls}">${puntuacion}/100</span></div>`:''}
+    `;
+  }
+  // Fuerza
+  if(g.fuerza){
+    document.getElementById('g-fuerza-card').style.display='block';
+    const f=g.fuerza;
+    document.getElementById('g-fuerza').innerHTML=`
+      <div class="prow"><span class="plbl">Nombre</span><span class="pval">${f.nombre||'Fuerza'}</span></div>
+      <div class="prow"><span class="plbl">Duracion</span><span class="pval">${f.duracion_min} min</span></div>
+      <div class="prow"><span class="plbl">Calorias</span><span class="pval">${f.calorias} kcal</span></div>
+      <div class="prow"><span class="plbl">FC media</span><span class="pval">${f.fc_media} ppm</span></div>
+      <div class="prow"><span class="plbl">FC maxima</span><span class="pval">${f.fc_max} ppm</span></div>
+    `;
+  }
+  // Actividades
+  const acts=g.actividades||[];
+  if(acts.length){
+    document.getElementById('g-acts-card').style.display='block';
+    document.getElementById('g-acts').innerHTML=acts.map(a=>`
+      <div class="prow" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <span style="font-size:13px;font-weight:600;color:var(--text)">${a.nombre||a.tipo}</span>
+        <span style="font-size:12px;color:var(--text2)">${a.duracion_min} min · ${a.calorias} kcal · FC ${a.fc_media}/${a.fc_max}</span>
+      </div>`).join('');
+  }
+};
+
+function importar(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{const data=JSON.parse(e.target.result);ST=Object.assign(ST,data);if(!ST.ejs)ST.ejs={A:[...EJS_DEF.A],B:[...EJS_DEF.B],C:[...EJS_DEF.C]};if(!ST.eval)ST.eval=[];save();renders.config();alert('Datos importados correctamente');}
+    catch(err){alert('Error al importar el archivo.');}
+  };
+  reader.readAsText(file);input.value='';
+}
+
+function borrarDatos(){
+  if(!confirm('Seguro que quieres borrar todos los datos?'))return;
+  ST.sets={};ST.nut={};ST.eval=[];save();alert('Datos borrados.');
+}
+
+// TOGGLE
+const mAllChk=document.getElementById('m-all');
+const togTrack=document.getElementById('tog-track');
+const togThumb=document.getElementById('tog-thumb');
+mAllChk.addEventListener('change',function(){
+  if(this.checked){togTrack.style.background='var(--blue)';togTrack.style.borderColor='var(--blue)';togThumb.style.transform='translateX(20px)';}
+  else{togTrack.style.background='var(--bg3)';togTrack.style.borderColor='var(--border2)';togThumb.style.transform='translateX(0)';}
+});
+
+// SLIDERS
+['d','f','s'].forEach(id=>{
+  const sl=document.getElementById('sl-'+id);
+  const vmap={d:'d',f:'f',s:'s'};
+  sl.value=ST.sliders[vmap[id]]||{d:0,f:1,s:3}[id];
+  document.getElementById('v'+id).textContent=sl.value;
+  sl.addEventListener('input',function(){document.getElementById('v'+id).textContent=this.value;ST.sliders[vmap[id]]=parseInt(this.value);save();renders.hoy();updateTopbarSem();});
+});
+
+
+
+renders.hoy();
+updateTopbarSem();
+renderGarminHoy();
+checkBackupReminder();
+// Drive auto-sync eliminado — Firebase es la fuente de verdad
+
+// ══════════════════════════════════════
+// BACKUP REMINDER
+// ══════════════════════════════════════
+
+// ══════════════════════════════════════
+// AUTO SYNC CON DRIVE
+// ══════════════════════════════════════
+var driveTokenCached=null;
+
+function setSyncPanel(icon,msg,sub,color){
+  var panel=document.getElementById('sync-panel');
+  var iconEl=document.getElementById('sync-icon');
+  var msgEl=document.getElementById('sync-msg');
+  var subEl=document.getElementById('sync-sub');
+  var dot=document.getElementById('sync-dot');
+  if(!panel) return;
+  panel.style.display='block';
+  panel.style.background=color==='green'?'var(--green-bg)':color==='orange'?'var(--orange-bg)':color==='red'?'var(--red-bg)':'var(--blue-bg)';
+  if(iconEl) iconEl.textContent=icon;
+  if(msgEl){msgEl.textContent=msg;msgEl.style.color=color==='green'?'var(--green-text)':color==='orange'?'var(--orange-text)':color==='red'?'var(--red-text)':'var(--blue-text)';}
+  if(subEl) subEl.textContent=sub;
+  if(dot) dot.style.background=color==='green'?'var(--green)':color==='orange'?'var(--orange)':color==='red'?'var(--red)':'var(--blue)';
+}
+
+
+function syncManual(){
+  if(fbReady&&fbUser){
+    saveFirebase();
+    setSyncPanel('🔄','Guardando en Firebase...','','blue');
+  } else {
+    setSyncPanel('⚠️','Sin conexión Firebase','Inicia sesión en Config','orange');
+    actualizarDotSync('error');
+  }
+}
+
+function mostrarSelectorBackups(archivos,token){
+  var listEl=document.getElementById('mo-backups-list');
+  listEl.innerHTML='';
+  archivos.forEach(function(archivo){
+    var fecha=new Date(archivo.modifiedTime);
+    var fechaStr=fecha.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    var kb=archivo.size?Math.round(parseInt(archivo.size)/1024)+'kb':'';
+    var esReciente=archivo===archivos[0];
+
+    var row=document.createElement('div');
+    row.style.cssText='padding:.75rem 1rem;border-bottom:.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px';
+    row.onmouseover=function(){this.style.background='var(--bg2)';};
+    row.onmouseout=function(){this.style.background='transparent';};
+
+    var info=document.createElement('div');
+    info.style.cssText='flex:1';
+
+    var nombre=document.createElement('div');
+    nombre.style.cssText='font-size:13px;font-weight:600;color:var(--text)';
+    nombre.textContent=fechaStr;
+
+    var sub=document.createElement('div');
+    sub.style.cssText='font-size:11px;color:var(--text2);margin-top:2px';
+    sub.textContent=archivo.name+(kb?' · '+kb:'');
+
+    info.appendChild(nombre);
+    info.appendChild(sub);
+    row.appendChild(info);
+
+    if(esReciente){
+      var badge=document.createElement('span');
+      badge.style.cssText='font-size:10px;font-weight:700;color:var(--green-text);background:var(--green-bg);padding:2px 8px;border-radius:20px;white-space:nowrap';
+      badge.textContent='Mas reciente';
+      row.appendChild(badge);
+    }
+
+    (function(id,fs){
+      row.onclick=function(){
+        document.getElementById('mo-backups').classList.remove('open');
+        setSyncPanel('ℹ️','Carga desde Drive desactivada','Usa Firebase para sincronizar entre dispositivos','blue');
+      };
+    })(archivo.id,fechaStr);
+
+    listEl.appendChild(row);
+  });
+
+  document.getElementById('mo-backups').classList.add('open');
+}
+
+function subirSilencioso(token){
+  var fecha=new Date().toISOString().slice(0,10);
+  var blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
+  var fileName='entreno_jose_backup_'+fecha+'.json';
+  fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',
+    {headers:{Authorization:'Bearer '+token}})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data.files||!data.files.length) return;
+    var folderId=data.files[0].id;
+    var form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify({name:fileName,parents:[folderId]})],{type:'application/json'}));
+    form.append('file',blob);
+    return fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      {method:'POST',headers:{Authorization:'Bearer '+token},body:form});
+  })
+  .then(function(r){if(r) return r.json();})
+  .then(function(data){
+    if(data&&data.id){
+      ST.ultimoBackup=new Date().toISOString();
+      save();
+      checkBackupReminder();
+      var fechaStr=new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      setSyncPanel('✅','Datos guardados en Drive','Sincronizado: '+fechaStr,'green');
+    }
+  })
+  .catch(function(){});
+}
+
+function actualizarDotSync(estado){
+  var cfg={
+    ok:     {color:'#185FA5', txt:'Sincronizado'},
+    saving: {color:'#BA7517', txt:'Guardando…'},
+    error:  {color:'#A32D2D', txt:'Sin sync'},
+    offline:{color:'#adadad', txt:'Sin conexión'}
+  };
+  var e=cfg[estado]||cfg.offline;
+  var dot=document.getElementById('sync-dot');
+  var lbl=document.getElementById('sync-dot-lbl');
+  if(dot) dot.style.background=e.color;
+  if(lbl) lbl.textContent=e.txt;
+  ['entreno','ciclo','boyle','nut','eval','cal','garmin','config','ejs','hist'].forEach(function(id){
+    var d=document.getElementById('fb-dot-'+id);
+    if(d) d.style.background=e.color;
+  });
+}
+
+function checkBackupReminder(){
+  var lbl=document.getElementById('backup-status-lbl');
+  if(!lbl) return;
+  var ultimoBackup=ST.ultimoBackup?new Date(ST.ultimoBackup):null;
+  var ahora=new Date();
+  var dias=ultimoBackup?Math.floor((ahora-ultimoBackup)/(1000*60*60*24)):999;
+  if(!ultimoBackup){
+    lbl.textContent='Sin backup - pulsa para guardar';
+    lbl.style.color='var(--orange-text)';
+  } else if(dias>=1){
+    lbl.textContent='Backup hace '+dias+'d - pulsa para guardar';
+    lbl.style.color='var(--orange-text)';
+  } else {
+    var fb=ultimoBackup.toLocaleDateString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    lbl.textContent='Backup '+fb;
+    lbl.style.color='var(--green-text)';
+  }
+}
+
+function hacerBackupAhora(){
+  var data=JSON.stringify(ST,null,2);
+  var blob=new Blob([data],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='entreno_jose_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  ST.ultimoBackup=new Date().toISOString();
+  save();
+  checkBackupReminder();
+  var ok=document.getElementById('backup-ok');
+  if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},3000);}
+}
+
 // ══════════════════════════════════════
 // CRONOMETRO
 // ══════════════════════════════════════
@@ -4625,6 +5584,7 @@ renders.historial=function(){
 // ══════════════════════════════════════
 // INIT EXTRAS
 // ══════════════════════════════════════
+checkBackupReminder();
 </script>
 
 <!-- MODAL RECALCULAR CICLO -->
@@ -4688,6 +5648,18 @@ renders.historial=function(){
 
 
 <!-- MODAL SELECTOR BACKUPS DRIVE -->
+<div class="mo" id="mo-backups" onclick="if(event.target===this)document.getElementById('mo-backups').classList.remove('open')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">Backups en Drive</div>
+    <div class="info-box ib" style="font-size:12px;margin-bottom:.75rem"><i class="ti ti-info-circle"></i> Selecciona el backup que quieres cargar. El mas reciente aparece primero.</div>
+    <div id="mo-backups-list"></div>
+    <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem" onclick="document.getElementById('mo-backups').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+
+<!-- MODAL CAMBIAR DIA BOYLE -->
 <div class="mo" id="mo-cambiardia" onclick="closeMo(event,'mo-cambiardia')">
   <div class="ms">
     <div class="mh"></div>

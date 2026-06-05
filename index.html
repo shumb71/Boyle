@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v82</title>
+<title>Entreno Boyle v83</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v82"
+      version: "v83"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -480,6 +480,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="stbox"><div class="stval" id="e-vol">0</div><div class="stlbl">kg volumen</div></div>
       <div class="stbox"><div class="stval" id="e-ser">0/0</div><div class="stlbl">series</div></div>
     </div>
+    <!-- ALERTA RECUPERACION -->
+    <div id="e-alerta-recuperacion" style="display:none;margin-bottom:.75rem"></div>
     <!-- CALENTAMIENTO EXPANDIBLE -->
     <div class="card" id="e-warmup-card">
       <div onclick="toggleSection('warmup')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
@@ -2222,6 +2224,7 @@ const renders={
     renderFaseBanner();
     renderFinalizarStatus();
     actualizarWarmupBadge();
+    calcularAlertaRecuperacion();
     // calentamiento en e-warmup-card
     const hist=document.getElementById('e-hist');
     const all=Object.entries(ST.sets).filter(([k])=>!k.startsWith('d'+ST.dia+'_')).slice(-6).reverse();
@@ -3813,6 +3816,66 @@ function toggleSection(id){
   }
 }
 
+function calcularAlertaRecuperacion(){
+  var el=document.getElementById('e-alerta-recuperacion');
+  if(!el) return;
+  // Datos Garmin de hoy o último día disponible
+  var hoy=new Date().toISOString().slice(0,10);
+  var g=null;
+  if(ST.garminHist&&ST.garminHist[hoy]) g=ST.garminHist[hoy];
+  if(!g&&ST.garminHist){
+    var fechas=Object.keys(ST.garminHist).sort();
+    if(fechas.length) g=ST.garminHist[fechas[fechas.length-1]];
+  }
+  // Sliders manuales
+  var sl=ST.sliders||{};
+  var dolor=sl.d||0;
+  var fatiga=sl.f||1;
+  // Puntuación de recuperación (0-100)
+  var score=100;
+  var alertas=[];
+  var esHoy=g&&g.fecha===hoy;
+  if(g){
+    if(g.fc_reposo&&g.fc_reposo>52){score-=20;alertas.push('FC reposo alta ('+g.fc_reposo+' bpm)');}
+    if(g.sueno_puntuacion&&g.sueno_puntuacion<60){score-=25;alertas.push('Sueño pobre ('+g.sueno_puntuacion+'/100)');}
+    else if(g.sueno_puntuacion&&g.sueno_puntuacion<75){score-=10;alertas.push('Sueño regular ('+g.sueno_puntuacion+'/100)');}
+    if(g.estres_medio&&g.estres_medio>40){score-=15;alertas.push('Estrés elevado ('+g.estres_medio+')');}
+    if(g.sueno_total_min&&g.sueno_total_min<360){score-=15;alertas.push('Poco sueño ('+Math.floor(g.sueno_total_min/60)+'h '+g.sueno_total_min%60+'min)');}
+  }
+  if(dolor>=3){score-=25;alertas.push('Dolor muscular ('+dolor+'/5)');}
+  else if(dolor>=2){score-=10;}
+  if(fatiga>=4){score-=20;alertas.push('Fatiga alta ('+fatiga+'/5)');}
+  else if(fatiga>=3){score-=10;}
+  score=Math.max(0,score);
+  // Sin datos suficientes
+  if(!g&&dolor===0&&fatiga<=1){el.style.display='none';return;}
+  // Determinar nivel
+  var nivel,color,bg,icono,recom;
+  if(score>=75){
+    nivel='Buena recuperación';color='var(--green-text)';bg='var(--green-bg)';icono='💚';
+    recom='Entrena con normalidad.';
+  } else if(score>=50){
+    nivel='Recuperación moderada';color='var(--orange-text)';bg='var(--orange-bg)';icono='🟡';
+    recom='Reduce volumen ~20%. Mismos ejercicios, menos series.';
+  } else {
+    nivel='Recuperación baja';color='var(--red-text)';bg='var(--red-bg)';icono='🔴';
+    recom='Considera movilidad o descanso activo. Evita alta intensidad.';
+  }
+  var garminTag=g?(esHoy?'<span style="font-size:10px;opacity:.7">· Garmin hoy</span>':'<span style="font-size:10px;opacity:.7">· Garmin '+g.fecha+'</span>'):'';
+  var html='<div style="background:'+bg+';border-radius:var(--rs);padding:.6rem .75rem">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">';
+  html+='<span style="font-size:13px;font-weight:700;color:'+color+'">'+icono+' '+nivel+'</span>';
+  html+='<span style="font-size:12px;font-weight:700;color:'+color+'">'+score+'% '+garminTag+'</span>';
+  html+='</div>';
+  if(alertas.length){
+    html+='<div style="font-size:11px;color:'+color+';opacity:.85;margin-bottom:.3rem">'+alertas.join(' · ')+'</div>';
+  }
+  html+='<div style="font-size:11px;color:'+color+';font-weight:600">'+recom+'</div>';
+  html+='</div>';
+  el.style.display='block';
+  el.innerHTML=html;
+}
+
 function renderWarmupBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("warmup-body");
@@ -4462,7 +4525,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v82';
+const APP_VERSION='v83';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5243,7 +5306,7 @@ mAllChk.addEventListener('change',function(){
   const vmap={d:'d',f:'f',s:'s'};
   sl.value=ST.sliders[vmap[id]]||{d:0,f:1,s:3}[id];
   document.getElementById('v'+id).textContent=sl.value;
-  sl.addEventListener('input',function(){document.getElementById('v'+id).textContent=this.value;ST.sliders[vmap[id]]=parseInt(this.value);save();renders.hoy();updateTopbarSem();});
+  sl.addEventListener('input',function(){document.getElementById('v'+id).textContent=this.value;ST.sliders[vmap[id]]=parseInt(this.value);save();renders.hoy();updateTopbarSem();calcularAlertaRecuperacion();});
 });
 
 

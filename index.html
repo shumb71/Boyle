@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v81</title>
+<title>Entreno Boyle v82</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v81"
+      version: "v82"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -3615,6 +3615,62 @@ function startRestTimer(ej) {
 // ══════════════════════════════════════
 // FINALIZAR SESION — REGISTRO CON FECHA
 // ══════════════════════════════════════
+function mostrarResumenSesion(sesionData){
+  var el=document.getElementById('mo-resumen-body');
+  if(!el) return;
+  var dB=sesionData.diaBoyleReal||'—';
+  var nomB=BOYLE_DIAS[dB]?BOYLE_DIAS[dB].n:dB;
+  var fase=sesionData.fase||'—';
+  var sem='Sem '+sesionData.semana+' ('+sesionData.semEnFase+' de 3 en '+fase+')';
+  var dur=sesionData.duracion_min?sesionData.duracion_min+' min':'—';
+  // Calcular volumen total
+  var volTotal=0,totalSets=0;
+  var ejsRealizados=sesionData.ejerciciosRealizados||[];
+  ejsRealizados.forEach(function(e){
+    (e.sets||[]).forEach(function(s){
+      if(s&&s.p&&s.r){volTotal+=s.p*s.r;totalSets++;}
+    });
+  });
+  var html='';
+  // Cabecera info
+  html+='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.6rem .75rem;margin-bottom:.75rem">';
+  html+='<div style="font-size:12px;font-weight:700;color:var(--green-text)">'+nomB+' · '+fase+'</div>';
+  html+='<div style="font-size:11px;color:var(--green-text);opacity:.8;margin-top:2px">'+sem+'</div>';
+  html+='</div>';
+  // Stats resumen
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:.75rem">';
+  html+='<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--blue)">'+ejsRealizados.length+'</div><div style="font-size:10px;color:var(--text2)">ejercicios</div></div>';
+  html+='<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--orange)">'+Math.round(volTotal)+'</div><div style="font-size:10px;color:var(--text2)">kg vol.</div></div>';
+  html+='<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--green)">'+dur+'</div><div style="font-size:10px;color:var(--text2)">duración</div></div>';
+  html+='</div>';
+  // Detalle por ejercicio
+  if(ejsRealizados.length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin-bottom:.4rem">EJERCICIOS</div>';
+    ejsRealizados.forEach(function(e){
+      var sets=e.sets||[];
+      var maxP=sets.length?Math.max.apply(null,sets.map(function(s){return s.p||0;})):0;
+      var varActual=ST.variantes&&ST.variantes[e.ej]?ST.variantes[e.ej]:'';
+      var varTag=varActual&&varActual!==e.ej?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 6px;margin-left:4px">'+varActual+'</span>':'';
+      html+='<div style="padding:.4rem 0;border-bottom:.5px solid var(--border)">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between">';
+      html+='<span style="font-size:12px;font-weight:600;color:var(--text)">'+e.ej+varTag+'</span>';
+      html+='<span style="font-size:11px;color:var(--blue-text);font-weight:700">'+maxP+'kg</span>';
+      html+='</div>';
+      if(sets.length){
+        var setsStr=sets.map(function(s,i){
+          var rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
+          return '<span style="color:'+rpeCol+'">S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe+'</span>';
+        }).join(' · ');
+        html+='<div style="font-size:11px;margin-top:2px">'+setsStr+'</div>';
+      }
+      html+='</div>';
+    });
+  }
+  html+='<button onclick="document.getElementById(\'mo-resumen-sesion\').classList.remove(\'open\')" style="width:100%;margin-top:1rem;padding:12px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">Cerrar</button>';
+  el.innerHTML=html;
+  document.getElementById('mo-resumen-sesion').classList.add('open');
+}
+
 function finalizarSesion(){
   var dB=getDiaBoyle();
   if(!dB){alert('Día de descanso — no hay sesión que registrar.');return;}
@@ -3667,9 +3723,10 @@ function finalizarSesion(){
   renderFinalizarStatus();
   exportarExcelDrive(true);
   appendSesionToSheets(ST.historialFechas[hoy]);
-  // Toast
-  var t=document.getElementById('fb-toast');
-  if(t){t.textContent='✅ Sesión registrada — '+hoy;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+  // Mostrar resumen de sesión
+  var elapsed=ST.timerInicio?Date.now()-ST.timerInicio:0;
+  ST.historialFechas[hoy].duracion_min=elapsed>0?Math.round(elapsed/60000):null;
+  mostrarResumenSesion(ST.historialFechas[hoy]);
   // Re-render calendario si está activo
   if(document.getElementById('s-cal').classList.contains('active')) renders.cal();
 }
@@ -4405,7 +4462,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v81';
+const APP_VERSION='v82';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5662,6 +5719,16 @@ checkBackupReminder();
 
 
 <!-- MODAL CAMBIAR DIA BOYLE -->
+<div class="mo" id="mo-resumen-sesion" onclick="closeMo(event,'mo-resumen-sesion')">
+  <div class="mo-box" style="max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div style="font-size:17px;font-weight:700;color:var(--text)">✅ Sesión completada</div>
+      <button onclick="document.getElementById('mo-resumen-sesion').classList.remove('open')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div id="mo-resumen-body"></div>
+  </div>
+</div>
+
 <div class="mo" id="mo-cambiardia" onclick="closeMo(event,'mo-cambiardia')">
   <div class="ms">
     <div class="mh"></div>

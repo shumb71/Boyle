@@ -1,4 +1,4 @@
-const CACHE_NAME = 'entreno-boyle-v48';
+const CACHE_NAME = 'entreno-boyle-v85';
 const ASSETS = [
   './',
   './index.html',
@@ -26,7 +26,20 @@ self.addEventListener('activate', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {
-  // Para garmin_historial.json: siempre red primero, cache como fallback
+  // index.html: network first — siempre intenta cargar la versión más reciente
+  if(e.request.url.endsWith('/') || e.request.url.includes('index.html')) {
+    e.respondWith(
+      fetch(e.request).then(function(res) {
+        var clone = res.clone();
+        caches.open(CACHE_NAME).then(function(c) { c.put(e.request, clone); });
+        return res;
+      }).catch(function() {
+        return caches.match(e.request);
+      })
+    );
+    return;
+  }
+  // garmin_historial.json: network first
   if(e.request.url.includes('garmin_historial.json')) {
     e.respondWith(
       fetch(e.request).then(function(res) {
@@ -39,7 +52,7 @@ self.addEventListener('fetch', function(e) {
     );
     return;
   }
-  // Para el resto: cache first, luego red
+  // Resto: cache first
   e.respondWith(
     caches.match(e.request).then(function(cached) {
       return cached || fetch(e.request).then(function(res) {

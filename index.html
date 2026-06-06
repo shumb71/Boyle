@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v85</title>
+<title>Entreno Boyle v86</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v85"
+      version: "v86"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -387,7 +387,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=85', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=86', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -787,6 +787,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="card-lbl">Datos</div>
       <button class="bkbtn bkexp" onclick="exportar()"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar a Excel (.xlsx)</button>
     </div>
+    <div class="card">
+      <div class="card-lbl">Ciclo de turnos</div>
+      <div class="info-box ib"><i class="ti ti-info-circle"></i> Ancla el ciclo de 12 días a una fecha real para que la app calcule automáticamente el día actual.</div>
+      <div style="margin-bottom:.6rem">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:.3rem">Fecha de inicio del ciclo (Día 1):</div>
+        <input type="date" id="cfg-anclaje-fecha" style="width:100%;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:14px" onchange="guardarAnclaje()">
+      </div>
+      <div id="cfg-anclaje-info" style="font-size:12px;color:var(--text2);margin-bottom:.5rem"></div>
+      <button class="bkbtn" style="background:var(--blue);color:#fff;border:none" onclick="aplicarAnclaje()"><i class="ti ti-calendar-check"></i> Calcular día actual automáticamente</button>
+    </div>
+
     <div class="card">
       <div class="card-lbl">Peligro</div>
       <div class="info-box iw"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Borrar todos los datos elimina series, pesos y progresion.</div>
@@ -1813,11 +1824,11 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{}};
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
     if(ST.sheetsId) _sheetsId=ST.sheetsId;
     migrarDiaBoyle();
   // Restaurar variantes custom
@@ -3819,6 +3830,59 @@ function toggleSection(id){
   }
 }
 
+// ── ANCLAJE DE CICLO A FECHA REAL ────────────────────────────────────────────
+function calcularDiaDesdeAnclaje(){
+  if(!ST.cicloAnclaje) return null;
+  var ancla=new Date(ST.cicloAnclaje+'T00:00:00');
+  var hoy=new Date();
+  hoy.setHours(0,0,0,0);
+  var diff=Math.round((hoy-ancla)/(1000*60*60*24));
+  if(diff<0) return null;
+  return (diff%12)+1;
+}
+
+function guardarAnclaje(){
+  var inp=document.getElementById('cfg-anclaje-fecha');
+  if(!inp||!inp.value) return;
+  ST.cicloAnclaje=inp.value;
+  save();
+  renderAnclajeInfo();
+}
+
+function aplicarAnclaje(){
+  var diaCalc=calcularDiaDesdeAnclaje();
+  if(!diaCalc){
+    alert('Configura primero la fecha de inicio del ciclo.');
+    return;
+  }
+  ST.dia=diaCalc;
+  save();
+  renders.hoy();renders.entreno();renders.ciclo();
+  var t=document.getElementById('fb-toast');
+  if(t){t.textContent='✅ Día del ciclo actualizado: Día '+diaCalc;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+}
+
+function renderAnclajeInfo(){
+  var el=document.getElementById('cfg-anclaje-info');
+  var inp=document.getElementById('cfg-anclaje-fecha');
+  if(!el) return;
+  if(ST.cicloAnclaje&&inp) inp.value=ST.cicloAnclaje;
+  var diaCalc=calcularDiaDesdeAnclaje();
+  if(!diaCalc){el.textContent='Sin anclaje configurado.';return;}
+  var hoy=new Date().toISOString().slice(0,10);
+  el.innerHTML='Hoy <strong>'+hoy+'</strong> → <strong>Día '+diaCalc+' del ciclo</strong> (actual: Día '+ST.dia+')';
+}
+
+function autoAplicarAnclaje(){
+  // Al arrancar, si hay anclaje configurado, actualizar el día automáticamente
+  var diaCalc=calcularDiaDesdeAnclaje();
+  if(diaCalc&&diaCalc!==ST.dia){
+    ST.dia=diaCalc;
+    save();
+  }
+}
+
+
 function checkDeload(){
   var el=document.getElementById('e-deload-banner');
   if(!el) return;
@@ -4542,7 +4606,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v85';
+const APP_VERSION='v86';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5328,6 +5392,7 @@ mAllChk.addEventListener('change',function(){
 
 
 
+autoAplicarAnclaje();
 renders.hoy();
 updateTopbarSem();
 renderGarminHoy();

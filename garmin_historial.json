@@ -1051,19 +1051,34 @@
     },
     "2026-06-06": {
       "fecha": "2026-06-06",
-      "pasos": 171,
-      "calorias_dia": 759.0,
-      "calorias_activas": 3.0,
-      "distancia_km": 0.14,
+      "pasos": 1440,
+      "calorias_dia": 2122.0,
+      "calorias_activas": 23.0,
+      "distancia_km": 1.19,
       "minutos_activos": 0,
       "fc_reposo": 40,
-      "estres_medio": 9,
+      "estres_medio": 13,
       "sueno_total_min": 459,
       "sueno_profundo_min": 125,
       "sueno_ligero_min": 207,
       "sueno_rem_min": 128,
       "sueno_puntuacion": 92
+    },
+    "2026-06-07": {
+      "fecha": "2026-06-07",
+      "pasos": 66,
+      "calorias_dia": 798.0,
+      "calorias_activas": 1.0,
+      "distancia_km": 0.05,
+      "minutos_activos": 0,
+      "fc_reposo": 45,
+      "estres_medio": 17,
+      "sueno_total_min": 333,
+      "sueno_profundo_min": 33,
+      "sueno_ligero_min": 223,
+      "sueno_rem_min": 78,
+      "sueno_puntuacion": 72
     }
   },
-  "actualizado": "2026-06-06"
+  "actualizado": "2026-06-07"
 }

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v88</title>
+<title>Entreno Boyle v89</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v88"
+      version: "v89"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -387,7 +387,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=88', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=89', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -2108,8 +2108,14 @@ const renders={
     if(anclajeEl){
       if(ST.cicloAnclaje){
         var anclaDate=new Date(ST.cicloAnclaje+'T00:00:00');
-        var anclaFmt=anclaDate.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
-        anclajeEl.textContent='Ciclo iniciado: '+anclaFmt;
+        var hoyDate=new Date(new Date().toISOString().slice(0,10)+'T00:00:00');
+        var diffDias=Math.round((hoyDate-anclaDate)/(1000*60*60*24));
+        var ciclosComp=Math.floor(diffDias/12);
+        var inicioActual=new Date(anclaDate.getTime()+ciclosComp*12*24*60*60*1000);
+        var inicioSiguiente=new Date(inicioActual.getTime()+12*24*60*60*1000);
+        var fmtSiguiente=inicioSiguiente.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+        var diasRestantes=Math.round((inicioSiguiente-hoyDate)/(1000*60*60*24));
+        anclajeEl.innerHTML='Próximo ciclo: <strong>'+fmtSiguiente+'</strong> <span style="color:var(--orange-text)">(en '+diasRestantes+' día'+(diasRestantes!==1?'s':'')+')</span>';
       } else {
         anclajeEl.textContent='';
       }
@@ -4669,7 +4675,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v88';
+const APP_VERSION='v89';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -4882,7 +4888,8 @@ async function appendSetToSheets(numDia, ej, variante, serie, peso, reps, rpe, n
   var dBraw=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(CICLO&&CICLO[(numDia-1)%12]?CICLO[(numDia-1)%12].b:'—');
   var dB=typeof dBraw==='object'?(dBraw.b||'—'):dBraw;
   var varMostrar=variante&&variante!==ej?variante:'';
-  var values=[fecha,numDia,dB,fase,sem,semEnFase,ej,varMostrar,serie,peso,reps,rpe,nota||''];
+  // Orden compatible con filas antiguas: variante al final
+  var values=[fecha,numDia,dB,fase,sem,semEnFase,ej,serie,peso,reps,rpe,nota||'',varMostrar];
   sheetsAppend('Sets y Pesos', values).catch(function(){});
 }
 

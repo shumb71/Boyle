@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v87</title>
+<title>Entreno Boyle v88</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v87"
+      version: "v88"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -387,7 +387,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=87', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=88', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1829,6 +1829,18 @@ var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
 function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
+    // Migrar fechaSesiones antiguo (dia→fecha) a nuevo (fecha→dia)
+    if(ST.fechaSesiones){
+      var fs=ST.fechaSesiones;var migrado=false;
+      Object.keys(fs).forEach(function(k){
+        var v=fs[k];
+        // Si la clave es un número (día) y el valor es una fecha string
+        if(!isNaN(k)&&typeof v==='string'&&v.match(/^\d{4}-\d{2}-\d{2}$/)){
+          fs[v]=parseInt(k); delete fs[k]; migrado=true;
+        }
+      });
+      if(migrado) console.log('fechaSesiones migrado al nuevo formato');
+    }
     if(ST.sheetsId) _sheetsId=ST.sheetsId;
     migrarDiaBoyle();
   // Restaurar variantes custom
@@ -2803,7 +2815,8 @@ function guardar(){
   }
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   var fechaHoy=new Date().toISOString().slice(0,10);
-  ST.fechaSesiones[ST.dia]=fechaHoy;
+  // Índice invertido: clave=fecha, valor=día ciclo
+  ST.fechaSesiones[fechaHoy]=ST.dia;
   save();
   // Append a Google Sheets
   var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
@@ -3744,9 +3757,9 @@ function finalizarSesion(){
     completado:true,
     timestamp:Date.now(),
   };
-  // Guardar también en fechaSesiones para compatibilidad con calendario existente
+  // fechaSesiones: clave=fecha, valor=día ciclo
   if(!ST.fechaSesiones) ST.fechaSesiones={};
-  ST.fechaSesiones[ST.dia]=hoy;
+  ST.fechaSesiones[hoy]=ST.dia;
   save();
   renderFinalizarStatus();
   exportarExcelDrive(true);
@@ -3878,18 +3891,60 @@ function renderAnclajeInfo(){
   var inp=document.getElementById('cfg-anclaje-fecha');
   if(!el) return;
   if(ST.cicloAnclaje&&inp) inp.value=ST.cicloAnclaje;
+  if(!ST.cicloAnclaje){el.textContent='Sin anclaje configurado.';return;}
   var diaCalc=calcularDiaDesdeAnclaje();
-  if(!diaCalc){el.textContent='Sin anclaje configurado.';return;}
   var hoy=new Date().toISOString().slice(0,10);
-  el.innerHTML='Hoy <strong>'+hoy+'</strong> → <strong>Día '+diaCalc+' del ciclo</strong> (actual: Día '+ST.dia+')';
+  // Calcular inicio ciclo actual y siguiente
+  var ancla=new Date(ST.cicloAnclaje+'T00:00:00');
+  var diff=Math.round((new Date(hoy+'T00:00:00')-ancla)/(1000*60*60*24));
+  var ciclosCompletos=Math.floor(diff/12);
+  var inicioCicloActual=new Date(ancla.getTime()+ciclosCompletos*12*24*60*60*1000);
+  var inicioSiguienteCiclo=new Date(inicioCicloActual.getTime()+12*24*60*60*1000);
+  var fmtActual=inicioCicloActual.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+  var fmtSiguiente=inicioSiguienteCiclo.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+  var html='<div style="font-size:12px;color:var(--text2);margin-bottom:4px">Hoy → <strong>Día '+(diaCalc||ST.dia)+' del ciclo actual</strong></div>';
+  html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  html+='<span style="font-size:11px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:2px 8px">🔵 Ciclo actual: '+fmtActual+'</span>';
+  html+='<span style="font-size:11px;background:var(--orange-bg);color:var(--orange-text);border-radius:10px;padding:2px 8px">🔜 Siguiente: '+fmtSiguiente+'</span>';
+  html+='</div>';
+  el.innerHTML=html;
 }
 
 function autoAplicarAnclaje(){
-  // Al arrancar, si hay anclaje configurado, actualizar el día automáticamente
+  if(!ST.cicloAnclaje) return;
   var diaCalc=calcularDiaDesdeAnclaje();
-  if(diaCalc&&diaCalc!==ST.dia){
+  if(!diaCalc) return;
+  // Actualizar día del ciclo automáticamente
+  if(diaCalc!==ST.dia){
     ST.dia=diaCalc;
     save();
+  }
+  // Aviso si hoy es el primer día de un nuevo ciclo
+  if(diaCalc===1){
+    var hoy=new Date().toISOString().slice(0,10);
+    var yaAvisado=ST._avisoCiclo===hoy;
+    if(!yaAvisado){
+      ST._avisoCiclo=hoy;
+      save();
+      setTimeout(function(){
+        var ancla=new Date(ST.cicloAnclaje+'T00:00:00');
+        var hoyDate=new Date(hoy+'T00:00:00');
+        var diff=Math.round((hoyDate-ancla)/(1000*60*60*24));
+        var ciclosCompletos=Math.floor(diff/12);
+        var nuevaAncla=new Date(ancla.getTime()+ciclosCompletos*12*24*60*60*1000);
+        var nuevaFecha=nuevaAncla.toISOString().slice(0,10);
+        if(confirm('🔄 Hoy empieza un nuevo ciclo de 12 días.
+
+¿Actualizar la fecha de inicio del ciclo a hoy ('+hoy+')?
+
+Pulsa OK para confirmar o Cancelar para mantener la fecha actual.')){
+          ST.cicloAnclaje=nuevaFecha;
+          save();
+          var t=document.getElementById('fb-toast');
+          if(t){t.textContent='✅ Ciclo actualizado: '+nuevaFecha;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+        }
+      }, 1500);
+    }
   }
 }
 
@@ -4617,7 +4672,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v87';
+const APP_VERSION='v88';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -4983,8 +5038,9 @@ function calGetEntrenosDia(fecha){
   });
   // Para el calendario, buscamos si existe fecha_sesion en ST.fechaSesiones
   const fechaSesiones=ST.fechaSesiones||{};
-  // Si existe mapeo fecha→dia, lo usamos
-  const diaNum=Object.keys(fechaSesiones).find(d=>fechaSesiones[d]===fecha);
+  // Nuevo índice (fecha→dia) con fallback antiguo (dia→fecha)
+  var diaNum=fechaSesiones[fecha]!=null?String(fechaSesiones[fecha]):null;
+  if(!diaNum) diaNum=Object.keys(fechaSesiones).find(d=>fechaSesiones[d]===fecha);
   if(diaNum&&dias[diaNum]){
     dias[diaNum].forEach(k=>{
       const ej=k.replace(/^d\d+_/,'');
@@ -5049,7 +5105,8 @@ function calSelDia(fecha){
   }
   // Entrenos (sets del programa)
   const fechaSesiones=ST.fechaSesiones||{};
-  const diaNum=Object.keys(fechaSesiones).find(dd=>fechaSesiones[dd]===fecha);
+  var diaNum=fechaSesiones[fecha]!=null?String(fechaSesiones[fecha]):null;
+  if(!diaNum) diaNum=Object.keys(fechaSesiones).find(dd=>fechaSesiones[dd]===fecha);
   if(diaNum){
     const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
     if(sesKeys.length){
@@ -5664,7 +5721,15 @@ renders.historial=function(){
     var volSesion=setsValidos.reduce(function(a,s){return a+s.p*s.r;},0);
     var rpeMedia=Math.round(setsValidos.reduce(function(a,s){return a+s.rpe;},0)/setsValidos.length);
     // Fecha real desde fechaSesiones, fallback a fecha del set, fallback a dia
-    var fechaReal=ST.fechaSesiones&&ST.fechaSesiones[dia]?ST.fechaSesiones[dia]:(setsValidos[0].fecha||null);
+    // Buscar fecha del día en nuevo índice (fecha→dia) y antiguo (dia→fecha)
+    var fechaReal=null;
+    if(ST.fechaSesiones){
+      // Nuevo índice
+      fechaReal=Object.keys(ST.fechaSesiones).find(function(f){return String(ST.fechaSesiones[f])===String(dia);});
+      // Antiguo índice
+      if(!fechaReal&&ST.fechaSesiones[dia]) fechaReal=ST.fechaSesiones[dia];
+    }
+    if(!fechaReal) fechaReal=setsValidos[0].fecha||null;
     var fechaLabel=fechaReal?fechaReal.slice(5).replace('-','/'):'D'+dia; // formato MM/DD
     ejMap[ej].sesiones.push({dia:dia,sets:setsValidos,maxPeso:maxPeso,volSesion:volSesion,rpeMedia:rpeMedia,fecha:fechaLabel,fechaFull:fechaReal||('Dia '+dia)});
     ejMap[ej].totalVol+=volSesion;

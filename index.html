@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v86</title>
+<title>Entreno Boyle v87</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v86"
+      version: "v87"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -387,7 +387,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=86', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=87', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -420,7 +420,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="card">
       <div class="card-lbl">Dia del ciclo</div>
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-size:34px;font-weight:700;color:var(--text)" id="f-dia">—</div><div style="font-size:13px;color:var(--text2);margin-top:2px" id="f-turno">—</div></div>
+        <div><div style="font-size:34px;font-weight:700;color:var(--text)" id="f-dia">—</div><div style="font-size:13px;color:var(--text2);margin-top:2px" id="f-turno">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="f-anclaje-lbl"></div></div>
         <div style="text-align:right"><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px" id="f-sesion">—</div><span id="f-tag" class="tag">—</span></div>
       </div>
     </div>
@@ -903,9 +903,9 @@ const CICLO=[
   {d:5, t:'Noche',    b:null,  e:'Baja',  h:'Turno noche — descanso'},
   {d:6, t:'Noche',    b:null,  e:'Baja',  h:'Turno noche — descanso'},
   {d:7, t:'Libre',    b:'D3',  e:'Alta',  h:'Libre 1 — DIA CLAVE'},
-  {d:8, t:'Libre',    b:null,  e:'Media', h:'Libre 2 — Descanso activo / movilidad'},
+  {d:8, t:'Libre',    b:null,  e:'Media', h:'Libre 2'},
   {d:9, t:'Libre',    b:'D4',  e:'Alta',  h:'Libre 3 — DIA CLAVE'},
-  {d:10,t:'Libre',    b:null,  e:'Media', h:'Libre 4 — Descanso activo'},
+  {d:10,t:'Libre',    b:null,  e:'Media', h:'Libre 4'},
   {d:11,t:'Libre',    b:null,  e:'Baja',  h:'Libre 5 — Recuperacion'},
   {d:12,t:'Libre',    b:null,  e:'Baja',  h:'Libre 6 — Recuperacion / movilidad'},
 ];
@@ -916,7 +916,7 @@ const SES_NOM={
   D2:'Dia 2 — Hip dom + Rodilla unilateral',
   D3:'Dia 3 — Explosivo + Rodilla unilateral + Press',
   D4:'Dia 4 — Rodilla unilateral + Hip dom unilateral',
-  Descanso:'Descanso activo',
+  Descanso:'Descanso',
   Mov:'Movilidad suave'
 };
 
@@ -2091,6 +2091,17 @@ const renders={
     const c=CICLO[(ST.dia-1)%12];
     document.getElementById('f-dia').textContent='Dia '+c.d;
     document.getElementById('f-turno').textContent=tnom(c.t)+' · '+c.h;
+    // Mostrar fecha de anclaje del ciclo
+    var anclajeEl=document.getElementById('f-anclaje-lbl');
+    if(anclajeEl){
+      if(ST.cicloAnclaje){
+        var anclaDate=new Date(ST.cicloAnclaje+'T00:00:00');
+        var anclaFmt=anclaDate.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+        anclajeEl.textContent='Ciclo iniciado: '+anclaFmt;
+      } else {
+        anclajeEl.textContent='';
+      }
+    }
     const dB=getDiaBoyle();
     const sesNomBoyle=dB?SES_NOM[dB]||dB:'Descanso / Movilidad';
     const sesEl=document.getElementById('f-sesion');
@@ -4606,7 +4617,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v86';
+const APP_VERSION='v87';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

@@ -3933,11 +3933,8 @@ function autoAplicarAnclaje(){
         var ciclosCompletos=Math.floor(diff/12);
         var nuevaAncla=new Date(ancla.getTime()+ciclosCompletos*12*24*60*60*1000);
         var nuevaFecha=nuevaAncla.toISOString().slice(0,10);
-        if(confirm('🔄 Hoy empieza un nuevo ciclo de 12 días.
-
-¿Actualizar la fecha de inicio del ciclo a hoy ('+hoy+')?
-
-Pulsa OK para confirmar o Cancelar para mantener la fecha actual.')){
+        var msg='🔄 Hoy empieza un nuevo ciclo de 12 días.\n\n¿Actualizar la fecha de inicio del ciclo a hoy ('+hoy+')?\n\nPulsa OK para confirmar o Cancelar para mantener la fecha actual.';
+        if(confirm(msg)){
           ST.cicloAnclaje=nuevaFecha;
           save();
           var t=document.getElementById('fb-toast');

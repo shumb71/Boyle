@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v90</title>
+<title>Entreno Boyle v91</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v90"
+      version: "v91"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -1008,6 +1008,23 @@ const BOYLE_DIAS={
   },
 };
 
+// GRUPOS_DIA [v91] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
+const GRUPOS_DIA={
+  D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
+      {lbl:'PAR — Hip dominante + Tracción vertical',tipo:'par',descanso:120,n:2},
+      {lbl:'TRI-SET — Rodilla + Tracción horizontal + Core',tipo:'triset',descanso:90,n:3}],
+  D2:[{lbl:'PAR 1 — Empuje horizontal + Movilidad superior',tipo:'par',descanso:120,n:2},
+      {lbl:'PAR 2 — Empuje vertical + Movilidad/estabilidad',tipo:'par',descanso:90,n:2},
+      {lbl:'TRI-SET — Empuje + Core antirrotación + Carry',tipo:'triset',descanso:90,n:3}],
+  D3:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
+      {lbl:'PAR — Rodilla + Tracción vertical',tipo:'par',descanso:120,n:2},
+      {lbl:'TRI-SET — Hip dominante + Tracción horizontal + Core',tipo:'triset',descanso:90,n:3}],
+  D4:[{lbl:'PAR 1 — Empuje incline + Movilidad superior',tipo:'par',descanso:120,n:2},
+      {lbl:'PAR 2 — Empuje horizontal + Rodilla/movilidad',tipo:'par',descanso:90,n:2},
+      {lbl:'TRI-SET — Core-misc + Core antirrotación + Carry',tipo:'triset',descanso:90,n:3}],
+};
+
 // VARIANTES DE EJERCICIOS (sistema Boyle: baseline → progression → regression)
 const VARIANTES={
   "Hang Clean":["Hang Clean desde pos. 1","High Pull","KB Swing / DB Snatch","Hang Clean desde pos. 2","Power Clean (desde suelo)"],
@@ -1102,7 +1119,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v90]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v91]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1338,7 +1355,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v90 ---
+  // --- Fichas añadidas v91 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1803,6 +1820,22 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
+// [v91] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
+function getBloquesHoy(dB){
+  if(!dB||!GRUPOS_DIA[dB]) return null;
+  var ejs=getEjs(dB)||[];
+  if(!ejs.length) return null;
+  var grupos=GRUPOS_DIA[dB], bloques=[], idx=0;
+  for(var gi=0; gi<grupos.length; gi++){
+    var g=grupos[gi];
+    var last=(gi===grupos.length-1);
+    var slice = last ? ejs.slice(idx) : ejs.slice(idx, idx+g.n);
+    idx += g.n;
+    if(slice.length) bloques.push({lbl:g.lbl,tipo:g.tipo,descanso:g.descanso,ejs:slice,nota:g.nota||''});
+  }
+  return bloques.length?bloques:null;
+}
 function getDiaBoyle(){
   var v=getDiaBoyleVal(ST.dia);
   if(v!==null){
@@ -2092,7 +2125,8 @@ const renders={
     const dB=getDiaBoyle();
     const el=document.getElementById('e-list');
     // Con estructura Boyle, verificar que hay pares definidos
-    var tienePares=dB&&BOYLE_DIAS[dB]&&BOYLE_DIAS[dB].pares&&BOYLE_DIAS[dB].pares.length>0;
+    var _bloquesHoy=dB?getBloquesHoy(dB):null;
+    var tienePares=_bloquesHoy&&_bloquesHoy.length>0;
     if(!dB||!tienePares){
       el.innerHTML='<div class="empty">Dia de descanso o movilidad</div>';
       document.getElementById('e-vol').textContent='0';
@@ -2103,7 +2137,7 @@ const renders={
     }
     let vol=0,done=0,tot=0;
     // Renderizar por bloques (trisets/pares) si hay datos Boyle
-    var bloques=dB&&BOYLE_DIAS[dB]?BOYLE_DIAS[dB].pares:null;
+    var bloques=_bloquesHoy;
     if(bloques){
       try{
       el.innerHTML=bloques.map(function(bloque,bi){
@@ -4123,7 +4157,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v90 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v91 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4650,7 +4684,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v90';
+const APP_VERSION='v91';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

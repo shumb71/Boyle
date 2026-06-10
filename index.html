@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v89</title>
+<title>Entreno Boyle v90</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v89"
+      version: "v90"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -1010,318 +1010,133 @@ const BOYLE_DIAS={
 
 // VARIANTES DE EJERCICIOS (sistema Boyle: baseline → progression → regression)
 const VARIANTES={
-  // EXPLOSIVOS / OLYMPIC LIFTS
-  'Hang Clean':[
-    'Hang Clean (barra)',
-    'DB Hang Clean (mancuerna)',
-    'KB Swing (alternativa)',
-    'Jump Squat (sin barra)',
-    'Hang Power Clean',
-  ],
-  'DB Snatch / KB Swing':[
-    'DB Snatch unilateral',
-    'KB Swing bilateral',
-    'KB Swing unilateral',
-    'Jump Squat con mancuernas',
-  ],
-  // HIP DOMINANTE BILATERAL
-  'Trap Bar Deadlift':[
-    'Trap Bar Deadlift (hex bar)',
-    'Peso muerto convencional',
-    'KB Sumo Deadlift (regresion)',
-    'Feet-elevated DB Deadlift',
-    'Goblet Squat (regresion maxima)',
-  ],
-  // RODILLA UNILATERAL
-  'Split Squat (Bottoms-up KB)':[
-    'Split Squat con KB bottoms-up',
-    'Split Squat con mancuernas',
-    'Split Squat con barra',
-    'Split Squat sin peso (regresion)',
-    'Partial Single-leg Squat (regresion)',
-  ],
-  'Split Squat / RFESS':[
-    'RFESS con mancuernas (Bulgarian)',
-    'RFESS con KB',
-    'Split Squat con mancuernas',
-    'Split Squat sin peso',
-    'Step-up (regresion)',
-  ],
-  'Single-leg Squat':[
-    'Single-leg Squat asistida',
-    'RFESS progresion',
-    'Zancada (regresion)',
-    'Step-up con pausa (regresion)',
-  ],
-  // HIP DOMINANTE UNILATERAL
-  'Single-leg RDL (Straight-leg DL)':[
-    'Single-leg RDL con mancuerna',
-    'Single-leg RDL con KB',
-    'Single-leg RDL con cable',
-    'Single-leg RDL alcance (sin peso)',
-    'Cook Hip Lift (regresion)',
-  ],
-  'Slide Board Lunge / Ham ISO':[
-    'Slide board lunge',
-    'Valslide lunge',
-    'Ham ISO en TRX',
-    'Stability ball leg curl',
-    'Nordic curl (progresion avanzada)',
-  ],
-  // TRACCION VERTICAL
-  'Chin-up / Pull-up':[
-    'Chin-up (agarre supino — baseline)',
-    'Dominada agarre neutro',
-    'Pull-up (agarre prono)',
-    'Sternum Chin-up (progresion)',
-    'Chin-up con lastre',
-    'Lat pulldown (regresion)',
-    'Dominada con goma (regresion)',
-  ],
-  // TRACCION HORIZONTAL
-  'DB Row / TRX Row':[
-    'DB Row unilateral (baseline)',
-    'TRX Row / Suspension Row',
-    'Single-arm single-leg Row',
-    'Bench straddle Row (regresion)',
-    'Chest-supported Row',
-  ],
-  // PRESS HORIZONTAL
-  'Press banca (Bench Press)':[
-    'Press banca mancuernas',
-    'Press banca barra',
-    'Incline press mancuernas',
-    'Close grip bench',
-    'Floor press',
-    'Flexiones lastradas (regresion)',
-    'Flexiones (regresion maxima)',
-  ],
-  'Incline Bench / Close Grip Bench':[
-    'Incline press mancuernas',
-    'Close grip bench',
-    'Press banca mancuernas',
-    'Push-up TRX',
-    'Flexiones con pausa',
-  ],
-  'Push-up variante (TRX/lastrada)':[
-    'Push-up con lastre',
-    'Push-up en TRX',
-    'Push-up inclinado (pies elevados)',
-    'Push-up con pausa 3 seg',
-    'Push-up BOSU',
-    'Flexiones normales (regresion)',
-  ],
-  // PRESS VERTICAL
-  'Press hombro KB (half-kneeling)':[
-    'Press KB half-kneeling alternante (baseline)',
-    'Press KB bottoms-up (regresion)',
-    'High split alternating press',
-    'Standing alternating DB press',
-    'Press Arnold',
-  ],
-  // CORE — ANTIROTACION
-  'Plancha antirotacion (Chop)':[
-    'Half-kneeling stable in-line Chop (baseline)',
-    'Half-kneeling stable in-line Lift',
-    'Lunge position Chop',
-    'Standing Chop',
-    'Standing transverse Chop',
-    'Step-up Lift (progresion maxima)',
-  ],
-  'Chop/Lift (standing)':[
-    'Standing Chop',
-    'Standing Lift',
-    'Standing transverse Chop',
-    'Lunge position Chop (regresion)',
-  ],
-  // CORE — ANTILATERAL
-  'Side Plank / Suitcase Carry':[
-    'Side Plank (baseline)',
-    'Side Plank Row',
-    'Suitcase Carry (KB)',
-    'Farmer Walk bilateral',
-    'Bottoms-up KB walk',
-  ],
-  'Farmer Walk / Side Plank Row':[
-    'Farmer Walk bilateral',
-    'Suitcase Carry unilateral',
-    'Side Plank Row',
-    'Side Plank (regresion)',
-  ],
-  // CORE — ANTIEXTENSION
-  'Ab Wheel / Body Saw':[
-    'Ab Wheel Rollout',
-    'Valslide Rollout',
-    'Body Saw',
-    'Stability Ball Rollout',
-    'Front Plank (regresion)',
-    'Torso-elevated Front Plank (regresion maxima)',
-  ],
-  'AB Wheel / Valslide Rollout':[
-    'Ab Wheel Rollout',
-    'Valslide Rollout',
-    'Body Saw',
-    'Stability Ball Rollout',
-    'Front Plank (regresion)',
-  ],
-  // NUEVOS EJERCICIOS F1-F4
-  'Bench Press':[
-    'Bench Press (barra)',
-    'Press banca mancuernas',
-    'Incline press mancuernas',
-    'Close grip bench',
-    'Flexiones lastradas (regresion)',
-  ],
-  'Standing Overhead Press':[
-    'Standing Overhead Press mancuernas',
-    'Press KB half-kneeling (regresion)',
-    'Arnold Press',
-    'High split alternating press',
-  ],
-  'One-leg Squat':[
-    'One-leg Squat asistida',
-    'RFESS progresion (regresion)',
-    'Split Squat con mancuernas (regresion)',
-    'Step-up cajón bajo (regresion)',
-  ],
-  'Rear-foot-elevated Split Squat':[
-    'RFESS con mancuernas',
-    'RFESS con KB',
-    'Split Squat sin elevación (regresion)',
-    'Step-up (regresion)',
-  ],
-  'Ring Row':[
-    'Ring Row / TRX Row',
-    'DB Row unilateral (regresion)',
-    'Chest-supported Row (regresion)',
-    'Cable Row (regresion)',
-  ],
-  'Front Plank':[
-    'Front Plank isométrica',
-    'Plank con elevación de pierna (progresion)',
-    'Plank rodillas (regresion)',
-  ],
-  'Hard-style Front Plank':[
-    'Hard-style Front Plank (máxima tensión)',
-    'Front Plank estándar (regresion)',
-  ],
-  'Stability Ball Roll-out':[
-    'Stability Ball Roll-out',
-    'Ab Wheel Rollout (alternativa)',
-    'Body Saw (regresion)',
-    'Front Plank (regresion maxima)',
-  ],
-  'In-line Chop':[
-    'In-line Chop (half-kneeling)',
-    'Standing Chop (progresion)',
-    'Chop con goma (regresion)',
-  ],
-  'In-line Lift':[
-    'In-line Lift (half-kneeling)',
-    'Standing Lift (progresion)',
-  ],
-  'In-line Iso Hold Chop':[
-    'In-line Iso Hold Chop',
-    'In-line Chop (regresion)',
-  ],
-  'In-line Iso Hold Lift':[
-    'In-line Iso Hold Lift',
-    'In-line Lift (regresion)',
-  ],
-  'Dynamic Chop':[
-    'Dynamic Chop de pie',
-    'In-line Iso Hold Chop (regresion)',
-    'Half-kneeling Chop (regresion)',
-  ],
-  'Dynamic Lift':[
-    'Dynamic Lift de pie',
-    'In-line Iso Hold Lift (regresion)',
-  ],
-  'Turkish Get-Up':[
-    'Turkish Get-Up completo',
-    'TGU hasta 1st roll to elbow (regresion)',
-    'TGU hasta half-kneeling (regresion)',
-    'TGU sin peso (regresion maxima)',
-  ],
-  'Turkish Get-Up (1st roll to elbow)':[
-    'TGU 1st roll to elbow',
-    'TGU hasta half-kneeling (progresion)',
-    'TGU completo (progresion maxima)',
-  ],
-  'Supine Floor Slide':[
-    'Supine Floor Slide (suelo)',
-    'Wall Slide (regresion)',
-    'Face Pull (alternativa)',
-  ],
-  'Suitcase Carry':[
-    'Suitcase Carry unilateral',
-    'Farmer Walk bilateral',
-    'Bottoms-up KB walk',
-  ],
-  'Farmer Carry':[
-    'Farmer Carry bilateral',
-    'Suitcase Carry unilateral (regresion)',
-  ],
-  'X-pull-down':[
-    'X-pull-down con cable o goma',
-    'Lat pulldown (alternativa)',
-    'Straight-arm pulldown (alternativa)',
-  ],
-  'Half-kneeling push-pull':[
-    'Half-kneeling push-pull con cable',
-    'Standing push-pull (progresion)',
-    'Seated cable row + press (regresion)',
-  ],
-  'Dynamic push-pull':[
-    'Dynamic push-pull de pie',
-    'Half-kneeling push-pull (regresion)',
-  ],
-  'Trineo (empujes)':[
-    'Trineo empuje pesado (fuerza especial)',
-    'Trineo empuje ligero (velocidad)',
-    'Trineo marcha (tecnica sprint)',
-    'Trineo arrastre (cadera)',
-  ],
+  "Hang Clean":["Hang Clean desde pos. 1","High Pull","KB Swing / DB Snatch","Hang Clean desde pos. 2","Power Clean (desde suelo)"],
+  "Hang Clean (65-75%)":["Hang Clean 65-75%","KB Swing","Hang Clean desde pos. 2"],
+  "Front Plank":["Front Plank","Front Plank rodillas","Hard-style Front Plank","Stability Ball Roll-out","Ab Wheel"],
+  "Hard-style Front Plank":["Hard-style Front Plank","Front Plank","Stability Ball Roll-out"],
+  "Stability Ball Roll-out":["Stability Ball Roll-out","Front Plank / Body Saw","Ab Wheel de pie"],
+  "Trap Bar Deadlift":["Trap Bar Deadlift","Single-leg RDL","Hip Thrust / Puente glúteo","Trap Bar + Hurdle Jump"],
+  "Trap Bar Deadlift + Hurdle Jump":["Trap Bar + empuje de Trineo (sin salto)","Trap Bar Deadlift solo","Trap Bar + Hurdle Jump"],
+  "Single-leg RDL (Straight-leg DL)":["Single-leg RDL","SLDL con apoyo (toe touch)","SLDL con KB/mancuerna pesada"],
+  "Split Squat (Bottoms-up KB)":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Terminal Knee Extension (banda)","Split Squat KB bottoms-up","RFESS","One-leg Squat"],
+  "Rear-foot-elevated Split Squat":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Terminal Knee Extension (banda)","Step-up bajo controlado","Split Squat (sin elevar pie)","RFESS","One-leg Squat"],
+  "One-leg Squat":["Step-up bajo controlado","Wall Sit","Split Squat a cajón","RFESS","One-leg Squat","Pistol squat asistido"],
+  "RFESS + Hurdle Hops":["RFESS + empuje de Trineo (sin salto)","RFESS solo","RFESS + Hurdle Hops"],
+  "Toe Touch Squat with medicine ball":["Toe Touch Squat (med ball)","Sentadilla a cajón","Goblet Squat (rango parcial)"],
+  "Squat Holds":["Squat Holds (isométrico)","Wall Sit"],
+  "Chin-up / Pull-up":["Chin-up / Pull-up","Chin-up asistido (banda)","Ring Row / Lat pulldown","Chin-up lastrado"],
+  "Chin-up + Med Ball Slam":["Chin-up + slam ligero","Chin-up + Med Ball Slam"],
+  "Ring Row":["Ring Row","TRX Row más vertical","Ring Row pies elevados"],
+  "Ring Row + Med Ball Slam":["Ring Row + slam ligero","Ring Row + Med Ball Slam"],
+  "DB Row":["DB Row","TRX Row / Seated cable row","Pendlay Row pesado"],
+  "X-pull-down":["X-pull-down con cable/goma","Lat pulldown","Straight-arm pulldown"],
+  "Bench Press":["Bench Press","DB Bench / Floor Press","Push-up","Bench + Med Ball / Close-grip"],
+  "Bench Press + Med Ball":["Bench + Med Ball","Bench Press","Close-grip Bench"],
+  "Dumbbell Incline Bench":["DB Incline Bench","Incline Push-up","Incline + Med Ball"],
+  "Dumbbell Incline Bench + Med Ball":["DB Incline + Med Ball","DB Incline Bench"],
+  "Half-kneeling Overhead Press":["Half-kneeling OHP (KB)","Seated DB Press","Standing Barbell OHP"],
+  "Standing Overhead Press":["Standing Barbell OHP","Half-kneeling OHP (KB)","Push Press"],
+  "Push-up progression":["Push-up suelo","Push-up inclinado / rodillas","Push-up pies elevados","Push-up lastrado"],
+  "In-line Chop":["In-line Chop","Half-kneeling Chop","In-line Iso Hold Chop","Dynamic Chop"],
+  "In-line Lift":["In-line Lift","Half-kneeling Lift","In-line Iso Hold Lift","Dynamic Lift"],
+  "In-line Iso Hold Chop":["In-line Iso Hold Chop","In-line Chop","Dynamic Chop"],
+  "In-line Iso Hold Lift":["In-line Iso Hold Lift","In-line Lift","Dynamic Lift"],
+  "Dynamic Chop":["Dynamic Chop","In-line Iso Hold Chop","In-line Chop"],
+  "Dynamic Lift":["Dynamic Lift","In-line Iso Hold Lift","In-line Lift"],
+  "Half-kneeling push-pull":["Half-kneeling push-pull con cable","Seated cable row + press","Standing push-pull","Dynamic push-pull"],
+  "Dynamic push-pull":["Dynamic push-pull de pie","Half-kneeling push-pull"],
+  "Half-kneeling antirotation hold":["Half-kneeling antirotation hold","Pallof press isométrico","Standing antirotation hold (tempo)"],
+  "Standing antirotation hold":["Standing antirotation hold","Half-kneeling antirotation hold","Pallof press caminando"],
+  "Suitcase Carry":["Suitcase Carry unilateral","Farmer Walk bilateral","Bottoms-up KB walk"],
+  "Farmer Carry":["Farmer Carry bilateral","Suitcase Carry unilateral"],
+  "Turkish Get-Up":["Get-up hasta codo","Get-up hasta puente alto","Turkish Get-Up completo"],
+  "Supine Floor Slide":["Supine Floor Slide","Wall Slide de pie"],
+  "Spiderman pos. lat stretch":["Spiderman lat stretch","Open book","World's greatest stretch"],
+};
+// Tipo de cada variante para los distintivos (regresion/base/progresion/alt_rodilla/alt)
+const VAR_TIPO={
+  "Hang Clean":{"Hang Clean desde pos. 1":"base","High Pull":"regresion","KB Swing / DB Snatch":"regresion","Hang Clean desde pos. 2":"progresion","Power Clean (desde suelo)":"progresion"},
+  "Hang Clean (65-75%)":{"Hang Clean 65-75%":"base","KB Swing":"regresion","Hang Clean desde pos. 2":"progresion"},
+  "Front Plank":{"Front Plank":"base","Front Plank rodillas":"regresion","Hard-style Front Plank":"progresion","Stability Ball Roll-out":"progresion","Ab Wheel":"progresion"},
+  "Hard-style Front Plank":{"Hard-style Front Plank":"base","Front Plank":"regresion","Stability Ball Roll-out":"progresion"},
+  "Stability Ball Roll-out":{"Stability Ball Roll-out":"base","Front Plank / Body Saw":"regresion","Ab Wheel de pie":"progresion"},
+  "Trap Bar Deadlift":{"Trap Bar Deadlift":"base","Single-leg RDL":"regresion","Hip Thrust / Puente glúteo":"regresion","Trap Bar + Hurdle Jump":"progresion"},
+  "Trap Bar Deadlift + Hurdle Jump":{"Trap Bar + empuje de Trineo (sin salto)":"alt_rodilla","Trap Bar Deadlift solo":"alt_rodilla","Trap Bar + Hurdle Jump":"base"},
+  "Single-leg RDL (Straight-leg DL)":{"Single-leg RDL":"base","SLDL con apoyo (toe touch)":"regresion","SLDL con KB/mancuerna pesada":"progresion"},
+  "Split Squat (Bottoms-up KB)":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Split Squat KB bottoms-up":"base","RFESS":"progresion","One-leg Squat":"progresion"},
+  "Rear-foot-elevated Split Squat":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Step-up bajo controlado":"alt_rodilla","Split Squat (sin elevar pie)":"regresion","RFESS":"base","One-leg Squat":"progresion"},
+  "One-leg Squat":{"Step-up bajo controlado":"alt_rodilla","Wall Sit":"alt_rodilla","Split Squat a cajón":"regresion","RFESS":"regresion","One-leg Squat":"base","Pistol squat asistido":"progresion"},
+  "RFESS + Hurdle Hops":{"RFESS + empuje de Trineo (sin salto)":"alt_rodilla","RFESS solo":"alt_rodilla","RFESS + Hurdle Hops":"base"},
+  "Toe Touch Squat with medicine ball":{"Toe Touch Squat (med ball)":"base","Sentadilla a cajón":"regresion","Goblet Squat (rango parcial)":"progresion"},
+  "Squat Holds":{"Squat Holds (isométrico)":"base","Wall Sit":"alt_rodilla"},
+  "Chin-up / Pull-up":{"Chin-up / Pull-up":"base","Chin-up asistido (banda)":"regresion","Ring Row / Lat pulldown":"regresion","Chin-up lastrado":"progresion"},
+  "Chin-up + Med Ball Slam":{"Chin-up + slam ligero":"regresion","Chin-up + Med Ball Slam":"base"},
+  "Ring Row":{"Ring Row":"base","TRX Row más vertical":"regresion","Ring Row pies elevados":"progresion"},
+  "Ring Row + Med Ball Slam":{"Ring Row + slam ligero":"regresion","Ring Row + Med Ball Slam":"base"},
+  "DB Row":{"DB Row":"base","TRX Row / Seated cable row":"regresion","Pendlay Row pesado":"progresion"},
+  "X-pull-down":{"X-pull-down con cable/goma":"base","Lat pulldown":"alt","Straight-arm pulldown":"alt"},
+  "Bench Press":{"Bench Press":"base","DB Bench / Floor Press":"regresion","Push-up":"regresion","Bench + Med Ball / Close-grip":"progresion"},
+  "Bench Press + Med Ball":{"Bench + Med Ball":"base","Bench Press":"regresion","Close-grip Bench":"progresion"},
+  "Dumbbell Incline Bench":{"DB Incline Bench":"base","Incline Push-up":"regresion","Incline + Med Ball":"progresion"},
+  "Dumbbell Incline Bench + Med Ball":{"DB Incline + Med Ball":"base","DB Incline Bench":"regresion"},
+  "Half-kneeling Overhead Press":{"Half-kneeling OHP (KB)":"base","Seated DB Press":"regresion","Standing Barbell OHP":"progresion"},
+  "Standing Overhead Press":{"Standing Barbell OHP":"base","Half-kneeling OHP (KB)":"regresion","Push Press":"progresion"},
+  "Push-up progression":{"Push-up suelo":"base","Push-up inclinado / rodillas":"regresion","Push-up pies elevados":"progresion","Push-up lastrado":"progresion"},
+  "In-line Chop":{"In-line Chop":"base","Half-kneeling Chop":"regresion","In-line Iso Hold Chop":"progresion","Dynamic Chop":"progresion"},
+  "In-line Lift":{"In-line Lift":"base","Half-kneeling Lift":"regresion","In-line Iso Hold Lift":"progresion","Dynamic Lift":"progresion"},
+  "In-line Iso Hold Chop":{"In-line Iso Hold Chop":"base","In-line Chop":"regresion","Dynamic Chop":"progresion"},
+  "In-line Iso Hold Lift":{"In-line Iso Hold Lift":"base","In-line Lift":"regresion","Dynamic Lift":"progresion"},
+  "Dynamic Chop":{"Dynamic Chop":"base","In-line Iso Hold Chop":"regresion","In-line Chop":"regresion"},
+  "Dynamic Lift":{"Dynamic Lift":"base","In-line Iso Hold Lift":"regresion","In-line Lift":"regresion"},
+  "Half-kneeling push-pull":{"Half-kneeling push-pull con cable":"base","Seated cable row + press":"regresion","Standing push-pull":"progresion","Dynamic push-pull":"progresion"},
+  "Dynamic push-pull":{"Dynamic push-pull de pie":"base","Half-kneeling push-pull":"regresion"},
+  "Half-kneeling antirotation hold":{"Half-kneeling antirotation hold":"base","Pallof press isométrico":"regresion","Standing antirotation hold (tempo)":"progresion"},
+  "Standing antirotation hold":{"Standing antirotation hold":"base","Half-kneeling antirotation hold":"regresion","Pallof press caminando":"progresion"},
+  "Suitcase Carry":{"Suitcase Carry unilateral":"base","Farmer Walk bilateral":"regresion","Bottoms-up KB walk":"progresion"},
+  "Farmer Carry":{"Farmer Carry bilateral":"base","Suitcase Carry unilateral":"regresion"},
+  "Turkish Get-Up":{"Get-up hasta codo":"regresion","Get-up hasta puente alto":"base","Turkish Get-Up completo":"progresion"},
+  "Supine Floor Slide":{"Supine Floor Slide":"base","Wall Slide de pie":"regresion"},
+  "Spiderman pos. lat stretch":{"Spiderman lat stretch":"base","Open book":"alt","World's greatest stretch":"progresion"},
 };
 
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel boyle24.xlsx
-// D1/D3: explosivo + press + core antirotacion
-// D2/D4: hip dom bilateral/unilateral + rodilla unilateral + traccion
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v90]
+// Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
+//                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
   F1:{
-    D1:['Hang Clean','In-line Chop','Press banca (Bench Press)','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up / Pull-up','Split Squat (Bottoms-up KB)','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-    D3:['Hang Clean / DB Snatch','In-line Lift','Incline Bench / Close Grip Bench','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
-    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
+    D1:["Hang Clean", "Front Plank", "Trap Bar Deadlift", "Chin-up / Pull-up", "Split Squat (Bottoms-up KB)", "DB Row", "In-line Chop"],
+    D2:["Bench Press", "Spiderman pos. lat stretch", "Half-kneeling Overhead Press", "Supine Floor Slide", "Push-up progression", "Half-kneeling push-pull", "Suitcase Carry"],
+    D3:["Hang Clean", "Front Plank", "Rear-foot-elevated Split Squat", "Ring Row", "Single-leg RDL (Straight-leg DL)", "X-pull-down", "In-line Lift"],
+    D4:["Dumbbell Incline Bench", "Spiderman pos. lat stretch", "Push-up progression", "Squat Holds", "Turkish Get-Up", "Half-kneeling antirotation hold", "Farmer Carry"],
     Descanso:[],
-    Mov:['Movilidad activa (Daily Mob)'],
+    Mov:["Movilidad activa (Daily Mob)"],
   },
   F2:{
-    D1:['Hang Clean','In-line Iso Hold Chop','Press banca (Bench Press)','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up / Pull-up','Split Squat (Bottoms-up KB)','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-    D3:['Hang Clean / DB Snatch','In-line Iso Hold Lift','Incline Bench / Close Grip Bench','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
-    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
+    D1:["Hang Clean", "Hard-style Front Plank", "Trap Bar Deadlift", "Chin-up / Pull-up", "One-leg Squat", "DB Row", "In-line Iso Hold Chop"],
+    D2:["Bench Press", "Spiderman pos. lat stretch", "Standing Overhead Press", "Supine Floor Slide", "Push-up progression", "Half-kneeling push-pull", "Suitcase Carry"],
+    D3:["Hang Clean (65-75%)", "Hard-style Front Plank", "Rear-foot-elevated Split Squat", "Ring Row", "Single-leg RDL (Straight-leg DL)", "X-pull-down", "In-line Iso Hold Lift"],
+    D4:["Dumbbell Incline Bench", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Turkish Get-Up", "Half-kneeling antirotation hold", "Farmer Carry"],
     Descanso:[],
-    Mov:['Movilidad activa (Daily Mob)'],
+    Mov:["Movilidad activa (Daily Mob)"],
   },
   F3:{
-    D1:['Hang Clean','Dynamic Chop','Trap Bar Deadlift + Hurdle Jump','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up + Med Ball Slam','One-leg Squat','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-    D3:['Hang Clean (65-75%)','Dynamic Lift','RFESS + Hurdle Hops','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
-    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
+    D1:["Hang Clean", "Stability Ball Roll-out", "Trap Bar Deadlift + Hurdle Jump", "Chin-up + Med Ball Slam", "One-leg Squat", "DB Row", "Dynamic Chop"],
+    D2:["Bench Press + Med Ball", "Spiderman pos. lat stretch", "Standing Overhead Press", "Supine Floor Slide", "Push-up progression", "Dynamic push-pull", "Suitcase Carry"],
+    D3:["Hang Clean (65-75%)", "Stability Ball Roll-out", "RFESS + Hurdle Hops", "Ring Row + Med Ball Slam", "Single-leg RDL (Straight-leg DL)", "DB Row", "Dynamic Lift"],
+    D4:["Dumbbell Incline Bench + Med Ball", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Turkish Get-Up", "Standing antirotation hold", "Farmer Carry"],
     Descanso:[],
-    Mov:['Movilidad activa (Daily Mob)'],
+    Mov:["Movilidad activa (Daily Mob)"],
   },
   F4:{
-    D1:['Hang Clean','Dynamic Chop','Trap Bar Deadlift + Hurdle Jump','Upper Stretch (lat/pecho)','Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
-    D2:['Trap Bar Deadlift','Side Plank / Suitcase Carry','Chin-up + Med Ball Slam','One-leg Squat','DB Row / TRX Row','Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
-    D3:['Hang Clean (65-75%)','Dynamic Lift','RFESS + Hurdle Hops','Upper Stretch (lat/pecho)','Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
-    D4:['Split Squat / RFESS / Single-leg Squat','Farmer Walk / Side Plank Row','Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up (con lastre)','Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
+    D1:["Hang Clean", "Stability Ball Roll-out", "Trap Bar Deadlift + Hurdle Jump", "Chin-up + Med Ball Slam", "One-leg Squat", "DB Row", "Dynamic Chop"],
+    D2:["Bench Press + Med Ball", "Spiderman pos. lat stretch", "Standing Overhead Press", "Supine Floor Slide", "Push-up progression", "Dynamic push-pull", "Suitcase Carry"],
+    D3:["Hang Clean (65-75%)", "Stability Ball Roll-out", "RFESS + Hurdle Hops", "Ring Row + Med Ball Slam", "Single-leg RDL (Straight-leg DL)", "DB Row", "Dynamic Lift"],
+    D4:["Dumbbell Incline Bench + Med Ball", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Turkish Get-Up", "Standing antirotation hold", "Farmer Carry"],
     Descanso:[],
-    Mov:['Movilidad activa (Daily Mob)'],
+    Mov:["Movilidad activa (Daily Mob)"],
   },
 };
 
@@ -1353,79 +1168,160 @@ const EJS_DEF={
 // Reps objetivo por fase/semana según tablas Boyle
 const REPS_FASE={
   F1:{
-    base:{n:3,r:8},
+    base:{"n": 3, "r": 8},
     D1:{
-      'Hang Clean':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Front Plank':[{s:1,r:'2×20s'},{s:2,r:'2×25s'},{s:3,r:'2×30s'}],
-      'Trap Bar Deadlift':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Chin-up / Pull-up':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Split Squat (Bottoms-up KB)':[{s:1,r:'8/lado'},{s:2,r:'8/lado'},{s:3,r:'8/lado'}],
-      'DB Row / TRX Row':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'In-line Chop':[{s:1,r:'2×8'},{s:2,r:'2×8'},{s:3,r:'2×8'}],
+      "Hang Clean":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Front Plank":[{"s": 1, "r": "2×20s"}, {"s": 2, "r": "2×25s"}, {"s": 3, "r": "2×30s"}],
+      "Trap Bar Deadlift":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Chin-up / Pull-up":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Split Squat (Bottoms-up KB)":[{"s": 1, "r": "8/lado"}, {"s": 2, "r": "8/lado"}, {"s": 3, "r": "8/lado"}],
+      "DB Row":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "In-line Chop":[{"s": 1, "r": "2×8"}, {"s": 2, "r": "2×8"}, {"s": 3, "r": "2×8"}],
     },
     D2:{
-      'Bench Press':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Spiderman pos. lat stretch':[{s:1,r:'2×5r'},{s:2,r:'2×5r'},{s:3,r:'2×5r'}],
-      'Standing Overhead Press':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Supine Floor Slide':[{s:1,r:10},{s:2,r:10},{s:3,r:10}],
-      'Push-up progression':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Half-kneeling push-pull':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Suitcase Carry':[{s:1,r:'25y/lado'},{s:2,r:'25y/lado'},{s:3,r:'25y/lado'}],
+      "Bench Press":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Half-kneeling Overhead Press":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Supine Floor Slide":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Half-kneeling push-pull":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Suitcase Carry":[{"s": 1, "r": "25y/lado"}, {"s": 2, "r": "25y/lado"}, {"s": 3, "r": "25y/lado"}],
     },
     D3:{
-      'Hang Clean':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Front Plank':[{s:1,r:'2×20s'},{s:2,r:'2×25s'},{s:3,r:'2×30s'}],
-      'Rear-foot-elevated Split Squat':[{s:1,r:'8/lado'},{s:2,r:'8/lado'},{s:3,r:'8/lado'}],
-      'Ring Row':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Single-leg RDL (Straight-leg DL)':[{s:1,r:'8/lado'},{s:2,r:'8/lado'},{s:3,r:'8/lado'}],
-      'X-pull-down':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'In-line Lift':[{s:1,r:'2×8'},{s:2,r:'2×8'},{s:3,r:'2×8'}],
+      "Hang Clean":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Front Plank":[{"s": 1, "r": "2×20s"}, {"s": 2, "r": "2×25s"}, {"s": 3, "r": "2×30s"}],
+      "Rear-foot-elevated Split Squat":[{"s": 1, "r": "8/lado"}, {"s": 2, "r": "8/lado"}, {"s": 3, "r": "8/lado"}],
+      "Ring Row":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Single-leg RDL (Straight-leg DL)":[{"s": 1, "r": "8/lado"}, {"s": 2, "r": "8/lado"}, {"s": 3, "r": "8/lado"}],
+      "X-pull-down":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "In-line Lift":[{"s": 1, "r": "2×8"}, {"s": 2, "r": "2×8"}, {"s": 3, "r": "2×8"}],
     },
     D4:{
-      'Dumbbell Incline Bench':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Spiderman pos. lat stretch':[{s:1,r:'2×5r'},{s:2,r:'2×5r'},{s:3,r:'2×5r'}],
-      'Push-up progression':[{s:1,r:8},{s:2,r:8},{s:3,r:8}],
-      'Toe Touch Squat with medicine ball':[{s:1,r:6},{s:2,r:6},{s:3,r:6}],
-      'Turkish Get-Up':[{s:1,r:'3/lado'},{s:2,r:'4/lado'},{s:3,r:'4/lado'}],
-      'Half-kneeling antirotation hold':[{s:1,r:'3×20s'},{s:2,r:'3×25s'},{s:3,r:'3×25s'}],
-      'Farmer Carry':[{s:1,r:'25y×2'},{s:2,r:'25y×2'},{s:3,r:'25y×3'}],
+      "Dumbbell Incline Bench":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Squat Holds":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
+      "Turkish Get-Up":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
+      "Half-kneeling antirotation hold":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
+      "Farmer Carry":[{"s": 1, "r": "25y×2"}, {"s": 2, "r": "25y×2"}, {"s": 3, "r": "25y×2"}],
     },
   },
   F2:{
-    base:{n:3,r:5},
+    base:{"n": 3, "r": 5},
     D1:{
-      'Hang Clean':[{s:1,r:3},{s:2,r:3},{s:3,r:3}],
-      'Hard-style Front Plank':[{s:1,r:'2×20s'},{s:2,r:'2×25s'},{s:3,r:'2×25s'}],
-      'Trap Bar Deadlift':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Chin-up / Pull-up':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'One-leg Squat':[{s:1,r:6},{s:2,r:6},{s:3,r:6}],
-      'DB Row / TRX Row':[{s:1,r:10},{s:2,r:10},{s:3,r:10}],
-      'In-line Iso Hold Chop':[{s:1,r:'2×8'},{s:2,r:'2×8'},{s:3,r:'2×8'}],
+      "Hang Clean":[{"s": 1, "r": 3}, {"s": 2, "r": 3}, {"s": 3, "r": 3}],
+      "Hard-style Front Plank":[{"s": 1, "r": "2×20s"}, {"s": 2, "r": "2×25s"}, {"s": 3, "r": "2×25s"}],
+      "Trap Bar Deadlift":[{"s": 1, "r": "5,5,5+"}, {"s": 2, "r": "5,5,5,5+"}, {"s": 3, "r": "5,5,5,5+"}],
+      "Chin-up / Pull-up":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "One-leg Squat":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
+      "DB Row":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "In-line Iso Hold Chop":[{"s": 1, "r": "2×8"}, {"s": 2, "r": "2×8"}, {"s": 3, "r": "2×8"}],
+    },
+    D2:{
+      "Bench Press":[{"s": 1, "r": "5,5,5+"}, {"s": 2, "r": "5,5,5,5+"}, {"s": 3, "r": "5,5,5,5+"}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Standing Overhead Press":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Supine Floor Slide":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
+      "Half-kneeling push-pull":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Suitcase Carry":[{"s": 1, "r": "25y/lado"}, {"s": 2, "r": "25y/lado"}, {"s": 3, "r": "25y/lado"}],
     },
     D3:{
-      'Hang Clean':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Hard-style Front Plank':[{s:1,r:'2×20s'},{s:2,r:'2×25s'},{s:3,r:'2×25s'}],
-      'Rear-foot-elevated Split Squat':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Ring Row':[{s:1,r:10},{s:2,r:10},{s:3,r:10}],
-      'Single-leg RDL (Straight-leg DL)':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'X-pull-down':[{s:1,r:10},{s:2,r:10},{s:3,r:10}],
-      'In-line Iso Hold Lift':[{s:1,r:'2×8'},{s:2,r:'2×8'},{s:3,r:'2×8'}],
+      "Hang Clean (65-75%)":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Hard-style Front Plank":[{"s": 1, "r": "2×20s"}, {"s": 2, "r": "2×25s"}, {"s": 3, "r": "2×25s"}],
+      "Rear-foot-elevated Split Squat":[{"s": 1, "r": "5,5,5+"}, {"s": 2, "r": "5,5,5,5+"}, {"s": 3, "r": "5,5,5,5+"}],
+      "Ring Row":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "Single-leg RDL (Straight-leg DL)":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "X-pull-down":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "In-line Iso Hold Lift":[{"s": 1, "r": "2×8"}, {"s": 2, "r": "2×8"}, {"s": 3, "r": "2×8"}],
+    },
+    D4:{
+      "Dumbbell Incline Bench":[{"s": 1, "r": "3×5"}, {"s": 2, "r": "5,5,5,5+"}, {"s": 3, "r": "5,5,5,5+"}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
+      "Toe Touch Squat with medicine ball":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
+      "Turkish Get-Up":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
+      "Half-kneeling antirotation hold":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
+      "Farmer Carry":[{"s": 1, "r": "25y×2"}, {"s": 2, "r": "25y×2"}, {"s": 3, "r": "25y×2"}],
     },
   },
   F3:{
-    base:{n:3,r:5},
+    base:{"n": 3, "r": 5},
     D1:{
-      'Hang Clean':[{s:1,r:3},{s:2,r:3},{s:3,r:3}],
-      'Stability Ball Roll-out':[{s:1,r:'3×6'},{s:2,r:'3×8'},{s:3,r:'3×8'}],
-      'Trap Bar Deadlift + Hurdle Jump':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Chin-up + Med Ball Slam':[{s:1,r:3},{s:2,r:3},{s:3,r:3}],
-      'One-leg Squat':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'DB Row / TRX Row':[{s:1,r:5},{s:2,r:5},{s:3,r:5}],
-      'Dynamic Chop':[{s:1,r:'3×10'},{s:2,r:'3×10'},{s:3,r:'3×10'}],
+      "Hang Clean":[{"s": 1, "r": 3}, {"s": 2, "r": 3}, {"s": 3, "r": 3}],
+      "Stability Ball Roll-out":[{"s": 1, "r": "3×6"}, {"s": 2, "r": "3×8"}, {"s": 3, "r": "3×8"}],
+      "Trap Bar Deadlift + Hurdle Jump":[{"s": 1, "r": "3×5"}, {"s": 2, "r": "3×5"}, {"s": 3, "r": "5,5,5+"}],
+      "Chin-up + Med Ball Slam":[{"s": 1, "r": "3,3,3+"}, {"s": 2, "r": "3,3,3+"}, {"s": 3, "r": "3,3,3+"}],
+      "One-leg Squat":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "DB Row":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Dynamic Chop":[{"s": 1, "r": "3×10"}, {"s": 2, "r": "3×10"}, {"s": 3, "r": "3×10"}],
+    },
+    D2:{
+      "Bench Press + Med Ball":[{"s": 1, "r": "5,3,3+"}, {"s": 2, "r": "5,3,3+"}, {"s": 3, "r": "5,3,1+"}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Standing Overhead Press":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Supine Floor Slide":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
+      "Dynamic push-pull":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Suitcase Carry":[{"s": 1, "r": "25y/lado"}, {"s": 2, "r": "25y/lado"}, {"s": 3, "r": "25y/lado"}],
+    },
+    D3:{
+      "Hang Clean (65-75%)":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Stability Ball Roll-out":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
+      "RFESS + Hurdle Hops":[{"s": 1, "r": "5,3,3+"}, {"s": 2, "r": "5,3,3+"}, {"s": 3, "r": "5,3,3+"}],
+      "Ring Row + Med Ball Slam":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "Single-leg RDL (Straight-leg DL)":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
+      "DB Row":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Dynamic Lift":[{"s": 1, "r": "3×10"}, {"s": 2, "r": "3×10"}, {"s": 3, "r": "3×10"}],
+    },
+    D4:{
+      "Dumbbell Incline Bench + Med Ball":[{"s": 1, "r": "5,3,3+"}, {"s": 2, "r": "5,3,3+"}, {"s": 3, "r": "5,3,3+"}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
+      "Toe Touch Squat with medicine ball":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Turkish Get-Up":[{"s": 1, "r": "2+2"}, {"s": 2, "r": "2+2"}, {"s": 3, "r": "2+2"}],
+      "Standing antirotation hold":[{"s": 1, "r": "3×25s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
+      "Farmer Carry":[{"s": 1, "r": "25y×3"}, {"s": 2, "r": "25y×3"}, {"s": 3, "r": "25y×3"}],
     },
   },
   F4:{
-    base:{n:3,r:5},
+    base:{"n": 3, "r": 5},
+    D1:{
+      "Hang Clean":[{"s": 1, "r": 3}, {"s": 2, "r": 3}, {"s": 3, "r": 3}],
+      "Stability Ball Roll-out":[{"s": 1, "r": "3×6"}, {"s": 2, "r": "3×8"}, {"s": 3, "r": "3×8"}],
+      "Trap Bar Deadlift + Hurdle Jump":[{"s": 1, "r": "3×5"}, {"s": 2, "r": "3×5"}, {"s": 3, "r": "5,5,5+"}],
+      "Chin-up + Med Ball Slam":[{"s": 1, "r": "3,3,3+"}, {"s": 2, "r": "3,3,3+"}, {"s": 3, "r": "3,3,3+"}],
+      "One-leg Squat":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "DB Row":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Dynamic Chop":[{"s": 1, "r": "3×10"}, {"s": 2, "r": "3×10"}, {"s": 3, "r": "3×10"}],
+    },
+    D2:{
+      "Bench Press + Med Ball":[{"s": 1, "r": "5,3,3+"}, {"s": 2, "r": "5,3,3+"}, {"s": 3, "r": "5,3,1+"}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Standing Overhead Press":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Supine Floor Slide":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
+      "Dynamic push-pull":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Suitcase Carry":[{"s": 1, "r": "25y/lado"}, {"s": 2, "r": "25y/lado"}, {"s": 3, "r": "25y/lado"}],
+    },
+    D3:{
+      "Hang Clean (65-75%)":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Stability Ball Roll-out":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
+      "RFESS + Hurdle Hops":[{"s": 1, "r": "5,3,3+"}, {"s": 2, "r": "5,3,3+"}, {"s": 3, "r": "5,3,3+"}],
+      "Ring Row + Med Ball Slam":[{"s": 1, "r": 10}, {"s": 2, "r": 10}, {"s": 3, "r": 10}],
+      "Single-leg RDL (Straight-leg DL)":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
+      "DB Row":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
+      "Dynamic Lift":[{"s": 1, "r": "3×10"}, {"s": 2, "r": "3×10"}, {"s": 3, "r": "3×10"}],
+    },
+    D4:{
+      "Dumbbell Incline Bench + Med Ball":[{"s": 1, "r": "5,3,3+"}, {"s": 2, "r": "5,3,3+"}, {"s": 3, "r": "5,3,3+"}],
+      "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
+      "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
+      "Toe Touch Squat with medicine ball":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Turkish Get-Up":[{"s": 1, "r": "2+2"}, {"s": 2, "r": "2+2"}, {"s": 3, "r": "2+2"}],
+      "Standing antirotation hold":[{"s": 1, "r": "3×25s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
+      "Farmer Carry":[{"s": 1, "r": "25y×3"}, {"s": 2, "r": "25y×3"}, {"s": 3, "r": "25y×3"}],
+    },
   },
 };
 
@@ -1442,6 +1338,44 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
+  // --- Fichas añadidas v90 ---
+  "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
+  "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
+  "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
+  "In-line Chop":{tipo:"prog",tecnica:"Medio arrodillado en línea, cable de alto a bajo. El core resiste la rotación (antirotación)."},
+  "In-line Lift":{tipo:"prog",tecnica:"Medio arrodillado en línea, cable de bajo a alto. Antirotación en patrón ascendente."},
+  "In-line Iso Hold Chop":{tipo:"prog",tecnica:"Como el chop pero manteniendo la posición final en isométrico. Máxima demanda de core."},
+  "In-line Iso Hold Lift":{tipo:"prog",tecnica:"Lift con sostén isométrico en la posición alta."},
+  "Dynamic Chop":{tipo:"prog",tecnica:"Chop con velocidad/potencia, fase 3-4. Transferencia de fuerza al patrón rotacional."},
+  "Dynamic Lift":{tipo:"prog",tecnica:"Lift dinámico de potencia."},
+  "Half-kneeling push-pull":{tipo:"prog",tecnica:"Medio arrodillado: un brazo empuja y el otro tira a la vez. Antirotación máxima del core."},
+  "Dynamic push-pull":{tipo:"prog",tecnica:"De pie, empuje-tracción dinámico. Fase avanzada."},
+  "Half-kneeling antirotation hold":{tipo:"fijo",series:"3",reps:"20-25 s",tecnica:"Pallof hold medio arrodillado. Resistir la tracción del cable sin rotar. Respiración controlada."},
+  "Standing antirotation hold":{tipo:"fijo",series:"3",reps:"25 s",tecnica:"Pallof hold de pie. Antirotación con base inestable."},
+  "Ring Row":{tipo:"prog",tecnica:"Remo invertido en anillas. Cuerpo recto, escápulas juntas. Cuanto más horizontal, más difícil."},
+  "Ring Row + Med Ball Slam":{tipo:"prog",tecnica:"Complejo: serie de remo + slam de balón medicinal para potencia de tracción."},
+  "X-pull-down":{tipo:"prog",tecnica:"Jalón en X con cable o goma cruzada. Tracción vertical con activación dorsal."},
+  "DB Row":{tipo:"prog",tecnica:"Remo con mancuerna a una mano, apoyo en banco. Tracción horizontal."},
+  "Chin-up + Med Ball Slam":{tipo:"prog",tecnica:"Complejo: dominadas + slam de balón. Fuerza-potencia de tracción."},
+  "Supine Floor Slide":{tipo:"prog",tecnica:"Tumbado, brazos deslizan por el suelo manteniendo lumbar pegada. Movilidad y estabilidad de hombro."},
+  "Spiderman pos. lat stretch":{tipo:"fijo",series:"2",reps:"5 respiraciones",tecnica:"Zancada profunda, mano interior al suelo, abre el pecho rotando. Movilidad de cadera y torácica."},
+  "Half-kneeling Overhead Press":{tipo:"prog",tecnica:"Press de hombro medio arrodillado con KB/mancuerna. Estabilidad de core y core antiextensión."},
+  "Standing Overhead Press":{tipo:"prog",tecnica:"Press militar de pie. Glúteos y abdomen firmes para no arquear."},
+  "Push-up progression":{tipo:"prog",tecnica:"Flexión con progresión: inclinado → suelo → pies elevados → lastrado. Cuerpo en tabla."},
+  "Bench Press":{tipo:"prog",tecnica:"Press de banca. Escápulas retraídas, recorrido controlado."},
+  "Bench Press + Med Ball":{tipo:"prog",tecnica:"Complejo: press + lanzamiento/press de balón en banco para potencia."},
+  "Dumbbell Incline Bench":{tipo:"prog",tecnica:"Press inclinado con mancuernas. Más énfasis en deltoides anterior y pecho superior."},
+  "Dumbbell Incline Bench + Med Ball":{tipo:"prog",tecnica:"Complejo de press inclinado + balón medicinal."},
+  "Trap Bar Deadlift + Hurdle Jump":{tipo:"prog",tecnica:"Complejo de potencia: peso muerto trap bar + saltos continuos de valla.",alerta:"⚠️ Rotura menisco externo: salto/impacto contraindicado. Sustituir por empuje de Trineo (sin salto) o el ejercicio sin el complejo de salto."},
+  "RFESS + Hurdle Hops":{tipo:"prog",tecnica:"Complejo: RFESS + saltos continuos de valla.",alerta:"⚠️ Rotura menisco externo: salto/impacto contraindicado. Sustituir por empuje de Trineo (sin salto) o el ejercicio sin el complejo de salto."},
+  "One-leg Squat":{tipo:"prog",tecnica:"Sentadilla a una pierna. Control de rodilla (sin valgo).",alerta:"⚠️ Rotura menisco externo / condropatía: evitar flexión profunda con carga. Sustituir por Step-up cajón bajo o Wall Sit."},
+  "Rear-foot-elevated Split Squat":{tipo:"prog",tecnica:"Pie trasero elevado. Bajada 3 s, rodilla delantera no supera el pie.",alerta:"⚠️ Rotura menisco externo: rango reducido, NO bajar rodilla al suelo. Si dolor → Split Squat sin elevación o Step-up cajón bajo."},
+  "Toe Touch Squat with medicine ball":{tipo:"prog",tecnica:"Sentadilla guiada tocando el balón. Patrón seguro de rodilla, bajo riesgo."},
+  "Squat Holds":{tipo:"prog",tecnica:"Sostén isométrico en sentadilla. Tolerable en general; baja el rango si molesta la rodilla."},
+  "Hang Clean (65-75%)":{tipo:"prog",tecnica:"Hang clean al 65-75%. SIEMPRE primero. Extensión completa de cadera, calidad sobre cantidad."},
+  "Turkish Get-Up":{tipo:"prog",tecnica:"Get-up turco progresivo: hasta codo → puente alto → de pie completo. Estabilidad total."},
+  "Suitcase Carry":{tipo:"prog",tecnica:"Caminata con peso a un lado. Antiflexión lateral del core. Tronco recto."},
+  "Farmer Carry":{tipo:"prog",tecnica:"Caminata con peso en ambas manos. Agarre y core."},
   'Hang Clean':{tipo:'prog',tecnica:'SIEMPRE primero en la sesion. Desde encima de rodillas. Extension completa de cadera. 3-5 reps max — calidad sobre cantidad.'},
   'DB Snatch / KB Swing':{tipo:'prog',tecnica:'KB Swing: cadera atras y adelante explosivo. No es una sentadilla. Alternativa al Hang Clean si hay fatiga o tecnica no consolidada.'},
   'Trap Bar Deadlift':{tipo:'prog',tecnica:'Agarre neutro en hex bar. Cadera baja al inicio. Empujar el suelo. Espalda neutra durante todo el recorrido. PARA si la lumbar se redondea.',alerta:'⚠️ Condropatía femoral medial: vigilar que las rodillas NO colapsen en valgo durante el tirón. Generalmente bien tolerado.'},
@@ -1526,8 +1460,11 @@ function abrirVariantes(ejOrig){
     var sel=v===actual;
     var div=document.createElement('div');
     div.style.cssText='padding:.75rem 1rem;border-bottom:.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:'+(sel?'var(--blue-bg)':'transparent');
+    var BADGE={regresion:['\u2193','#2e7d32','Regresion'],base:['\u25CF','#1565c0','Base'],progresion:['\u2191','#c62828','Progresion'],alt_rodilla:['\u26A0\uFE0F','#e65100','Rodilla'],alt:['\u2194','#6a1b9a','Alt.']};
+    var _tp=(typeof VAR_TIPO!=='undefined'&&VAR_TIPO[ejOrig]&&VAR_TIPO[ejOrig][v])||'';
+    if(_tp&&BADGE[_tp]){var bdg=document.createElement('span');bdg.style.cssText='font-size:10px;font-weight:800;color:'+BADGE[_tp][1]+';min-width:74px;flex-shrink:0';bdg.textContent=BADGE[_tp][0]+' '+BADGE[_tp][2];div.appendChild(bdg);}
     var span=document.createElement('span');
-    span.style.cssText='font-size:14px;font-weight:'+(sel?'700':'500')+';color:'+(sel?'var(--blue)':'var(--text)');
+    span.style.cssText='flex:1;font-size:14px;font-weight:'+(sel?'700':'500')+';color:'+(sel?'var(--blue)':'var(--text)');
     span.textContent=v;
     div.appendChild(span);
     if(sel){var chk=document.createElement('span');chk.style.cssText='color:var(--blue);font-size:18px';chk.innerHTML='&#10003;';div.appendChild(chk);}
@@ -4186,6 +4123,44 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
+  // --- Añadidos v90 (programa Summer Lift fiel al Excel) ---
+  {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
+  {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
+  {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
+  {id:"inline_chop",n:"In-line Chop",cat:"Core",key:"In-line Chop"},
+  {id:"inline_lift",n:"In-line Lift",cat:"Core",key:"In-line Lift"},
+  {id:"iso_chop",n:"In-line Iso Hold Chop",cat:"Core",key:"In-line Iso Hold Chop"},
+  {id:"iso_lift",n:"In-line Iso Hold Lift",cat:"Core",key:"In-line Iso Hold Lift"},
+  {id:"dyn_chop",n:"Dynamic Chop",cat:"Core",key:"Dynamic Chop"},
+  {id:"dyn_lift",n:"Dynamic Lift",cat:"Core",key:"Dynamic Lift"},
+  {id:"hk_pushpull",n:"Half-kneeling push-pull",cat:"Core",key:"Half-kneeling push-pull"},
+  {id:"dyn_pushpull",n:"Dynamic push-pull",cat:"Core",key:"Dynamic push-pull"},
+  {id:"hk_antirot",n:"Half-kneeling antirotation hold",cat:"Core",key:"Half-kneeling antirotation hold"},
+  {id:"st_antirot",n:"Standing antirotation hold",cat:"Core",key:"Standing antirotation hold"},
+  {id:"ring_row",n:"Ring Row",cat:"Traccion",key:"Ring Row"},
+  {id:"ring_row_slam",n:"Ring Row + Med Ball Slam",cat:"Traccion",key:"Ring Row + Med Ball Slam"},
+  {id:"xpulldown",n:"X-pull-down",cat:"Traccion",key:"X-pull-down"},
+  {id:"db_row2",n:"DB Row",cat:"Traccion",key:"DB Row"},
+  {id:"chin_slam",n:"Chin-up + Med Ball Slam",cat:"Traccion",key:"Chin-up + Med Ball Slam"},
+  {id:"supine_slide",n:"Supine Floor Slide",cat:"Movilidad",key:"Supine Floor Slide"},
+  {id:"spiderman",n:"Spiderman pos. lat stretch",cat:"Movilidad",key:"Spiderman pos. lat stretch"},
+  {id:"hk_ohp",n:"Half-kneeling Overhead Press",cat:"Press",key:"Half-kneeling Overhead Press"},
+  {id:"st_ohp",n:"Standing Overhead Press",cat:"Press",key:"Standing Overhead Press"},
+  {id:"pushup_prog",n:"Push-up progression",cat:"Press",key:"Push-up progression"},
+  {id:"bench_press2",n:"Bench Press",cat:"Press",key:"Bench Press"},
+  {id:"bench_mb",n:"Bench Press + Med Ball",cat:"Press",key:"Bench Press + Med Ball"},
+  {id:"incline_db",n:"Dumbbell Incline Bench",cat:"Press",key:"Dumbbell Incline Bench"},
+  {id:"incline_mb",n:"Dumbbell Incline Bench + Med Ball",cat:"Press",key:"Dumbbell Incline Bench + Med Ball"},
+  {id:"trap_jump",n:"Trap Bar Deadlift + Hurdle Jump",cat:"Hip Dom",key:"Trap Bar Deadlift + Hurdle Jump"},
+  {id:"rfess_hops",n:"RFESS + Hurdle Hops",cat:"Rodilla Unilat",key:"RFESS + Hurdle Hops"},
+  {id:"oneleg_squat",n:"One-leg Squat",cat:"Rodilla Unilat",key:"One-leg Squat"},
+  {id:"rfess2",n:"Rear-foot-elevated Split Squat",cat:"Rodilla Unilat",key:"Rear-foot-elevated Split Squat"},
+  {id:"toe_touch",n:"Toe Touch Squat with medicine ball",cat:"Rodilla Unilat",key:"Toe Touch Squat with medicine ball"},
+  {id:"squat_holds",n:"Squat Holds",cat:"Rodilla Unilat",key:"Squat Holds"},
+  {id:"hang_6575",n:"Hang Clean (65-75%)",cat:"Explosivo",key:"Hang Clean (65-75%)"},
+  {id:"tgu",n:"Turkish Get-Up",cat:"Core",key:"Turkish Get-Up"},
+  {id:"suitcase",n:"Suitcase Carry",cat:"Traccion",key:"Suitcase Carry"},
+  {id:"farmer",n:"Farmer Carry",cat:"Traccion",key:"Farmer Carry"},
 ];
 
 // Estado seleccionado en ficha
@@ -4675,7 +4650,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v89';
+const APP_VERSION='v90';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

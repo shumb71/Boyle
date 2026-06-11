@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v91</title>
+<title>Entreno Boyle v92</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v91"
+      version: "v92"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -798,11 +798,25 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="bkbtn" style="background:var(--blue);color:#fff;border:none" onclick="aplicarAnclaje()"><i class="ti ti-calendar-check"></i> Calcular día actual automáticamente</button>
     </div>
 
+    <div class="card" style="border:.5px solid rgba(24,95,165,.3)">
+      <div class="card-lbl" style="color:var(--blue)">&#128206; Biblioteca (Raindrop)</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Pega tu <b>Test token</b> de Raindrop (app.raindrop.io &rarr; Settings &rarr; Integrations &rarr; crea una app &rarr; copia el Test token). Se guarda solo en este dispositivo.</div>
+      <input id="cfg-rd-token" type="password" placeholder="Test token" autocomplete="off" style="width:100%;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin:.5rem 0">
+      <button class="bkbtn" style="background:var(--blue);color:#fff;border:none;margin-bottom:.4rem" onclick="rdGuardarToken()"><i class="ti ti-plug-connected"></i> Guardar y probar</button>
+      <button class="bkbtn" onclick="rdSync(true)"><i class="ti ti-refresh"></i> Actualizar biblioteca ahora</button>
+      <div id="cfg-rd-status" style="font-size:12px;color:var(--text2);margin-top:.5rem"></div>
+    </div>
+
     <div class="card">
       <div class="card-lbl">Peligro</div>
       <div class="info-box iw"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Borrar todos los datos elimina series, pesos y progresion.</div>
       <button class="bkbtn bkdel" onclick="borrarDatos()"><i class="ti ti-trash" aria-hidden="true"></i> Borrar todos los datos</button>
     </div>
+  </div>
+
+  <div class="screen" id="s-biblio">
+    <div class="ph"><h1>Biblioteca</h1><span style="font-size:13px;color:var(--text2)">Raindrop</span></div>
+    <div id="biblio-body"></div>
   </div>
 
   <!-- TOPBAR -->
@@ -851,6 +865,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </button>
       <button class="dnav-item" id="dnav-ejercicios" onclick="navTo('ejercicios','Ejercicios')">
         <i class="ti ti-list-details dnav-icon"></i><span class="dnav-label">Ejercicios</span>
+      </button>
+      <button class="dnav-item" id="dnav-biblio" onclick="navTo('biblio','Biblioteca')">
+        <i class="ti ti-bookmark dnav-icon" aria-hidden="true"></i><span class="dnav-label">Biblioteca</span>
       </button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-config" onclick="navTo('config','Config')">
@@ -1008,7 +1025,7 @@ const BOYLE_DIAS={
   },
 };
 
-// GRUPOS_DIA [v91] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// GRUPOS_DIA [v92] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
 // La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
 const GRUPOS_DIA={
   D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
@@ -1119,7 +1136,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v91]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v92]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1355,7 +1372,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v91 ---
+  // --- Fichas añadidas v92 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1820,7 +1837,7 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
-// [v91] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// [v92] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
   if(!dB||!GRUPOS_DIA[dB]) return null;
@@ -2201,6 +2218,7 @@ const renders={
             +(ult?'<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:4px;display:inline-block"><span style="color:var(--text3);margin-right:4px">'+ultFechaStr+'</span>'+ult.peso+'kg x '+ult.reps+' R'+ult.rpe+'</div>':'')
             +(info.tecnica?'<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">'+info.tecnica+'</div>':'')
             +(info.alerta?'<div style="font-size:11px;color:var(--orange);background:var(--orange-bg,var(--bg3));border-radius:6px;padding:3px 8px;margin-bottom:5px;line-height:1.4">'+info.alerta+'</div>':'')
+            +rdRefsBtnHtml(ej)
             +'<div style="margin-top:4px"><div class="pills">'+pillsArr.join('')+'</div></div>'
             +'</div>';
         }).join('');
@@ -4157,7 +4175,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v91 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v92 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4684,7 +4702,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v91';
+const APP_VERSION='v92';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -6101,5 +6119,188 @@ checkBackupReminder();
       onclick="document.getElementById('mo-cambiar-ej').classList.remove('open')">Cancelar</button>
   </div>
 </div>
+<script>
+/* ===================== BIBLIOTECA (Raindrop) — v92 ===================== */
+const RD_BASE='https://api.raindrop.io/rest/v1';
+
+// Mapa: nombre de ejercicio del programa -> etiqueta ej: (vocabulario unificado)
+const EJ_TAG={
+  'Hang Clean':'ej:hang-clean','Hang Clean (65-75%)':'ej:hang-clean',
+  'Front Plank':'ej:front-plank','Hard-style Front Plank':'ej:front-plank',
+  'Stability Ball Roll-out':'ej:sb-rollout',
+  'Trap Bar Deadlift':'ej:trap-bar','Trap Bar Deadlift + Hurdle Jump':'ej:trap-bar',
+  'Single-leg RDL (Straight-leg DL)':'ej:sl-rdl',
+  'Split Squat (Bottoms-up KB)':'ej:split-squat',
+  'Rear-foot-elevated Split Squat':'ej:rfess','RFESS + Hurdle Hops':'ej:rfess',
+  'One-leg Squat':'ej:one-leg-squat',
+  'Toe Touch Squat with medicine ball':'ej:toe-touch-squat',
+  'Squat Holds':'ej:squat-hold',
+  'Chin-up / Pull-up':'ej:chin-up','Chin-up + Med Ball Slam':'ej:chin-up',
+  'Ring Row':'ej:ring-row','Ring Row + Med Ball Slam':'ej:ring-row',
+  'DB Row':'ej:db-row','X-pull-down':'ej:x-pulldown',
+  'Bench Press':'ej:bench-press','Bench Press + Med Ball':'ej:bench-press',
+  'Dumbbell Incline Bench':'ej:incline-press','Dumbbell Incline Bench + Med Ball':'ej:incline-press',
+  'Half-kneeling Overhead Press':'ej:overhead-press','Standing Overhead Press':'ej:overhead-press',
+  'Push-up progression':'ej:push-up',
+  'In-line Chop':'ej:chop','In-line Iso Hold Chop':'ej:chop','Dynamic Chop':'ej:chop',
+  'In-line Lift':'ej:lift','In-line Iso Hold Lift':'ej:lift','Dynamic Lift':'ej:lift',
+  'Half-kneeling push-pull':'ej:push-pull','Dynamic push-pull':'ej:push-pull',
+  'Half-kneeling antirotation hold':'ej:pallof','Standing antirotation hold':'ej:pallof',
+  'Turkish Get-Up':'ej:get-up',
+  'Suitcase Carry':'ej:suitcase-carry','Farmer Carry':'ej:farmer-carry',
+  'Spiderman pos. lat stretch':'ej:spiderman','Supine Floor Slide':'ej:floor-slide'
+};
+
+function rdGetToken(){ return localStorage.getItem('rd_token')||''; }
+function rdGetCache(){ try{ return JSON.parse(localStorage.getItem('rd_cache')||'null'); }catch(e){ return null; } }
+function rdSetStatus(t){ var e=document.getElementById('cfg-rd-status'); if(e) e.textContent=t; }
+
+async function rdFetch(path){
+  var token=rdGetToken();
+  if(!token) throw new Error('Sin token');
+  var res=await fetch(RD_BASE+path,{headers:{Authorization:'Bearer '+token}});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function rdSlimItem(it){
+  var colId=(it.collection&&(it.collection.$id!==undefined?it.collection.$id:it.collection))||it.collectionId||0;
+  return {link:it.link,title:it.title,tags:it.tags||[],cover:it.cover||'',col:colId};
+}
+
+async function rdSync(showMsg){
+  if(!rdGetToken()){ if(showMsg) alert('Pega primero tu Test token de Raindrop en Config.'); return; }
+  rdSetStatus('Sincronizando…');
+  try{
+    var cols=[];
+    var r1=await rdFetch('/collections'); cols=cols.concat(r1.items||[]);
+    var r2=await rdFetch('/collections/childrens'); cols=cols.concat(r2.items||[]);
+    var items=[],page=0;
+    while(true){
+      var rr=await rdFetch('/raindrops/0?perpage=50&page='+page);
+      var its=rr.items||[]; if(!its.length) break;
+      items=items.concat(its); page++;
+      if(page>40) break;
+    }
+    var cache={ts:Date.now(),collections:cols.map(function(c){return {_id:c._id,title:c.title,parent:c.parent||null,count:c.count};}),items:items.map(rdSlimItem)};
+    localStorage.setItem('rd_cache',JSON.stringify(cache));
+    rdSetStatus('Biblioteca actualizada: '+items.length+' enlaces · '+new Date().toLocaleTimeString('es-ES'));
+    var sb=document.getElementById('s-biblio');
+    if(sb&&sb.classList.contains('active')) renderBiblioteca();
+    if(showMsg&&typeof toast==='function') toast('Biblioteca actualizada');
+  }catch(e){ rdSetStatus('Error al sincronizar: '+(e.message||e)); }
+}
+
+function rdGuardarToken(){
+  var i=document.getElementById('cfg-rd-token'); if(!i) return;
+  var t=i.value.trim();
+  if(!t){ rdSetStatus('Pega un token.'); return; }
+  localStorage.setItem('rd_token',t);
+  rdSetStatus('Probando token…');
+  rdFetch('/user').then(function(u){
+    rdSetStatus('Conectado como '+(u.user&&u.user.fullName?u.user.fullName:'usuario')+'. Sincronizando…');
+    rdSync(false);
+  }).catch(function(e){ rdSetStatus('Token inválido o sin conexión ('+(e.message||e)+').'); });
+}
+
+function rdItemColId(it){ return it.col!==undefined?it.col:(it.collection&&it.collection.$id); }
+
+function refsParaEj(ej){
+  var slug=EJ_TAG[ej]; if(!slug) return [];
+  var cache=rdGetCache(); if(!cache||!cache.items) return [];
+  slug=slug.toLowerCase();
+  return cache.items.filter(function(it){
+    return (it.tags||[]).some(function(t){ return String(t).toLowerCase()===slug; });
+  });
+}
+
+function rdRefsBtnHtml(ej){
+  try{
+    var n=refsParaEj(ej).length; if(!n) return '';
+    var ejSafe=ej.replace(/'/g,'&#39;');
+    return '<button data-ej="'+ejSafe+'" onclick="abrirRefs(this)" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:6px;padding:3px 8px;margin-bottom:5px;font-size:11px;cursor:pointer">&#128206; '+n+' referencia'+(n>1?'s':'')+'</button>';
+  }catch(e){ return ''; }
+}
+
+function rdItemHtml(it){
+  var tags=(it.tags||[]).map(function(t){ return '<span style="font-size:10px;background:var(--bg3);color:var(--text2);border-radius:10px;padding:1px 6px;margin:0 3px 3px 0;display:inline-block">'+t+'</span>'; }).join('');
+  var thumb=it.cover?'<img src="'+it.cover+'" style="width:54px;height:54px;object-fit:cover;border-radius:8px;flex-shrink:0" onerror="this.style.display=\'none\'">':'';
+  return '<a href="'+it.link+'" target="_blank" rel="noopener" style="display:flex;gap:10px;align-items:center;padding:.55rem 0;border-bottom:.5px solid var(--border);text-decoration:none;color:inherit">'
+    +thumb
+    +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;line-height:1.3">'+(it.title||it.link)+'</div><div style="margin-top:3px">'+tags+'</div></div>'
+    +'<span style="color:var(--blue);font-size:18px;flex-shrink:0">&#8599;</span></a>';
+}
+
+function rdModal(title,inner){
+  var ov=document.getElementById('rd-modal'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='rd-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--bg);color:var(--text);width:100%;max-width:600px;max-height:82vh;overflow:auto;border-radius:16px 16px 0 0;padding:1rem 1.1rem 1.5rem';
+  box.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;position:sticky;top:0;background:var(--bg)"><h3 style="margin:0;font-size:15px">'+title+'</h3><button onclick="var m=document.getElementById(\'rd-modal\');if(m)m.remove()" style="border:none;background:var(--bg3);color:var(--text2);border-radius:50%;width:30px;height:30px;cursor:pointer">&#10005;</button></div>'+inner;
+  ov.appendChild(box); document.body.appendChild(ov);
+}
+
+function abrirRefs(btn){
+  var ej=btn.getAttribute('data-ej').replace(/&#39;/g,"'");
+  var refs=refsParaEj(ej);
+  var inner=refs.length?refs.map(rdItemHtml).join(''):'<div style="color:var(--text3);padding:1rem;text-align:center">Sin referencias</div>';
+  rdModal('&#128206; '+ej+' ('+refs.length+')',inner);
+}
+
+function rdGymCollections(cache){
+  var gym=(cache.collections||[]).find(function(c){ return (c.title||'').toLowerCase()==='gym'; });
+  var gid=gym?gym._id:null;
+  var kids=(cache.collections||[]).filter(function(c){ return c.parent&&c.parent.$id===gid; });
+  if(kids.length) return kids.sort(function(a,b){ return (a.title||'').localeCompare(b.title||''); });
+  return (cache.collections||[]).filter(function(c){ return c._id!==gid; });
+}
+function rdCountInCollection(cache,cid){
+  return (cache.items||[]).filter(function(it){ return rdItemColId(it)===cid; }).length;
+}
+
+function abrirColeccion(cid){
+  var cache=rdGetCache(); if(!cache) return;
+  var col=(cache.collections||[]).find(function(c){ return c._id===cid; });
+  var items=(cache.items||[]).filter(function(it){ return rdItemColId(it)===cid; });
+  rdModal((col?col.title:'Colección')+' ('+items.length+')', items.length?items.map(rdItemHtml).join(''):'<div style="color:var(--text3);padding:1rem">Vacía</div>');
+}
+
+function renderBiblioteca(){
+  var el=document.getElementById('biblio-body'); if(!el) return;
+  if(!rdGetToken()){
+    el.innerHTML='<div class="card"><div class="info-box ib"><i class="ti ti-info-circle"></i> Conecta tu cuenta de Raindrop en Config para ver tu biblioteca de ejercicios.</div><button class="bkbtn" style="margin-top:.5rem" onclick="navTo(\'config\',\'Config\')">Ir a Config</button></div>';
+    return;
+  }
+  var cache=rdGetCache();
+  if(!cache){
+    el.innerHTML='<div class="card"><div class="info-box ib">Aún no hay datos descargados.</div><button class="bkbtn" style="margin-top:.5rem" onclick="rdSync(true)">↻ Descargar biblioteca</button></div>';
+    return;
+  }
+  var cats=rdGymCollections(cache);
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem"><span style="font-size:12px;color:var(--text3)">'+ (cache.items?cache.items.length:0) +' enlaces · '+new Date(cache.ts).toLocaleDateString('es-ES')+'</span><button class="bkbtn" style="width:auto;padding:4px 12px;font-size:12px" onclick="rdSync(true)">&#8635; Actualizar</button></div>';
+  var grid=cats.map(function(c){
+    return '<button onclick="abrirColeccion('+c._id+')" class="card" style="text-align:left;cursor:pointer;width:100%;border:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span style="font-weight:600">'+c.title+'</span><span style="font-size:12px;color:var(--text3)">'+rdCountInCollection(cache,c._id)+'</span></button>';
+  }).join('');
+  el.innerHTML=head+(grid||'<div class="info-box ib">No se encontraron colecciones.</div>');
+}
+
+// registrar vista
+renders.biblio=renderBiblioteca;
+
+// init: precargar token en Config y auto-sync si la caché es vieja
+(function(){
+  try{
+    var t=rdGetToken();
+    var inp=document.getElementById('cfg-rd-token'); if(inp&&t) inp.value=t;
+    var cache=rdGetCache();
+    var vieja=!cache||(Date.now()-(cache.ts||0))>24*60*60*1000;
+    if(t&&vieja&&navigator.onLine) setTimeout(function(){ rdSync(false); },1500);
+  }catch(e){}
+})();
+/* =================== FIN BIBLIOTECA (Raindrop) =================== */
+
+</script>
 </body>
 </html>

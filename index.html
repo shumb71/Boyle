@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v92</title>
+<title>Entreno Boyle v94</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v92"
+      version: "v94"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -807,6 +807,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="cfg-rd-status" style="font-size:12px;color:var(--text2);margin-top:.5rem"></div>
     </div>
 
+    <div class="card" style="border:.5px solid rgba(99,153,34,.3)">
+      <div class="card-lbl" style="color:var(--green)">&#128202; Mi Excel (Drive)</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Abre tu hoja de cálculo guardada en Google Drive.</div>
+      <button class="bkbtn" onclick="window.open('https://docs.google.com/spreadsheets/d/1NA_T-076Z9VVhv2TznTj9ij5FR_Q0-Xo/edit?usp=drive_link','_blank')"><i class="ti ti-table"></i> Abrir mi Excel</button>
+    </div>
+
     <div class="card">
       <div class="card-lbl">Peligro</div>
       <div class="info-box iw"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Borrar todos los datos elimina series, pesos y progresion.</div>
@@ -1025,7 +1031,7 @@ const BOYLE_DIAS={
   },
 };
 
-// GRUPOS_DIA [v92] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// GRUPOS_DIA [v94] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
 // La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
 const GRUPOS_DIA={
   D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
@@ -1136,7 +1142,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v92]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v94]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1372,7 +1378,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v92 ---
+  // --- Fichas añadidas v94 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1795,11 +1801,11 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{}};
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
     // Migrar fechaSesiones antiguo (dia→fecha) a nuevo (fecha→dia)
     if(ST.fechaSesiones){
       var fs=ST.fechaSesiones;var migrado=false;
@@ -1837,7 +1843,7 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
-// [v92] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// [v94] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
   if(!dB||!GRUPOS_DIA[dB]) return null;
@@ -2348,7 +2354,7 @@ const renders={
       </div>`;
     }).join('');
   },
-  config(){}
+  config(){ try{ renderAnclajeInfo(); }catch(e){} },
 };
 
 // ══════════════════════════════════════
@@ -4014,21 +4020,29 @@ function calcularAlertaRecuperacion(){
   el.innerHTML=html;
 }
 
+function wuGetData(){
+  var checkKey='wu_d'+ST.dia;
+  if(!ST.warmupCheck) ST.warmupCheck={};
+  if(!ST.warmupRemoved) ST.warmupRemoved={};
+  if(!ST.warmupCustom) ST.warmupCustom={};
+  return {checkKey:checkKey,
+    checks:ST.warmupCheck[checkKey]||{},
+    removed:ST.warmupRemoved[checkKey]||[],
+    custom:ST.warmupCustom[checkKey]||[]};
+}
+
 function renderWarmupBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("warmup-body");
   if(!body||!dB) return;
-  var cal=CAL_BOYLE[dB];
-  if(!cal||!cal.length){body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay calentamiento para este dia.</div>";return;}
+  var cal=CAL_BOYLE[dB]||[];
+  var d=wuGetData();
+  var checkKey=d.checkKey, checks=d.checks, removed=d.removed, custom=d.custom;
 
-  // Calcular total de items y cuántos están marcados
   var totalItems=0,doneItems=0;
-  cal.forEach(function(fase){totalItems+=fase.items.length;});
-  var checkKey='wu_d'+ST.dia;
-  var checks=ST.warmupCheck[checkKey]||{};
-  Object.values(checks).forEach(function(v){if(v)doneItems++;});
+  cal.forEach(function(fase,fi){ fase.items.forEach(function(item,ii){ var k='f'+fi+'_i'+ii; if(removed.indexOf(k)<0){ totalItems++; if(checks[k]) doneItems++; } }); });
+  custom.forEach(function(c){ totalItems++; if(checks[c.id]) doneItems++; });
 
-  // Cabecera de progreso
   var pct=totalItems>0?Math.round(doneItems/totalItems*100):0;
   var isLinear=dB==='D1'||dB==='D3';
   var tipoDia=isLinear?'⚡ LINEAR — Chest Pass + Sprint Lineal':'🔄 MULTI-DIRECTION — Rotatory / Overhead Med Ball';
@@ -4036,49 +4050,47 @@ function renderWarmupBody(){
   var bgTipo=isLinear?'var(--blue-bg)':'var(--orange-bg,#faeeda)';
 
   var out=[];
-  // Badge tipo de día
-  out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between">');
-  out.push('<span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+tipoDia+'</span>');
-  out.push('<span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+doneItems+'/'+totalItems+'</span>');
-  out.push('</div>');
-  // Barra de progreso
-  out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.75rem;overflow:hidden">');
-  out.push('<div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div>');
-  out.push('</div>');
+  out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+tipoDia+'</span><span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+doneItems+'/'+totalItems+'</span></div>');
+  out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.75rem;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div></div>');
 
-  // Secuencia Boyle del Excel — labels de fase
+  function itemRow(key,n,desc,t,imgName){
+    var isDone=checks[key]||false;
+    var ejImgs=imgName?getEjImgs(imgName):[];
+    var h='<div style="padding:.45rem 0;border-bottom:.5px solid var(--border)"><div style="display:flex;align-items:flex-start;gap:10px">';
+    h+='<div onclick="toggleWarmupCheck(\''+checkKey+'\',\''+key+'\')" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">'+(isDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')+'</div>';
+    if(ejImgs.length) h+='<img src="'+ejImgs[0]+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">';
+    h+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</div>';
+    if(desc) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+desc+'</div>';
+    if(t) h+='<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+t+'</span>';
+    h+='</div>';
+    h+='<button onclick="removeWarmupItem(\''+checkKey+'\',\''+key+'\')" title="Quitar" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1;flex-shrink:0"><i class="ti ti-x"></i></button>';
+    h+='</div></div>';
+    return h;
+  }
+
+  var firstFase=true;
   cal.forEach(function(fase,fi){
-    if(fi>0) out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
-    out.push('<div style="margin-bottom:.4rem">');
-    out.push('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">');
-    out.push('<span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span>');
-    out.push('<span style="font-size:11px;color:var(--text3)">'+fase.tiempo+'</span></div>');
-
-    fase.items.forEach(function(item,ii){
-      var itemKey='f'+fi+'_i'+ii;
-      var isDone=checks[itemKey]||false;
-      var ejImgs=getEjImgs(item.n);
-      out.push('<div style="padding:.45rem 0;border-bottom:.5px solid var(--border)">');
-      out.push('<div style="display:flex;align-items:flex-start;gap:10px">');
-      // Checkbox
-      out.push('<div onclick="toggleWarmupCheck(\''+checkKey+'\',\''+itemKey+'\')" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">');
-      if(isDone) out.push('<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>');
-      out.push('</div>');
-      // Imagen si existe
-      if(ejImgs.length){
-        out.push('<img src="'+ejImgs[0]+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">');
-      }
-      out.push('<div style="flex:1">');
-      out.push('<div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+item.n+'</div>');
-      if(item.d) out.push('<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+item.d+'</div>');
-      if(item.t) out.push('<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+item.t+'</span>');
-      out.push('</div></div></div>');
-    });
+    var visibles=fase.items.map(function(item,ii){return {item:item,key:'f'+fi+'_i'+ii};}).filter(function(o){return removed.indexOf(o.key)<0;});
+    if(!visibles.length) return;
+    if(!firstFase) out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
+    firstFase=false;
+    out.push('<div style="margin-bottom:.4rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem"><span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span><span style="font-size:11px;color:var(--text3)">'+fase.tiempo+'</span></div>');
+    visibles.forEach(function(o){ out.push(itemRow(o.key,o.item.n,o.item.d,o.item.t,o.item.n)); });
     out.push('</div>');
   });
 
-  // Botón resetear warm-up
-  out.push('<button onclick="resetWarmup(\''+checkKey+'\')" style="width:100%;margin-top:.6rem;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">↺ Resetear calentamiento</button>');
+  if(custom.length){
+    out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
+    out.push('<div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:.35rem">➕ Añadidos</div>');
+    custom.forEach(function(c){ out.push(itemRow(c.id,c.txt,'','','')); });
+  }
+
+  out.push('<div style="display:flex;gap:6px;margin-top:.7rem"><input id="wu-add-input" type="text" placeholder="Añadir ejercicio…" style="flex:1;padding:8px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px" onkeydown="if(event.key===\'Enter\')addWarmupItem()"><button onclick="addWarmupItem()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:0 14px;font-size:18px;cursor:pointer">+</button></div>');
+
+  out.push('<div style="display:flex;gap:6px;margin-top:.6rem"><button onclick="resetWarmup(\''+checkKey+'\')" style="flex:1;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">↺ Resetear marcas</button>');
+  if(removed.length) out.push('<button onclick="restaurarWarmupProtocolo(\''+checkKey+'\')" style="flex:1;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">Restaurar protocolo</button>');
+  out.push('</div>');
+
   body.innerHTML=out.join('');
 }
 
@@ -4100,16 +4112,44 @@ function resetWarmup(checkKey){
   actualizarWarmupBadge();
 }
 
+function addWarmupItem(){
+  var inp=document.getElementById('wu-add-input'); if(!inp) return;
+  var txt=inp.value.trim(); if(!txt) return;
+  var checkKey='wu_d'+ST.dia;
+  if(!ST.warmupCustom) ST.warmupCustom={};
+  if(!ST.warmupCustom[checkKey]) ST.warmupCustom[checkKey]=[];
+  ST.warmupCustom[checkKey].push({id:'c'+Date.now(),txt:txt});
+  save(); renderWarmupBody(); actualizarWarmupBadge();
+}
+
+function removeWarmupItem(checkKey,key){
+  if(!ST.warmupRemoved) ST.warmupRemoved={};
+  if(!ST.warmupCustom) ST.warmupCustom={};
+  var arr=ST.warmupCustom[checkKey]||[];
+  var idx=arr.findIndex(function(c){return c.id===key;});
+  if(idx>=0){ arr.splice(idx,1); }
+  else { if(!ST.warmupRemoved[checkKey]) ST.warmupRemoved[checkKey]=[]; if(ST.warmupRemoved[checkKey].indexOf(key)<0) ST.warmupRemoved[checkKey].push(key); }
+  if(ST.warmupCheck&&ST.warmupCheck[checkKey]) delete ST.warmupCheck[checkKey][key];
+  save(); renderWarmupBody(); actualizarWarmupBadge();
+}
+
+function restaurarWarmupProtocolo(checkKey){
+  if(ST.warmupRemoved) ST.warmupRemoved[checkKey]=[];
+  save(); renderWarmupBody(); actualizarWarmupBadge();
+}
+
+
 function actualizarWarmupBadge(){
   var dB=getDiaBoyle();
   if(!dB) return;
-  var cal=CAL_BOYLE[dB];
-  if(!cal) return;
-  var total=0,done=0;
+  var cal=CAL_BOYLE[dB]; if(!cal) return;
   var checkKey='wu_d'+ST.dia;
   var checks=(ST.warmupCheck&&ST.warmupCheck[checkKey])||{};
-  cal.forEach(function(f){total+=f.items.length;});
-  Object.values(checks).forEach(function(v){if(v)done++;});
+  var removed=(ST.warmupRemoved&&ST.warmupRemoved[checkKey])||[];
+  var custom=(ST.warmupCustom&&ST.warmupCustom[checkKey])||[];
+  var total=0,done=0;
+  cal.forEach(function(f,fi){ f.items.forEach(function(it,ii){ var k='f'+fi+'_i'+ii; if(removed.indexOf(k)<0){ total++; if(checks[k]) done++; } }); });
+  custom.forEach(function(c){ total++; if(checks[c.id]) done++; });
   var lbl=document.querySelector('#e-warmup-card .card-lbl');
   if(lbl){
     lbl.innerHTML='🔥 Calentamiento'+(total>0?' <span style="font-size:10px;background:'+(done===total?'var(--green-bg)':'var(--bg3)')+';color:'+(done===total?'var(--green-text)':'var(--text2)')+';border-radius:10px;padding:1px 7px;font-weight:700">'+done+'/'+total+'</span>':'');
@@ -4175,7 +4215,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v92 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v94 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4702,7 +4742,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v92';
+const APP_VERSION='v94';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -6120,7 +6160,7 @@ checkBackupReminder();
   </div>
 </div>
 <script>
-/* ===================== BIBLIOTECA (Raindrop) — v92 ===================== */
+/* ===================== BIBLIOTECA (Raindrop) — v94 ===================== */
 const RD_BASE='https://api.raindrop.io/rest/v1';
 
 // Mapa: nombre de ejercicio del programa -> etiqueta ej: (vocabulario unificado)
@@ -6267,6 +6307,15 @@ function abrirColeccion(cid){
   rdModal((col?col.title:'Colección')+' ('+items.length+')', items.length?items.map(rdItemHtml).join(''):'<div style="color:var(--text3);padding:1rem">Vacía</div>');
 }
 
+var rdTagSel=[];
+function rdAllTags(cache){
+  var counts={};
+  (cache.items||[]).forEach(function(it){ (it.tags||[]).forEach(function(t){ counts[t]=(counts[t]||0)+1; }); });
+  return Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]||a.localeCompare(b); }).map(function(t){return {t:t,n:counts[t]};});
+}
+function rdToggleTag(t){ var i=rdTagSel.indexOf(t); if(i>=0) rdTagSel.splice(i,1); else rdTagSel.push(t); renderBiblioteca(); }
+function rdClearTags(){ rdTagSel=[]; renderBiblioteca(); }
+
 function renderBiblioteca(){
   var el=document.getElementById('biblio-body'); if(!el) return;
   if(!rdGetToken()){
@@ -6278,12 +6327,33 @@ function renderBiblioteca(){
     el.innerHTML='<div class="card"><div class="info-box ib">Aún no hay datos descargados.</div><button class="bkbtn" style="margin-top:.5rem" onclick="rdSync(true)">↻ Descargar biblioteca</button></div>';
     return;
   }
-  var cats=rdGymCollections(cache);
   var head='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem"><span style="font-size:12px;color:var(--text3)">'+ (cache.items?cache.items.length:0) +' enlaces · '+new Date(cache.ts).toLocaleDateString('es-ES')+'</span><button class="bkbtn" style="width:auto;padding:4px 12px;font-size:12px" onclick="rdSync(true)">&#8635; Actualizar</button></div>';
+
+  // Barra de tags
+  var tags=rdAllTags(cache);
+  var chips='<div style="margin-bottom:.6rem"><div style="font-size:11px;color:var(--text3);margin-bottom:.3rem">Filtrar por tag'+(rdTagSel.length?' <button onclick="rdClearTags()" style="border:none;background:transparent;color:var(--blue);font-size:11px;cursor:pointer;padding:0">(limpiar)</button>':'')+'</div><div style="display:flex;flex-wrap:wrap;gap:5px;max-height:130px;overflow:auto">';
+  chips+=tags.map(function(o){
+    var sel=rdTagSel.indexOf(o.t)>=0;
+    var safe=o.t.replace(/'/g,"\'");
+    return '<button onclick="rdToggleTag(\''+safe+'\')" style="border:.5px solid '+(sel?'var(--blue)':'var(--border2)')+';background:'+(sel?'var(--blue-bg)':'var(--bg2)')+';color:'+(sel?'var(--blue-text)':'var(--text2)')+';border-radius:12px;padding:2px 9px;font-size:11px;cursor:pointer;white-space:nowrap">'+o.t+' <span style="opacity:.6">'+o.n+'</span></button>';
+  }).join('');
+  chips+='</div></div>';
+
+  if(rdTagSel.length){
+    var sel=rdTagSel.map(function(t){return t.toLowerCase();});
+    var items=(cache.items||[]).filter(function(it){
+      var its=(it.tags||[]).map(function(x){return String(x).toLowerCase();});
+      return sel.every(function(t){ return its.indexOf(t)>=0; });
+    });
+    el.innerHTML=head+chips+'<div style="font-size:12px;color:var(--text3);margin:.2rem 0 .4rem">'+items.length+' enlace'+(items.length!==1?'s':'')+' con: '+rdTagSel.join(' + ')+'</div>'+(items.length?items.map(rdItemHtml).join(''):'<div class="info-box ib">Sin resultados para esa combinación.</div>');
+    return;
+  }
+
+  var cats=rdGymCollections(cache);
   var grid=cats.map(function(c){
     return '<button onclick="abrirColeccion('+c._id+')" class="card" style="text-align:left;cursor:pointer;width:100%;border:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span style="font-weight:600">'+c.title+'</span><span style="font-size:12px;color:var(--text3)">'+rdCountInCollection(cache,c._id)+'</span></button>';
   }).join('');
-  el.innerHTML=head+(grid||'<div class="info-box ib">No se encontraron colecciones.</div>');
+  el.innerHTML=head+chips+(grid||'<div class="info-box ib">No se encontraron colecciones.</div>');
 }
 
 // registrar vista

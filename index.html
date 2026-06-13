@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v94</title>
+<title>Entreno Boyle v96</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -133,7 +133,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v94"
+      version: "v96"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -814,6 +814,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
 
     <div class="card">
+      <div class="card-lbl">&#128197; Recuperar historial</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Marca en el calendario los días pasados que entrenaste (según el índice guardado). No toca los que ya están registrados; los antiguos saldrán sin desglose de ejercicios.</div>
+      <button class="bkbtn" onclick="recuperarEntrenosPasados()"><i class="ti ti-calendar-plus"></i> Recuperar entrenos pasados</button>
+    </div>
+
+    <div class="card">
       <div class="card-lbl">Peligro</div>
       <div class="info-box iw"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Borrar todos los datos elimina series, pesos y progresion.</div>
       <button class="bkbtn bkdel" onclick="borrarDatos()"><i class="ti ti-trash" aria-hidden="true"></i> Borrar todos los datos</button>
@@ -1031,7 +1037,7 @@ const BOYLE_DIAS={
   },
 };
 
-// GRUPOS_DIA [v94] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// GRUPOS_DIA [v96] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
 // La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
 const GRUPOS_DIA={
   D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
@@ -1142,7 +1148,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v94]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v96]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1378,7 +1384,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v94 ---
+  // --- Fichas añadidas v96 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1802,6 +1808,8 @@ function semaforo(d,f){
 }
 
 let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{}};
+function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function hoyLocal(){return fmtFechaLocal(new Date());}
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
@@ -1843,7 +1851,7 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
-// [v94] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// [v96] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
   if(!dB||!GRUPOS_DIA[dB]) return null;
@@ -2101,7 +2109,7 @@ const renders={
     if(anclajeEl){
       if(ST.cicloAnclaje){
         var anclaDate=new Date(ST.cicloAnclaje+'T00:00:00');
-        var hoyDate=new Date(new Date().toISOString().slice(0,10)+'T00:00:00');
+        var hoyDate=new Date(hoyLocal()+'T00:00:00');
         var diffDias=Math.round((hoyDate-anclaDate)/(1000*60*60*24));
         var ciclosComp=Math.floor(diffDias/12);
         var inicioActual=new Date(anclaDate.getTime()+ciclosComp*12*24*60*60*1000);
@@ -2815,10 +2823,11 @@ function guardar(){
     ST.sets[key][mSer]=setData;
   }
   if(!ST.fechaSesiones) ST.fechaSesiones={};
-  var fechaHoy=new Date().toISOString().slice(0,10);
+  var fechaHoy=hoyLocal();
   // Índice invertido: clave=fecha, valor=día ciclo
   ST.fechaSesiones[fechaHoy]=ST.dia;
   save();
+  autoRegistrarFecha();
   // Append a Google Sheets
   var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
   var varActual=ST.variantes&&ST.variantes[ejClean]?ST.variantes[ejClean]:'';
@@ -2826,6 +2835,77 @@ function guardar(){
   document.getElementById('mo-set').classList.remove('open');
   renders.entreno();
 }
+
+function autoRegistrarFecha(){
+  try{
+    var dB=getDiaBoyle();
+    if(!dB||dB==='Descanso') return; // solo dias de entreno
+    // ¿hay al menos una serie con datos reales hoy (dia de ciclo actual)?
+    var hayDatos=Object.keys(ST.sets||{}).some(function(k){
+      return k.indexOf('d'+ST.dia+'_')===0 && (ST.sets[k]||[]).some(function(s){return s&&(s.p>0||s.r>0);});
+    });
+    if(!hayDatos) return;
+    var hoy=hoyLocal();
+    var fase=getFaseActual(ST.sem);
+    var semEnFase=getSemEnFase(ST.sem);
+    var dBProg=CICLO[(ST.dia-1)%12].b;
+    var variacion=!!(ST.diaBoyle&&ST.diaBoyle[ST.dia]&&ST.diaBoyle[ST.dia]!==dBProg);
+    var ejsBase=EJS_FASES[fase][dB]||[];
+    var ejsReales=getEjs(dB);
+    var ejsSustituidos=ejsReales.filter(function(e){return ejsBase.indexOf(e)<0;});
+    if(ejsSustituidos.length) variacion=true;
+    var ejsRealizados=[];
+    Object.keys(ST.sets||{}).forEach(function(k){
+      if(k.indexOf('d'+ST.dia+'_')!==0) return;
+      var ej=k.replace(/^d\d+_/,'');
+      var sets=(ST.sets[k]||[]).filter(Boolean);
+      if(sets.length) ejsRealizados.push({ej:ej,sets:sets});
+    });
+    if(!ST.historialFechas) ST.historialFechas={};
+    var prev=ST.historialFechas[hoy];
+    var rec=Object.assign({}, prev||{}, {
+      diaCiclo:ST.dia, fase:fase, semana:ST.sem, semEnFase:semEnFase,
+      diaBoyleProg:dBProg||null, diaBoyleReal:dB, variacion:variacion,
+      ejsSustituidos:ejsSustituidos, ejerciciosRealizados:ejsRealizados,
+      completado:true
+    });
+    if(!prev){ rec.auto=true; rec.timestamp=Date.now(); }
+    ST.historialFechas[hoy]=rec;
+    if(!ST.fechaSesiones) ST.fechaSesiones={};
+    ST.fechaSesiones[hoy]=ST.dia;
+    save();
+    try{ renderFinalizarStatus(); }catch(e){}
+    try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
+  }catch(e){ console.warn('autoRegistrarFecha',e); }
+}
+
+function recuperarEntrenosPasados(){
+  var fs=ST.fechaSesiones||{};
+  var fechas=Object.keys(fs);
+  if(!fechas.length){ alert('No hay fechas de entreno guardadas para recuperar.'); return; }
+  if(!confirm('Voy a marcar en el calendario los días pasados que entrenaste (según el índice guardado).\n\nLos días que ya tienes registrados NO se tocan. Los más antiguos aparecerán como entreno realizado pero sin el desglose de ejercicios/pesos (ese detalle no se guardó por fecha).\n\n¿Continuar?')) return;
+  if(!ST.historialFechas) ST.historialFechas={};
+  var creados=0, yaExisten=0;
+  fechas.forEach(function(fecha){
+    if(ST.historialFechas[fecha]){ yaExisten++; return; }
+    var diaCiclo=parseInt(fs[fecha],10);
+    if(!diaCiclo) return;
+    var dBProg=(CICLO&&CICLO[(diaCiclo-1)%12])?CICLO[(diaCiclo-1)%12].b:null;
+    var dBReal=(ST.diaBoyle&&ST.diaBoyle[diaCiclo])?ST.diaBoyle[diaCiclo]:dBProg;
+    ST.historialFechas[fecha]={
+      diaCiclo:diaCiclo, fase:null, semana:null, semEnFase:null,
+      diaBoyleProg:dBProg||null, diaBoyleReal:dBReal||null,
+      variacion:false, ejsSustituidos:[], ejerciciosRealizados:[],
+      completado:true, recuperado:true
+    };
+    creados++;
+  });
+  save();
+  try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
+  alert('Recuperación completada.\n\nDías añadidos al calendario: '+creados+'\nYa registrados (sin tocar): '+yaExisten);
+}
+
+
 
 function toggleEjCheck(ej){
   const key='d'+ST.dia+'_'+ej;
@@ -3724,7 +3804,7 @@ function finalizarSesion(){
   if(!tieneSetReal){
     if(!confirm('No hay ejercicios registrados para hoy. ¿Quieres registrar la sesión igualmente?')) return;
   }
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=hoyLocal();
   var fase=getFaseActual(ST.sem);
   var semEnFase=getSemEnFase(ST.sem);
   // Detectar si hubo variación (dia Boyle diferente al asignado por ciclo)
@@ -3756,6 +3836,7 @@ function finalizarSesion(){
     ejsSustituidos:ejsSustituidos,
     ejerciciosRealizados:ejsRealizados,
     completado:true,
+    manual:true,
     timestamp:Date.now(),
   };
   // fechaSesiones: clave=fecha, valor=día ciclo
@@ -3777,7 +3858,7 @@ function renderFinalizarStatus(){
   var el=document.getElementById('e-finalizar-status');
   var btn=document.getElementById('btn-finalizar-sesion');
   if(!el) return;
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=hoyLocal();
   var reg=ST.historialFechas&&ST.historialFechas[hoy];
   if(reg&&reg.completado){
     el.innerHTML='<span style="color:var(--green-text)">✅ Registrada hoy — '+reg.fase+' Sem '+reg.semana+(reg.diaBoyleReal&&reg.diaBoyleReal!=='Descanso'?' · '+reg.diaBoyleReal:'')+(reg.variacion?' · <span style="color:var(--orange-text)">⚠ Con variación</span>':'')+'</span>';
@@ -3894,7 +3975,7 @@ function renderAnclajeInfo(){
   if(ST.cicloAnclaje&&inp) inp.value=ST.cicloAnclaje;
   if(!ST.cicloAnclaje){el.textContent='Sin anclaje configurado.';return;}
   var diaCalc=calcularDiaDesdeAnclaje();
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=hoyLocal();
   // Calcular inicio ciclo actual y siguiente
   var ancla=new Date(ST.cicloAnclaje+'T00:00:00');
   var diff=Math.round((new Date(hoy+'T00:00:00')-ancla)/(1000*60*60*24));
@@ -3922,7 +4003,7 @@ function autoAplicarAnclaje(){
   }
   // Aviso si hoy es el primer día de un nuevo ciclo
   if(diaCalc===1){
-    var hoy=new Date().toISOString().slice(0,10);
+    var hoy=hoyLocal();
     var yaAvisado=ST._avisoCiclo===hoy;
     if(!yaAvisado){
       ST._avisoCiclo=hoy;
@@ -3933,7 +4014,7 @@ function autoAplicarAnclaje(){
         var diff=Math.round((hoyDate-ancla)/(1000*60*60*24));
         var ciclosCompletos=Math.floor(diff/12);
         var nuevaAncla=new Date(ancla.getTime()+ciclosCompletos*12*24*60*60*1000);
-        var nuevaFecha=nuevaAncla.toISOString().slice(0,10);
+        var nuevaFecha=fmtFechaLocal(nuevaAncla);
         var msg='🔄 Hoy empieza un nuevo ciclo de 12 días.\n\n¿Actualizar la fecha de inicio del ciclo a hoy ('+hoy+')?\n\nPulsa OK para confirmar o Cancelar para mantener la fecha actual.';
         if(confirm(msg)){
           ST.cicloAnclaje=nuevaFecha;
@@ -3964,7 +4045,7 @@ function calcularAlertaRecuperacion(){
   var el=document.getElementById('e-alerta-recuperacion');
   if(!el) return;
   // Datos Garmin de hoy o último día disponible
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=hoyLocal();
   var g=null;
   if(ST.garminHist&&ST.garminHist[hoy]) g=ST.garminHist[hoy];
   if(!g&&ST.garminHist){
@@ -4215,7 +4296,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v94 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v96 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4742,7 +4823,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v94';
+const APP_VERSION='v96';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -4750,14 +4831,14 @@ function exportarJSON(){
   const blob=new Blob([data],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;
-  a.download='entreno_jose_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.download='entreno_jose_backup_'+hoyLocal()+'.json';
   a.click();URL.revokeObjectURL(url);
 }
 
 function exportar(){
   if(typeof XLSX==='undefined'){alert('Cargando... espera 3 seg e intentalo de nuevo.');const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>exportar();document.head.appendChild(s);return;}
   const wb=XLSX.utils.book_new();
-  const fecha=new Date().toISOString().slice(0,10);
+  const fecha=hoyLocal();
   function hdr(v){return{v,t:'s',s:{font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'185FA5'}},alignment:{horizontal:'center'}}};}
   function cel(v,bold){return{v:v??'',t:typeof v==='number'?'n':'s',s:{font:{bold:!!bold}}};}
   // Series
@@ -4948,7 +5029,7 @@ async function sheetsAppend(sheetName, values){
 
 // Llamar al registrar un set
 async function appendSetToSheets(numDia, ej, variante, serie, peso, reps, rpe, nota){
-  var fecha=new Date().toISOString().slice(0,10);
+  var fecha=hoyLocal();
   var fase=getFaseActual(ST.sem);
   var sem='Sem '+ST.sem;
   var semEnFase='Sem '+getSemEnFase(ST.sem)+' de 3';
@@ -5363,7 +5444,7 @@ renders.cal=function(){
 };
 
 function renderGarminHoy(){
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=hoyLocal();
   var g=null;
   // Buscar en garminHist (fuente principal)
   if(ST.garminHist&&ST.garminHist[hoy]) g=ST.garminHist[hoy];
@@ -5623,7 +5704,7 @@ function mostrarSelectorBackups(archivos,token){
 }
 
 function subirSilencioso(token){
-  var fecha=new Date().toISOString().slice(0,10);
+  var fecha=hoyLocal();
   var blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
   var fileName='entreno_jose_backup_'+fecha+'.json';
   fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',
@@ -5694,7 +5775,7 @@ function hacerBackupAhora(){
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
   a.href=url;
-  a.download='entreno_jose_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.download='entreno_jose_backup_'+hoyLocal()+'.json';
   a.click();
   URL.revokeObjectURL(url);
   ST.ultimoBackup=new Date().toISOString();
@@ -6160,7 +6241,7 @@ checkBackupReminder();
   </div>
 </div>
 <script>
-/* ===================== BIBLIOTECA (Raindrop) — v94 ===================== */
+/* ===================== BIBLIOTECA (Raindrop) — v96 ===================== */
 const RD_BASE='https://api.raindrop.io/rest/v1';
 
 // Mapa: nombre de ejercicio del programa -> etiqueta ej: (vocabulario unificado)

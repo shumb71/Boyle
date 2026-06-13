@@ -68,7 +68,7 @@ function initFirebase() {
             var localData=localStorage.getItem('jose_v9');
             var localTime=localData?JSON.parse(localData)._localSaveTime||0:0;
             if(fbTime>=localTime){
-              mergeRemoto(parsed);
+              aplicarRemoto(parsed);
               // Migraciones de seguridad
               if(!ST.warmupCheck) ST.warmupCheck={};
               if(!ST.fechaSesiones) ST.fechaSesiones={};
@@ -121,6 +121,16 @@ function logoutFirebase() {
 }
 
 // Guardar datos en Firestore (con debounce 2s para no saturar)
+function aplicarRemoto(parsed){
+  var protegidos=['historialFechas','fechaSesiones','planDia'];
+  var prev={};
+  protegidos.forEach(function(k){ prev[k]=ST[k]||{}; });
+  ST=Object.assign({},ST,parsed);
+  protegidos.forEach(function(k){
+    ST[k]=Object.assign({}, parsed[k]||{}, prev[k]||{});
+  });
+}
+
 function saveFirebase() {
   if (!fbReady || !fbUser) {
     actualizarDotSync('error');
@@ -159,7 +169,7 @@ function suscribirCambiosRemoto() {
       if (remoto > local + 3000) { // margen 3s para evitar loop
         try {
           const parsed = JSON.parse(data.datos);
-          mergeRemoto(parsed);
+          aplicarRemoto(parsed);
           if(!ST.warmupCheck) ST.warmupCheck={};
           if(!ST.fechaSesiones) ST.fechaSesiones={};
           if(!ST.variantes) ST.variantes={};
@@ -387,7 +397,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=97', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=98', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -451,6 +461,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- ENTRENO -->
   <div class="screen" id="s-entreno">
     <div class="ph"><h1>Entreno</h1><span id="e-sem" style="font-size:13px;color:var(--text2)">Semana 1</span><div id="fb-dot-entreno" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
+    <div id="e-dia-picker"></div>
     <!-- FASE ACTUAL -->
     <div id="e-fase-banner" style="margin-bottom:.75rem;padding:.5rem .75rem;border-radius:var(--rs);background:var(--blue-bg);border:.5px solid rgba(91,143,255,.2);display:flex;align-items:center;justify-content:space-between">
       <div>
@@ -1807,25 +1818,13 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
-function mergeRemoto(parsed){
-  // No perder datos locales en mapas acumulativos/manuales: unión, lo local prevalece en conflicto
-  var proteger=['historialFechas','fechaSesiones','diaBoyle','sets','sesionCustom','variantes','variantesCustom','warmupCheck','warmupCustom','warmupRemoved','ejsImgs','checksManual','planning'];
-  var locales={};
-  proteger.forEach(function(k){ if(ST[k]&&typeof ST[k]==='object'&&!Array.isArray(ST[k])) locales[k]=ST[k]; });
-  ST=Object.assign({},ST,parsed);
-  proteger.forEach(function(k){
-    var loc=locales[k]; if(!loc) return;
-    var rem=(parsed[k]&&typeof parsed[k]==='object'&&!Array.isArray(parsed[k]))?parsed[k]:{};
-    ST[k]=Object.assign({}, rem, loc);
-  });
-}
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
     // Migrar fechaSesiones antiguo (dia→fecha) a nuevo (fecha→dia)
     if(ST.fechaSesiones){
       var fs=ST.fechaSesiones;var migrado=false;
@@ -1879,7 +1878,17 @@ function getBloquesHoy(dB){
   }
   return bloques.length?bloques:null;
 }
+function esHoyActual(){
+  if(!ST.cicloAnclaje) return true;
+  var c=calcularDiaDesdeAnclaje();
+  return !!c && c===ST.dia;
+}
 function getDiaBoyle(){
+  // Planning manual de HOY: tu elección manda siempre
+  if(esHoyActual() && ST.planDia){
+    var p=ST.planDia[hoyLocal()];
+    if(p) return p==='Descanso'?null:p;
+  }
   var v=getDiaBoyleVal(ST.dia);
   if(v!==null){
     if(v==='Descanso') return null;
@@ -1887,6 +1896,32 @@ function getDiaBoyle(){
   }
   return CICLO[(ST.dia-1)%12].b||null;
 }
+function fijarDiaHoy(dB){
+  // Asegurar que estamos en hoy antes de fijar
+  if(ST.cicloAnclaje){ var c=calcularDiaDesdeAnclaje(); if(c) ST.dia=c; }
+  var f=hoyLocal();
+  if(!ST.planDia) ST.planDia={};
+  if(!dB){ delete ST.planDia[f]; } else { ST.planDia[f]=dB; }
+  save();
+  try{renders.entreno();}catch(e){}
+  try{renders.hoy();}catch(e){}
+  try{renders.ciclo();}catch(e){}
+}
+function renderDiaPicker(){
+  var el=document.getElementById('e-dia-picker'); if(!el) return;
+  var f=hoyLocal();
+  var manual=!!(ST.planDia&&ST.planDia[f]);
+  var actual=getDiaBoyle()||'Descanso';
+  var dias=['D1','D2','D3','D4','Descanso'];
+  var btns=dias.map(function(d){
+    var sel=actual===d;
+    return '<button onclick="fijarDiaHoy(\''+d+'\')" style="border:.5px solid '+(sel?'var(--blue)':'var(--border2)')+';background:'+(sel?'var(--blue-bg)':'var(--bg2)')+';color:'+(sel?'var(--blue-text)':'var(--text2)')+';border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer">'+d+'</button>';
+  }).join('');
+  var cab='<span style="font-size:12px;color:var(--text3)">Día de hoy · '+(manual?'<span style="color:var(--blue)">✋ fijado por ti</span>':'<span>recomendado</span>')+'</span>';
+  var rec=manual?'<button onclick="fijarDiaHoy(null)" style="border:none;background:transparent;color:var(--blue);font-size:11px;cursor:pointer">usar recomendación</button>':'';
+  el.innerHTML='<div style="margin-bottom:.6rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">'+cab+rec+'</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+btns+'</div></div>';
+}
+
 
 // Obtener ultima sesion de un ejercicio
 function getUltimaSesion(ej){
@@ -2162,6 +2197,7 @@ const renders={
   },
   entreno(){
     restoreTimer();
+    try{renderDiaPicker();}catch(e){}
     const c=CICLO[(ST.dia-1)%12];
     const pr=PROG[(ST.sem-1)%12];
     document.getElementById('e-sem').textContent='Semana '+ST.sem+(pr.d?' — Descarga':'');

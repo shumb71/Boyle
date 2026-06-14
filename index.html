@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v98</title>
+<title>Entreno Boyle v99</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -143,7 +143,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v98"
+      version: "v99"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -397,7 +397,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=98', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=99', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1048,7 +1048,7 @@ const BOYLE_DIAS={
   },
 };
 
-// GRUPOS_DIA [v98] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// GRUPOS_DIA [v99] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
 // La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
 const GRUPOS_DIA={
   D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
@@ -1159,7 +1159,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v98]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v99]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1395,7 +1395,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v98 ---
+  // --- Fichas añadidas v99 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1862,7 +1862,7 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
-// [v98] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// [v99] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
   if(!dB||!GRUPOS_DIA[dB]) return null;
@@ -2929,31 +2929,53 @@ function autoRegistrarFecha(){
 
 function recuperarEntrenosPasados(){
   var fs=ST.fechaSesiones||{};
-  var fechas=Object.keys(fs);
+  var fechas=Object.keys(fs).sort();
   if(!fechas.length){ alert('No hay fechas de entreno guardadas para recuperar.'); return; }
-  if(!confirm('Voy a marcar en el calendario los días pasados que entrenaste (según el índice guardado).\n\nLos días que ya tienes registrados NO se tocan. Los más antiguos aparecerán como entreno realizado pero sin el desglose de ejercicios/pesos (ese detalle no se guardó por fecha).\n\n¿Continuar?')) return;
+  if(!confirm('Voy a marcar en el calendario los días que entrenaste (según el índice guardado) e intentaré recuperar el desglose de los más recientes (ciclo actual).\n\nLos días antiguos saldrán marcados pero sin desglose (ese detalle se sobrescribió hace tiempo).\n\n¿Continuar?')) return;
   if(!ST.historialFechas) ST.historialFechas={};
-  var creados=0, yaExisten=0;
+
+  // Para cada posición de ciclo, la fecha MÁS RECIENTE que la usó conserva su detalle en ST.sets
+  var ultimaFechaDePos={};
+  fechas.forEach(function(f){ var p=parseInt(fs[f],10); if(p) ultimaFechaDePos[p]=f; });
+
+  function detalleDePos(pos){
+    var out=[];
+    Object.keys(ST.sets||{}).forEach(function(k){
+      if(k.indexOf('d'+pos+'_')!==0) return;
+      var ej=k.replace(/^d\d+_/,'');
+      var sets=(ST.sets[k]||[]).filter(Boolean);
+      if(sets.length) out.push({ej:ej,sets:sets});
+    });
+    return out;
+  }
+
+  var creados=0, actualizados=0, conDetalle=0;
   fechas.forEach(function(fecha){
-    if(ST.historialFechas[fecha]){ yaExisten++; return; }
-    var diaCiclo=parseInt(fs[fecha],10);
-    if(!diaCiclo) return;
-    var dBProg=(CICLO&&CICLO[(diaCiclo-1)%12])?CICLO[(diaCiclo-1)%12].b:null;
-    var dBReal=(ST.diaBoyle&&ST.diaBoyle[diaCiclo])?ST.diaBoyle[diaCiclo]:dBProg;
-    ST.historialFechas[fecha]={
-      diaCiclo:diaCiclo, fase:null, semana:null, semEnFase:null,
-      diaBoyleProg:dBProg||null, diaBoyleReal:dBReal||null,
-      variacion:false, ejsSustituidos:[], ejerciciosRealizados:[],
+    var pos=parseInt(fs[fecha],10); if(!pos) return;
+    var dBProg=(CICLO[(pos-1)%12]?CICLO[(pos-1)%12].b:null);
+    var planB=(ST.planDia&&ST.planDia[fecha])?ST.planDia[fecha]:null;
+    var ovB=(ST.diaBoyle&&ST.diaBoyle[pos]&&ST.diaBoyle[pos].b)?ST.diaBoyle[pos].b:null;
+    var dBReal=planB||ovB||dBProg;
+    if(dBReal==='Descanso') dBReal=null;
+    var detalle=(ultimaFechaDePos[pos]===fecha)?detalleDePos(pos):[];
+    var prev=ST.historialFechas[fecha];
+    var rec=Object.assign({}, prev||{}, {
+      diaCiclo:pos,
+      diaBoyleProg:dBProg||null,
+      diaBoyleReal:dBReal||null,
       completado:true, recuperado:true
-    };
-    creados++;
+    });
+    if(detalle.length && (!rec.ejerciciosRealizados || !rec.ejerciciosRealizados.length)){
+      rec.ejerciciosRealizados=detalle; conDetalle++;
+    } else if(!rec.ejerciciosRealizados){ rec.ejerciciosRealizados=[]; }
+    if(rec.ejsSustituidos===undefined) rec.ejsSustituidos=[];
+    if(!prev){ creados++; if(!rec.timestamp) rec.timestamp=Date.now(); } else { actualizados++; }
+    ST.historialFechas[fecha]=rec;
   });
   save();
   try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
-  alert('Recuperación completada.\n\nDías añadidos al calendario: '+creados+'\nYa registrados (sin tocar): '+yaExisten);
+  alert('Recuperación:\n\nDías nuevos: '+creados+'\nActualizados: '+actualizados+'\nCon desglose recuperado: '+conDetalle);
 }
-
-
 
 function toggleEjCheck(ej){
   const key='d'+ST.dia+'_'+ej;
@@ -4344,7 +4366,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v98 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v99 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4871,7 +4893,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v98';
+const APP_VERSION='v99';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -6289,7 +6311,7 @@ checkBackupReminder();
   </div>
 </div>
 <script>
-/* ===================== BIBLIOTECA (Raindrop) — v98 ===================== */
+/* ===================== BIBLIOTECA (Raindrop) — v99 ===================== */
 const RD_BASE='https://api.raindrop.io/rest/v1';
 
 // Mapa: nombre de ejercicio del programa -> etiqueta ej: (vocabulario unificado)

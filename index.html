@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v99</title>
+<title>Entreno Boyle v100</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -143,7 +143,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v99"
+      version: "v100"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -397,7 +397,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=99', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=100', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -1048,7 +1048,7 @@ const BOYLE_DIAS={
   },
 };
 
-// GRUPOS_DIA [v99] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// GRUPOS_DIA [v100] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
 // La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
 const GRUPOS_DIA={
   D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
@@ -1159,7 +1159,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v99]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v100]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1395,7 +1395,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v99 ---
+  // --- Fichas añadidas v100 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1862,7 +1862,7 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
-// [v99] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// [v100] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
   if(!dB||!GRUPOS_DIA[dB]) return null;
@@ -2561,6 +2561,25 @@ var _boyleVarianteEjOrig=null;
 // EDITAR SESIÓN HISTÓRICA
 // ══════════════════════════════════════
 var _editarFecha = null;
+
+function crearSesionManual(fecha){
+  if(!ST.historialFechas) ST.historialFechas={};
+  if(!ST.historialFechas[fecha]){
+    var pos=(ST.fechaSesiones&&ST.fechaSesiones[fecha])?parseInt(ST.fechaSesiones[fecha],10):(ST.dia||1);
+    var dBProg=(CICLO[(pos-1)%12]?CICLO[(pos-1)%12].b:null);
+    var dB=(ST.planDia&&ST.planDia[fecha])||dBProg||'D1';
+    if(dB==='Descanso') dB='D1';
+    ST.historialFechas[fecha]={
+      diaCiclo:pos, fase:(getFaseActual(ST.sem)||''), semana:(ST.sem||1), semEnFase:null,
+      diaBoyleProg:dBProg||null, diaBoyleReal:dB,
+      variacion:false, ejsSustituidos:[], ejerciciosRealizados:[],
+      completado:true, manual:true, timestamp:Date.now()
+    };
+    save();
+    try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
+  }
+  abrirEditarSesion(fecha);
+}
 
 function abrirEditarSesion(fecha){
   _editarFecha = fecha;
@@ -4366,7 +4385,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v99 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v100 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4893,7 +4912,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v99';
+const APP_VERSION='v100';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5364,7 +5383,7 @@ function calSelDia(fecha){
       </div>`;
     }
   }
-  if(!htmlE) htmlE=`<div style="color:var(--text3);font-size:12px;margin-top:4px">Sin entreno registrado este día</div>`;
+  if(!htmlE) htmlE=`<div style="color:var(--text3);font-size:12px;margin-top:4px">Sin entreno registrado este día</div><button onclick="crearSesionManual('${fecha}')" style="margin-top:8px;border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">➕ Añadir entreno a este día</button>`;
   // Info de historialFechas si existe — es la fuente principal
   var histSes=ST.historialFechas&&ST.historialFechas[fecha];
   if(histSes&&histSes.completado){
@@ -6311,7 +6330,7 @@ checkBackupReminder();
   </div>
 </div>
 <script>
-/* ===================== BIBLIOTECA (Raindrop) — v99 ===================== */
+/* ===================== BIBLIOTECA (Raindrop) — v100 ===================== */
 const RD_BASE='https://api.raindrop.io/rest/v1';
 
 // Mapa: nombre de ejercicio del programa -> etiqueta ej: (vocabulario unificado)

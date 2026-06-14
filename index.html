@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v100</title>
+<title>Entreno Boyle v101</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -121,14 +121,49 @@ function logoutFirebase() {
 }
 
 // Guardar datos en Firestore (con debounce 2s para no saturar)
+// ---- Nota del día ----
+function guardarNotaDia(){
+  var el=document.getElementById('e-nota-dia'); if(!el) return;
+  var f=hoyLocal();
+  if(!ST.notaDia) ST.notaDia={};
+  ST.notaDia[f]=el.value;
+  if(ST.historialFechas&&ST.historialFechas[f]) ST.historialFechas[f].nota=el.value;
+  clearTimeout(window._notaTO);
+  window._notaTO=setTimeout(function(){ try{save();}catch(e){} }, 600);
+}
+function cargarNotaDia(){
+  var el=document.getElementById('e-nota-dia'); if(!el) return;
+  var f=hoyLocal();
+  el.value=(ST.notaDia&&ST.notaDia[f])||'';
+}
+
+// ---- Aviso de sincronización (no bloqueante) ----
+function avisoSync(on){
+  var el=document.getElementById('sync-aviso');
+  if(on){
+    if(!el){
+      el=document.createElement('div'); el.id='sync-aviso';
+      el.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9998;background:var(--blue);color:#fff;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+      el.textContent='🔄 Sincronizando…';
+      (document.body||document.documentElement).appendChild(el);
+    }
+    el.style.display='block';
+  } else if(el){ el.remove(); }
+}
+(function(){
+  function ini(){ try{ avisoSync(true); setTimeout(function(){ avisoSync(false); }, 6000); }catch(e){} }
+  if(document.body) ini(); else document.addEventListener('DOMContentLoaded', ini);
+})();
+
 function aplicarRemoto(parsed){
-  var protegidos=['historialFechas','fechaSesiones','planDia'];
+  var protegidos=['historialFechas','fechaSesiones','planDia','notaDia'];
   var prev={};
   protegidos.forEach(function(k){ prev[k]=ST[k]||{}; });
   ST=Object.assign({},ST,parsed);
   protegidos.forEach(function(k){
     ST[k]=Object.assign({}, parsed[k]||{}, prev[k]||{});
   });
+  try{avisoSync(false);}catch(e){}
 }
 
 function saveFirebase() {
@@ -143,7 +178,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v100"
+      version: "v101"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -397,7 +432,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   // --- SERVICE WORKER (fichero externo sw.js) ---
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=100', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=101', {scope: './'})
       .then(reg => console.log('SW registrado:', reg.scope))
       .catch(err => console.warn('SW error:', err));
   }
@@ -470,22 +505,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
       <span id="e-reps-target-lbl" style="font-size:11px;font-weight:700;color:var(--blue-text);background:rgba(91,143,255,.15);border-radius:20px;padding:2px 8px">3×8</span>
     </div>
-    <!-- CRONOMETRO -->
-    <div class="card" style="background:var(--blue-bg);border:.5px solid rgba(91,143,255,.2);margin-bottom:.75rem">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:11px;font-weight:700;color:var(--blue-text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">⏱ Duracion sesion</div>
-          <div id="timer-display" style="font-size:32px;font-weight:700;color:var(--blue);font-family:monospace;letter-spacing:2px">00:00:00</div>
-          <div id="timer-inicio" style="font-size:11px;color:var(--blue-text);margin-top:2px;opacity:.7"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-          <button id="timer-start-btn" onclick="startTimer()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">&#9654; Iniciar</button>
-          <button id="timer-end-btn" onclick="endTimer()" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:none">&#9632; Fin sesion</button>
-        </div>
-      </div>
-      <div id="timer-resumen" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:.5px solid rgba(91,143,255,.2)">
-        <div style="font-size:13px;color:var(--blue-text)">Completada <strong id="timer-total-lbl"></strong></div>
-      </div>
+    <!-- FINALIZAR (en el sitio del cronómetro) -->
+    <div class="card" id="e-finalizar-card" style="border:.5px solid rgba(99,153,34,.3);margin-bottom:.75rem">
+      <button onclick="finalizarSesion()" id="btn-finalizar-sesion" style="width:100%;padding:13px;border:none;background:var(--green);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">✓ Finalizar y registrar sesión</button>
+      <div id="e-finalizar-status" style="font-size:12px;color:var(--text2);margin-top:.6rem;text-align:center"></div>
+      <span id="timer-display" style="display:none"></span><span id="timer-inicio" style="display:none"></span><span id="timer-start-btn" style="display:none"></span><span id="timer-end-btn" style="display:none"></span><span id="timer-resumen" style="display:none"></span><span id="timer-total-lbl" style="display:none"></span>
     </div>
     <div class="strow">
       <div class="stbox"><div class="stval" id="e-vol">0</div><div class="stlbl">kg volumen</div></div>
@@ -549,11 +573,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="e-enf" style="display:none;margin-top:.75rem"></div>
     </div>
     <div class="card"><div class="card-lbl">Historial reciente</div><div id="e-hist"></div></div>
-    <!-- FINALIZAR SESION -->
-    <div class="card" id="e-finalizar-card" style="border:.5px solid rgba(99,153,34,.3)">
-      <div class="card-lbl" style="color:var(--green);margin-bottom:.5rem">✅ Registro de sesión</div>
-      <div id="e-finalizar-status" style="font-size:12px;color:var(--text2);margin-bottom:.75rem"></div>
-      <button onclick="finalizarSesion()" id="btn-finalizar-sesion" style="width:100%;padding:12px;border:none;background:var(--green);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">✓ Finalizar y registrar sesión</button>
+    <!-- NOTA DEL DÍA -->
+    <div class="card">
+      <div class="card-lbl" style="margin-bottom:.5rem">📝 Nota del día</div>
+      <textarea id="e-nota-dia" placeholder="Apunta sensaciones, dolores, ajustes…" oninput="guardarNotaDia()" style="width:100%;min-height:70px;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;resize:vertical;font-family:inherit"></textarea>
     </div>
   </div>
 
@@ -1048,7 +1071,7 @@ const BOYLE_DIAS={
   },
 };
 
-// GRUPOS_DIA [v100] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
+// GRUPOS_DIA [v101] — agrupacion par/tri-set derivada del Excel (patron 2+2+3).
 // La vista Hoy construye los bloques aplicando esto a EJS_FASES (fase actual).
 const GRUPOS_DIA={
   D1:[{lbl:'INICIAL — Explosivo + Core antiextensión',tipo:'par',descanso:90,n:2},
@@ -1159,7 +1182,7 @@ const VAR_TIPO={
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
 // Basado en tablas 11.2-11.5 de New Functional Training for Sports (Boyle)
-// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v100]
+// EJS_FASES — fiel al Excel (Summer Lift, tablas 11.2-11.5) [v101]
 // Patron por dia: D1/D3 = explosivo+core | hip/rodilla+traccion | tri-set core
 //                 D2/D4 = empuje+movilidad (push days) | core+carry
 const EJS_FASES={
@@ -1395,7 +1418,7 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
 }
 
 const EJ_INFO={
-  // --- Fichas añadidas v100 ---
+  // --- Fichas añadidas v101 ---
   "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
   "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
   "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
@@ -1818,13 +1841,13 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
     // Migrar fechaSesiones antiguo (dia→fecha) a nuevo (fecha→dia)
     if(ST.fechaSesiones){
       var fs=ST.fechaSesiones;var migrado=false;
@@ -1862,7 +1885,7 @@ function getEjs(ses){
   // Fallback a ST.ejs o EJS_DEF
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
-// [v100] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
+// [v101] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
   if(!dB||!GRUPOS_DIA[dB]) return null;
@@ -2198,6 +2221,7 @@ const renders={
   entreno(){
     restoreTimer();
     try{renderDiaPicker();}catch(e){}
+    try{cargarNotaDia();}catch(e){}
     const c=CICLO[(ST.dia-1)%12];
     const pr=PROG[(ST.sem-1)%12];
     document.getElementById('e-sem').textContent='Semana '+ST.sem+(pr.d?' — Descarga':'');
@@ -2934,7 +2958,7 @@ function autoRegistrarFecha(){
       diaCiclo:ST.dia, fase:fase, semana:ST.sem, semEnFase:semEnFase,
       diaBoyleProg:dBProg||null, diaBoyleReal:dB, variacion:variacion,
       ejsSustituidos:ejsSustituidos, ejerciciosRealizados:ejsRealizados,
-      completado:true
+      completado:true, nota:(ST.notaDia&&ST.notaDia[hoy])||(prev&&prev.nota)||''
     });
     if(!prev){ rec.auto=true; rec.timestamp=Date.now(); }
     ST.historialFechas[hoy]=rec;
@@ -3926,6 +3950,7 @@ function finalizarSesion(){
     ejerciciosRealizados:ejsRealizados,
     completado:true,
     manual:true,
+    nota:(ST.notaDia&&ST.notaDia[hoy])||'',
     timestamp:Date.now(),
   };
   // fechaSesiones: clave=fecha, valor=día ciclo
@@ -4385,7 +4410,7 @@ const EJ_BASE = [
   {id:'equilibrio',n:'Equilibrio Unipodal',cat:'Movilidad',key:'Equilibrio unipodal'},
   // TRINEO
   {id:'trineo',n:'Trineo',cat:'Hip Dom',key:'Trineo (empujes)'},
-  // --- Añadidos v100 (programa Summer Lift fiel al Excel) ---
+  // --- Añadidos v101 (programa Summer Lift fiel al Excel) ---
   {id:"front_plank",n:"Front Plank",cat:"Core",key:"Front Plank"},
   {id:"hs_plank",n:"Hard-style Front Plank",cat:"Core",key:"Hard-style Front Plank"},
   {id:"sb_rollout",n:"Stability Ball Roll-out",cat:"Core",key:"Stability Ball Roll-out"},
@@ -4912,7 +4937,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v100';
+const APP_VERSION='v101';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5388,7 +5413,7 @@ function calSelDia(fecha){
   var histSes=ST.historialFechas&&ST.historialFechas[fecha];
   if(histSes&&histSes.completado){
     var varTag=histSes.variacion?'<span style="background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">⚠ Variación</span>':'';
-    var sustHtml=histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'';
+    var sustHtml=(histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'')+(histSes.nota?'<div style="font-size:12px;color:var(--text);background:var(--bg3);border-radius:var(--rs);padding:6px 8px;margin-top:6px">📝 '+histSes.nota+'</div>':'');
     // Ejercicios de historialFechas
     var ejsHtml='';
     if(histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){
@@ -6330,7 +6355,7 @@ checkBackupReminder();
   </div>
 </div>
 <script>
-/* ===================== BIBLIOTECA (Raindrop) — v100 ===================== */
+/* ===================== BIBLIOTECA (Raindrop) — v101 ===================== */
 const RD_BASE='https://api.raindrop.io/rest/v1';
 
 // Mapa: nombre de ejercicio del programa -> etiqueta ej: (vocabulario unificado)

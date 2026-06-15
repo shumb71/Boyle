@@ -5513,6 +5513,17 @@ function calSelDia(fecha){
   // Info de historialFechas si existe — es la fuente principal
   var histSes=ST.historialFechas&&ST.historialFechas[fecha];
   if(histSes&&histSes.completado){
+    // Sanear campos que pueden ser undefined en sesiones antiguas
+    if(!histSes.fase||histSes.fase==='undefined'){
+      // Intentar reconstruir desde diaCiclo guardado
+      var dc=histSes.diaCiclo||diaNum;
+      histSes.fase=dc?getFaseActual(histSes.semana||ST.sem):'—';
+    }
+    if(!histSes.semana||histSes.semana==='undefined') histSes.semana=ST.sem||'—';
+    if(!histSes.diaBoyleReal||histSes.diaBoyleReal==='undefined'){
+      var dBrecup=diaNum?CICLO[(parseInt(diaNum)-1)%12]:null;
+      histSes.diaBoyleReal=dBrecup?dBrecup.b:'—';
+    }
     var varTag=histSes.variacion?'<span style="background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">⚠ Variación</span>':'';
     var sustHtml=(histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'')+(histSes.nota?'<div style="font-size:12px;color:var(--text);background:var(--bg3);border-radius:var(--rs);padding:6px 8px;margin-top:6px">📝 '+histSes.nota+'</div>':'');
     // Ejercicios de historialFechas
@@ -5540,6 +5551,20 @@ function calSelDia(fecha){
       }
     }
     var fechaSafe=fecha.replace(/'/g,"\\'");
+    // Calcular tonelaje para el bloque histSes
+    var volHist=0, serHist=0;
+    if(diaNum){
+      Object.keys(ST.sets||{}).filter(function(k){return k.startsWith('d'+diaNum+'_');}).forEach(function(k){
+        (ST.sets[k]||[]).filter(Boolean).forEach(function(s){
+          if(s.tipo==='reps'||!s.tipo){ volHist+=(s.p||0)*(s.r||0); }
+          serHist++;
+        });
+      });
+    }
+    var statsHistHtml=serHist>0?'<div style="display:flex;gap:6px;margin:.4rem 0">'
+      +'<div style="flex:1;background:rgba(0,0,0,.08);border-radius:var(--rs);padding:.35rem;text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green-text)">'+Math.round(volHist)+'</div><div style="font-size:10px;color:var(--green-text);opacity:.8">kg tonelaje</div></div>'
+      +'<div style="flex:1;background:rgba(0,0,0,.08);border-radius:var(--rs);padding:.35rem;text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green-text)">'+serHist+'</div><div style="font-size:10px;color:var(--green-text);opacity:.8">series</div></div>'
+      +'</div>':'';
     htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
       +'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;justify-content:space-between">'
       +'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
@@ -5548,7 +5573,7 @@ function calSelDia(fecha){
       +varTag+'</div>'
       +'<button onclick="abrirEditarSesion(\''+fechaSafe+'\')" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">✏ Editar</button>'
       +'</div>'
-      +sustHtml+ejsHtml+'</div>';
+      +statsHistHtml+sustHtml+ejsHtml+'</div>';
   }
   // Limpiar antes de rellenar para forzar re-render
   const garminEl = document.getElementById('cal-det-garmin');

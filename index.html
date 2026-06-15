@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v102</title>
+<title>Entreno Boyle v103</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -157,11 +157,22 @@ function avisoSync(on){
 
 function aplicarRemoto(parsed){
   var protegidos=['historialFechas','fechaSesiones','planDia','notaDia'];
-  var prev={};
-  protegidos.forEach(function(k){ prev[k]=ST[k]||{}; });
   ST=Object.assign({},ST,parsed);
   protegidos.forEach(function(k){
-    ST[k]=Object.assign({}, parsed[k]||{}, prev[k]||{});
+    var remoto=parsed[k]||{};
+    var local=ST[k]||{};
+    var merged={};
+    var todasClaves=Object.keys(Object.assign({},remoto,local));
+    todasClaves.forEach(function(clave){
+      var r=remoto[clave], l=local[clave];
+      if(r===undefined||r===null) { merged[clave]=l; return; }
+      if(l===undefined||l===null) { merged[clave]=r; return; }
+      // Para historialFechas comparar timestamp; para el resto local gana
+      var tsR=(r&&r.timestamp)||0;
+      var tsL=(l&&l.timestamp)||0;
+      merged[clave]=(tsR>tsL)?r:l;
+    });
+    ST[k]=merged;
   });
   try{avisoSync(false);}catch(e){}
 }
@@ -178,7 +189,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v102"
+      version: "v103"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -519,6 +530,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="e-deload-banner" style="display:none;margin-bottom:.75rem"></div>
     <!-- ALERTA RECUPERACION -->
     <div id="e-alerta-recuperacion" style="display:none;margin-bottom:.75rem"></div>
+    <!-- AVISO COMPLEJO CON SALTO -->
+    <div id="e-aviso-salto" style="display:none;margin-bottom:.75rem"></div>
     <!-- CALENTAMIENTO EXPANDIBLE -->
     <div class="card" id="e-warmup-card">
       <div onclick="toggleSection('warmup')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
@@ -930,8 +943,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="mh"></div>
     <div class="mt" id="mo-title">Registrar serie</div>
     <div id="mo-ultima" style="background:var(--blue-bg);border-radius:var(--rs);padding:.6rem .9rem;margin-bottom:.75rem;font-size:13px;color:var(--blue-text);display:none"></div>
+    <!-- Selector tipo -->
+    <div style="display:flex;gap:6px;margin-bottom:.75rem">
+      <button id="mbt-reps" onclick="setTipoSet('reps')" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:12px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Reps</button>
+      <button id="mbt-tiempo" onclick="setTipoSet('tiempo')" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:12px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Tiempo</button>
+      <button id="mbt-dist" onclick="setTipoSet('distancia')" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:12px;font-weight:700;cursor:pointer;background:var(--bg3);color:var(--text2)">Distancia</button>
+    </div>
     <div class="ig"><label>Peso (kg)</label><input type="number" id="m-p" placeholder="0" min="0" step="0.5" inputmode="decimal"></div>
-    <div class="ig"><label>Repeticiones</label><input type="number" id="m-r" placeholder="0" min="1" inputmode="numeric"></div>
+    <div class="ig" id="ig-reps"><label>Repeticiones</label><input type="number" id="m-r" placeholder="0" min="1" inputmode="numeric"></div>
+    <div class="ig" id="ig-tiempo" style="display:none"><label>Tiempo (segundos)</label><input type="number" id="m-t" placeholder="30" min="1" inputmode="numeric"></div>
+    <div class="ig" id="ig-dist" style="display:none"><label>Distancia (metros)</label><input type="number" id="m-d" placeholder="20" min="1" inputmode="numeric"></div>
     <div class="ig"><label>RPE — esfuerzo 1-10</label><input type="number" id="m-rpe" placeholder="7" min="1" max="10" inputmode="numeric"></div>
     <div class="ig"><label>Nota (opcional)</label><input type="text" id="m-n" placeholder="Todo bien..."></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:.5px solid var(--border)">
@@ -946,28 +967,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 </div>
 
-<!-- MODAL AÑADIR FINISHER CUSTOM -->
-<div class="mo" id="mo-add-finisher" onclick="closeMo(event,'mo-add-finisher')">
-  <div class="ms">
-    <div class="mh"></div>
-    <div class="mt">➕ Añadir finisher</div>
-    <div class="ig"><label>Nombre</label><input type="text" id="mo-fin-nombre" placeholder="Ej: Trineo ligero 4×20m"></div>
-    <div class="ig"><label>Descripción (opcional)</label><input type="text" id="mo-fin-desc" placeholder="Series, distancia, descanso…"></div>
-    <div class="ig">
-      <label>Tipo</label>
-      <select id="mo-fin-tipo" style="width:100%;padding:10px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:15px;background:var(--bg);color:var(--text);outline:none">
-        <option value="metabolico">Metabólico / Acondicionamiento</option>
-        <option value="potencia">Potencia / Velocidad</option>
-      </select>
-    </div>
-    <div class="br2">
-      <button class="bcan" onclick="document.getElementById('mo-add-finisher').classList.remove('open')">Cancelar</button>
-      <button class="bsav" onclick="confirmarAddFinisherCustom()">Añadir</button>
-    </div>
-  </div>
-</div>
-
-
+<!-- MODAL HISTORIAL EJERCICIO -->
 <div class="mo" id="mo-hist" onclick="closeMo(event,'mo-hist')">
   <div class="ms">
     <div class="mh"></div>
@@ -2357,18 +2357,9 @@ const renders={
     }
     document.getElementById('e-vol').textContent=Math.round(vol);
     const edDia=document.getElementById('e-editor-dia');if(edDia){edDia.textContent=dB||'Descanso';}
-    // Sumar volumen de finishers al display (no cuentan en series tot)
-    try{
-      var volFin=0;
-      Object.keys(ST.sets||{}).forEach(function(k){
-        if(k.startsWith('d'+ST.dia+'_fin_')){
-          (ST.sets[k]||[]).filter(Boolean).forEach(function(s){ volFin+=s.p*s.r; });
-        }
-      });
-      if(volFin>0) document.getElementById('e-vol').textContent=Math.round(vol+volFin);
-    }catch(e){}
     document.getElementById('e-ser').textContent=done+'/'+tot;
     renderEnf(dB||'Mov','e-enf','e-enf-card');
+    renderAvisoSalto(dB);
     renderFaseBanner();
     renderFinalizarStatus();
     actualizarWarmupBadge();
@@ -2900,14 +2891,46 @@ function openMo2(el){
   var pi=parseInt(el.dataset.pi)||0;
   openMo(ej,pi);
 }
+var mTipoSet='reps'; // 'reps' | 'tiempo' | 'distancia'
+
+// Tipos por defecto para ejercicios que no son reps
+var EJ_TIPO_SET={
+  'Front Plank':'tiempo','Hard-style Front Plank':'tiempo','Half-kneeling antirotation hold':'tiempo',
+  'Standing antirotation hold':'tiempo','Squat Holds':'tiempo','Supine Floor Slide':'reps',
+  'Suitcase Carry':'distancia','Farmer Carry':'distancia','Farmer Walk bilateral':'distancia',
+  'Trineo empuje pesado':'distancia','Trineo marcha (técnica sprint)':'distancia',
+  'Trineo empuje ligero':'distancia','Trineo arrastre hacia atrás':'distancia',
+  'Trineo arrastre con correa al pecho':'distancia','RFESS + empuje de Trineo (sin salto)':'distancia',
+  'Trap Bar + empuje de Trineo (sin salto)':'distancia',
+};
+
+function setTipoSet(tipo){
+  mTipoSet=tipo;
+  var btns={reps:'mbt-reps',tiempo:'mbt-tiempo',distancia:'mbt-dist'};
+  Object.keys(btns).forEach(function(t){
+    var b=document.getElementById(btns[t]);
+    if(!b) return;
+    b.style.background=t===tipo?'var(--blue)':'var(--bg3)';
+    b.style.color=t===tipo?'#fff':'var(--text2)';
+  });
+  document.getElementById('ig-reps').style.display=tipo==='reps'?'':'none';
+  document.getElementById('ig-tiempo').style.display=tipo==='tiempo'?'':'none';
+  document.getElementById('ig-dist').style.display=tipo==='distancia'?'':'none';
+}
+
 function openMo(ej,serie){
   mEj=(ej||'').replace(/&#39;/g,"'");
   mSer=serie;
   document.getElementById('mo-title').textContent=ej+' — Serie '+(serie+1);
   const key='d'+ST.dia+'_'+ej;
   const prev=(ST.sets[key]||[])[serie];
+  // Determinar tipo del ejercicio
+  var tipoEj=EJ_TIPO_SET[ej]||'reps';
+  setTipoSet(prev&&prev.tipo?prev.tipo:tipoEj);
   document.getElementById('m-p').value=prev?prev.p:'';
   document.getElementById('m-r').value=prev?prev.r:10;
+  document.getElementById('m-t').value=prev?prev.t||'':'';
+  document.getElementById('m-d').value=prev?prev.dist||'':'';
   document.getElementById('m-rpe').value=prev?prev.rpe:7;
   document.getElementById('m-n').value=prev?prev.n:'';
   // Mostrar ultima sesion
@@ -2925,18 +2948,25 @@ function openMo(ej,serie){
 }
 function closeMo(e,id){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.remove('open');}
 function guardar(){
-  // Asegurar que mEj no tiene entidades HTML
   var ejClean = (mEj||'').replace(/&#39;/g,"'").replace(/&amp;/g,'&').replace(/&quot;/g,'"');
-  // Detectar si es finisher
   var esFinisher = ejClean.indexOf('__fin__')===0;
   var finNombre = esFinisher ? ejClean.replace('__fin__','') : null;
   var key = esFinisher ? _finKey(finNombre) : 'd'+ST.dia+'_'+ejClean;
   if(!ST.sets[key])ST.sets[key]=[];
   var peso=parseFloat(document.getElementById('m-p').value)||0;
-  var reps=parseInt(document.getElementById('m-r').value)||0;
   var rpe=parseInt(document.getElementById('m-rpe').value)||7;
   var nota=document.getElementById('m-n').value||'';
-  var setData={p:peso,r:reps,rpe:rpe,n:nota};
+  var tipo=mTipoSet||'reps';
+  var setData={p:peso,rpe:rpe,n:nota,tipo:tipo};
+  if(tipo==='reps'){
+    setData.r=parseInt(document.getElementById('m-r').value)||0;
+  } else if(tipo==='tiempo'){
+    setData.t=parseInt(document.getElementById('m-t').value)||0;
+    setData.r=0;
+  } else if(tipo==='distancia'){
+    setData.dist=parseInt(document.getElementById('m-d').value)||0;
+    setData.r=0;
+  }
   if(!esFinisher){
     var varActiva=ST.variantes&&ST.variantes[ejClean];
     if(varActiva&&varActiva!==ejClean) setData.v=varActiva;
@@ -2957,7 +2987,8 @@ function guardar(){
   if(!esFinisher){
     var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
     var varActual=ST.variantes&&ST.variantes[ejClean]?ST.variantes[ejClean]:'';
-    appendSetToSheets(ST.dia, ejClean, varActual, serie, peso, reps, rpe, nota);
+    var valReg=tipo==='reps'?setData.r:(tipo==='tiempo'?setData.t+'s':setData.dist+'m');
+    appendSetToSheets(ST.dia, ejClean, varActual, serie, peso, valReg, rpe, nota);
   }
   document.getElementById('mo-set').classList.remove('open');
   if(esFinisher) renderFinisherBody();
@@ -3931,7 +3962,9 @@ function mostrarResumenSesion(sesionData){
       if(sets.length){
         var setsStr=sets.map(function(s,i){
           var rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
-          return '<span style="color:'+rpeCol+'">S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe+'</span>';
+          var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+          var notaStr=s.n?' <em style="color:var(--text3);font-size:10px">('+s.n+')</em>':'';
+          return '<span style="color:'+rpeCol+'">S'+(i+1)+': '+s.p+'kg×'+val+' R'+s.rpe+'</span>'+notaStr;
         }).join(' · ');
         html+='<div style="font-size:11px;margin-top:2px">'+setsStr+'</div>';
       }
@@ -4021,8 +4054,22 @@ function renderFinalizarStatus(){
   }
 }
 
+function renderAvisoSalto(dB){
+  var el=document.getElementById('e-aviso-salto');
+  if(!el) return;
+  if(!dB){el.style.display='none';return;}
+  var ejs=getEjs(dB)||[];
+  var SALTO=['RFESS + Hurdle Hops','Trap Bar Deadlift + Hurdle Jump'];
+  var tieneComplejo=ejs.some(function(e){return SALTO.indexOf(e)>=0;});
+  if(!tieneComplejo){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="background:var(--orange-bg);border-radius:var(--rs);padding:.6rem .75rem;border-left:3px solid var(--orange)">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--orange-text);margin-bottom:3px">⚠️ Complejo con salto en la sesión de hoy</div>'
+    +'<div style="font-size:12px;color:var(--orange-text);opacity:.85;line-height:1.45">Recuerda que tienes variantes sin impacto disponibles: <strong>empuje de Trineo</strong> o el ejercicio <strong>sin el salto</strong>. Puedes cambiarlas desde el botón de variantes de cada ejercicio.</div>'
+    +'</div>';
+}
+
 function renderFaseBanner(){
-  var fase=getFaseActual(ST.sem);
   var semEnFase=getSemEnFase(ST.sem);
   // Nombres y datos EXACTOS del Excel boyle24.xlsx
   var faseNoms={
@@ -4147,8 +4194,12 @@ function autoAplicarAnclaje(){
   if(!ST.cicloAnclaje) return;
   var diaCalc=calcularDiaDesdeAnclaje();
   if(!diaCalc) return;
-  // Actualizar día del ciclo automáticamente
-  if(diaCalc!==ST.dia){
+  // No cambiar el día si ya hay sesión registrada hoy para el día actual
+  var hoy=hoyLocal();
+  var sesionHoy=ST.historialFechas&&ST.historialFechas[hoy]&&ST.historialFechas[hoy].completado;
+  if(sesionHoy && diaCalc!==ST.dia){
+    // Sesión ya registrada — no pisamos el día
+  } else if(diaCalc!==ST.dia){
     ST.dia=diaCalc;
     save();
   }
@@ -4843,123 +4894,36 @@ function renderPlyoBody(){
   body.innerHTML=nota+items;
 }
 
-function _finKey(nombre){
-  return 'd'+ST.dia+'_fin_'+nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑüÜ]/g,'');
-}
-
-function abrirSetFinisher(nombre){
-  var key=_finKey(nombre);
-  var sets=ST.sets[key]||[];
-  var serie=sets.filter(Boolean).length; // siguiente serie libre
-  mEj='__fin__'+nombre;
-  mSer=serie;
-  document.getElementById('mo-title').textContent='🔥 '+nombre+' — Serie '+(serie+1);
-  document.getElementById('m-p').value='';
-  document.getElementById('m-r').value=10;
-  document.getElementById('m-rpe').value=7;
-  document.getElementById('m-n').value='';
-  document.getElementById('mo-ultima').style.display='none';
-  var chk=document.getElementById('m-all');
-  chk.checked=false;
-  document.getElementById('tog-track').style.background='var(--bg3)';
-  document.getElementById('tog-thumb').style.transform='translateX(0)';
-  document.getElementById('mo-set').classList.add('open');
-  setTimeout(function(){document.getElementById('m-p').focus();},150);
-}
-
 function renderFinisherBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("finisher-body");
   if(!body) return;
-  var base=FINISHERS[dB]||[];
-  var custom=(ST.finishersCustom&&ST.finishersCustom[dB])||[];
-  var finishers=base.concat(custom);
+  var finishers=FINISHERS[dB];
+  if(!finishers||!finishers.length){
+    body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay finishers definidos para este día.</div>";
+    return;
+  }
   var sv=semaforo(ST.sliders.d,ST.sliders.f);
   var esFatiga=sv.cls==='sem-r';
   var rec="<div style=\"font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem\">"
     +(esFatiga?"⚠️ Fatiga alta — elige finisher metabólico (KB Swing, Farmer Walk). Evita trineo pesado.":"💡 Elige un finisher según el tiempo y equipo disponible.")
     +"</div>";
-
-  function renderFinisher(f, isCustom){
-    var key=_finKey(f.n);
-    var sets=(ST.sets[key]||[]).filter(Boolean);
-    var completado=sets.length>0;
-    var fnSafe=f.n.replace(/'/g,"\\'");
-    var checkHtml='<div style="width:26px;height:26px;border-radius:50%;border:.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:'+(completado?'var(--green-bg)':'var(--bg3)')+';border-color:'+(completado?'rgba(99,153,34,.35)':'var(--border2)')+'">'+
-      (completado?'<span style="font-size:14px">✓</span>':'')+'</div>';
-    var setsHtml='';
-    if(sets.length){
-      setsHtml='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">';
-      sets.forEach(function(s,i){
-        setsHtml+='<span style="font-size:11px;background:var(--green-bg);color:var(--green-text);border-radius:10px;padding:2px 8px">S'+(i+1)+': '+s.p+'kg×'+s.r+'</span>';
-      });
-      setsHtml+='</div>';
-    }
-    var delBtn=isCustom?'<button onclick="eliminarFinisherCustom(\''+dB+'\',\''+fnSafe+'\')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:3px 8px;font-size:11px;cursor:pointer;margin-left:4px">✕</button>':'';
-    return "<div style=\"padding:.55rem 0;border-bottom:.5px solid var(--border)\">"
-      +"<div style=\"display:flex;align-items:flex-start;gap:8px\">"
-      +checkHtml
-      +"<div style=\"flex:1\">"
-      +"<div style=\"font-size:13px;font-weight:700;color:var(--text)\">"+f.n+"</div>"
-      +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+f.d+"</div>"
-      +setsHtml
-      +"</div>"
-      +"<div style=\"display:flex;gap:4px;flex-shrink:0;align-items:flex-start;margin-top:2px\">"
-      +"<button onclick=\"abrirSetFinisher('"+fnSafe+"')\" style=\"border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer\">＋ Set</button>"
-      +delBtn
-      +"</div>"
-      +"</div>"
-      +"</div>";
-  }
-
+  // Separar por tipo
   var potencia=finishers.filter(function(f){return f.tipo==="potencia";});
   var metabolico=finishers.filter(function(f){return f.tipo==="metabolico";});
-
   function renderGrupo(lista,titulo,color){
     if(!lista.length) return "";
     return "<div style=\"font-size:10px;font-weight:800;color:"+color+";text-transform:uppercase;letter-spacing:.06em;margin:.5rem 0 .25rem\">"+titulo+"</div>"
-      +lista.map(function(f){ return renderFinisher(f, !!f._custom); }).join("");
+      +lista.map(function(f){
+        return "<div style=\"padding:.5rem 0;border-bottom:.5px solid var(--border)\">"
+          +"<div style=\"font-size:13px;font-weight:700;color:var(--text)\">"+f.n+"</div>"
+          +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+f.d+"</div>"
+          +"</div>";
+      }).join("");
   }
-
-  var addBtn="<div style=\"margin-top:.75rem\">"
-    +"<button onclick=\"abrirAddFinisherCustom()\" style=\"width:100%;padding:9px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer\">＋ Añadir finisher personalizado</button>"
-    +"</div>";
-
-  var contenido = finishers.length
-    ? renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")+renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)")
-    : "<div style=\"color:var(--text3);font-size:13px;padding:.3rem 0\">No hay finishers para este día.</div>";
-
-  body.innerHTML=rec+contenido+addBtn;
-}
-
-function abrirAddFinisherCustom(){
-  document.getElementById('mo-fin-nombre').value='';
-  document.getElementById('mo-fin-desc').value='';
-  document.getElementById('mo-fin-tipo').value='metabolico';
-  document.getElementById('mo-add-finisher').classList.add('open');
-  setTimeout(function(){document.getElementById('mo-fin-nombre').focus();},200);
-}
-
-function confirmarAddFinisherCustom(){
-  var nombre=document.getElementById('mo-fin-nombre').value.trim();
-  if(!nombre){alert('Escribe el nombre del finisher');return;}
-  var desc=document.getElementById('mo-fin-desc').value.trim()||'Finisher personalizado.';
-  var tipo=document.getElementById('mo-fin-tipo').value||'metabolico';
-  var dB=getDiaBoyle();
-  if(!dB){alert('No hay día de entreno activo');return;}
-  if(!ST.finishersCustom) ST.finishersCustom={};
-  if(!ST.finishersCustom[dB]) ST.finishersCustom[dB]=[];
-  ST.finishersCustom[dB].push({n:nombre,d:desc,tipo:tipo,_custom:true});
-  save();
-  document.getElementById('mo-add-finisher').classList.remove('open');
-  renderFinisherBody();
-}
-
-function eliminarFinisherCustom(dB, nombre){
-  if(!ST.finishersCustom||!ST.finishersCustom[dB]) return;
-  ST.finishersCustom[dB]=ST.finishersCustom[dB].filter(function(f){return f.n!==nombre;});
-  save();
-  renderFinisherBody();
+  body.innerHTML=rec
+    +renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")
+    +renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)");
 }
 
 
@@ -5061,7 +5025,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v102';
+const APP_VERSION='v103';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5500,6 +5464,16 @@ function calSelDia(fecha){
   if(diaNum){
     const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
     if(sesKeys.length){
+      // Calcular tonelaje total del día
+      var volDia=0, serDia=0;
+      sesKeys.forEach(function(k){
+        var sets=(ST.sets[k]||[]).filter(Boolean);
+        sets.forEach(function(s){ if(s.tipo==='reps'||!s.tipo){ volDia+=((s.p||0)*(s.r||0)); serDia++; } else { serDia++; } });
+      });
+      var statsHtml='<div style="display:flex;gap:6px;margin-bottom:6px">'
+        +'<div style="flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--orange)">'+Math.round(volDia)+'</div><div style="font-size:10px;color:var(--text2)">kg tonelaje</div></div>'
+        +'<div style="flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">'+serDia+'</div><div style="font-size:10px;color:var(--text2)">series</div></div>'
+        +'</div>';
       const ejsHTML=sesKeys.map(k=>{
         const ej=k.replace(/^d\d+_/,'');
         const sets=(ST.sets[k]||[]).filter(Boolean);
@@ -5508,7 +5482,9 @@ function calSelDia(fecha){
         const ejColor=maxRpe>=9?'var(--red)':maxRpe>=8?'var(--orange)':'var(--text)';
         const setsStr=sets.map((s,i)=>{
           const rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
-          return`<span style="color:${rpeCol}">S${i+1}: ${s.p}kg×${s.r} R${s.rpe}</span>`;
+          var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+          var notaStr=s.n?` <span style="color:var(--text3);font-style:italic">(${s.n})</span>`:'';
+          return`<span style="color:${rpeCol}">S${i+1}: ${s.p}kg×${val} R${s.rpe}${notaStr}</span>`;
         }).join(' · ');
         // Variante: primero del set, luego ST.variantes, luego nombre base
         const varMostrar=sets[0]&&sets[0].v?sets[0].v:(ST.variantes&&ST.variantes[ej]&&ST.variantes[ej]!==ej?ST.variantes[ej]:ej);
@@ -5528,6 +5504,7 @@ function calSelDia(fecha){
         (semBoyle?' <span style="color:var(--orange-text);background:var(--orange-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+semBoyle+'</span>':'');
       if(ejsHTML) htmlE=`<div>
         <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${badgesBoyle?' · '+badgesBoyle:''}</div>
+        ${statsHtml}
         ${ejsHTML}
       </div>`;
     }

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v103</title>
+<title>Entreno Boyle v104</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -158,6 +158,7 @@ function avisoSync(on){
 function aplicarRemoto(parsed){
   var protegidos=['historialFechas','fechaSesiones','planDia','notaDia'];
   ST=Object.assign({},ST,parsed);
+  var conflictos=[];
   protegidos.forEach(function(k){
     var remoto=parsed[k]||{};
     var local=ST[k]||{};
@@ -165,15 +166,50 @@ function aplicarRemoto(parsed){
     var todasClaves=Object.keys(Object.assign({},remoto,local));
     todasClaves.forEach(function(clave){
       var r=remoto[clave], l=local[clave];
-      if(r===undefined||r===null) { merged[clave]=l; return; }
-      if(l===undefined||l===null) { merged[clave]=r; return; }
-      // Para historialFechas comparar timestamp; para el resto local gana
-      var tsR=(r&&r.timestamp)||0;
-      var tsL=(l&&l.timestamp)||0;
-      merged[clave]=(tsR>tsL)?r:l;
+      if(r===undefined||r===null){ merged[clave]=l; return; }
+      if(l===undefined||l===null){ merged[clave]=r; return; }
+      // Solo historialFechas tiene lógica de conflicto
+      if(k==='historialFechas'){
+        var lComp=l&&l.completado;
+        var rComp=r&&r.completado;
+        // Remoto quiere vaciar/eliminar una sesión completa local → conflicto
+        if(lComp && !rComp){
+          conflictos.push({fecha:clave,local:l,remoto:r});
+          merged[clave]=l; // mantener local por ahora
+          return;
+        }
+        // Remoto quiere modificar una sesión completa local con datos distintos
+        var tsR=(r&&r.timestamp)||0;
+        var tsL=(l&&l.timestamp)||0;
+        if(lComp && rComp && tsR!==tsL && tsR>tsL){
+          // Remoto es más reciente pero local también está completa → conflicto
+          var ejsL=(l.ejerciciosRealizados||[]).map(function(e){return e.ej;}).join(',');
+          var ejsR=(r.ejerciciosRealizados||[]).map(function(e){return e.ej;}).join(',');
+          if(ejsL!==ejsR){
+            conflictos.push({fecha:clave,local:l,remoto:r});
+            merged[clave]=l; // mantener local hasta que el usuario decida
+            return;
+          }
+        }
+        merged[clave]=(tsR>tsL)?r:l;
+      } else {
+        var tsR2=(r&&r.timestamp)||0;
+        var tsL2=(l&&l.timestamp)||0;
+        merged[clave]=(tsR2>tsL2)?r:l;
+      }
     });
     ST[k]=merged;
   });
+  // Guardar conflictos pendientes
+  if(conflictos.length){
+    if(!ST.conflictosSync) ST.conflictosSync=[];
+    conflictos.forEach(function(c){
+      // No duplicar si ya existe
+      var existe=ST.conflictosSync.some(function(x){return x.fecha===c.fecha;});
+      if(!existe) ST.conflictosSync.push(c);
+    });
+    try{ renderBannerConflictos(); }catch(e){}
+  }
   try{avisoSync(false);}catch(e){}
 }
 
@@ -189,7 +225,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v103"
+      version: "v104"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -463,6 +499,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
     </div>
     <div id="backup-ok" style="display:none;background:var(--green-bg);border:.5px solid rgba(99,153,34,.25);border-radius:var(--rs);padding:6px 12px;margin-bottom:.75rem;font-size:12px;color:var(--green-text);font-weight:600;text-align:center">Backup guardado correctamente</div>
+    <!-- BANNER CONFLICTOS SYNC -->
+    <div id="banner-conflictos" style="display:none;background:var(--orange-bg);border:.5px solid rgba(200,120,0,.25);border-radius:var(--rs);padding:10px 12px;margin-bottom:.75rem;cursor:pointer" onclick="abrirConflictos()">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">⚠️</span>
+        <div style="flex:1">
+          <div id="banner-conflictos-txt" style="font-size:13px;font-weight:700;color:var(--orange-text)">Conflictos de sincronización</div>
+          <div style="font-size:11px;color:var(--orange-text);opacity:.8;margin-top:1px">Pulsa para revisar — algunos datos remotos difieren de los locales</div>
+        </div>
+        <span style="font-size:16px;color:var(--orange-text)">›</span>
+      </div>
+    </div>
     <div id="sync-panel" style="display:none;border-radius:var(--rs);padding:8px 12px;margin-bottom:.75rem;font-size:12px">
       <div style="display:flex;align-items:center;gap:8px">
         <span id="sync-icon" style="font-size:16px">☁️</span>
@@ -964,6 +1011,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </label>
     </div>
     <div class="br2"><button class="bcan" onclick="document.getElementById('mo-set').classList.remove('open')">Cancelar</button><button class="bsav" onclick="guardar()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL CONFLICTOS SYNC -->
+<div class="mo" id="mo-conflictos" onclick="closeMo(event,'mo-conflictos')">
+  <div class="ms" style="max-height:85vh;overflow-y:auto">
+    <div class="mh"></div>
+    <div class="mt">⚠️ Conflictos de sync</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Los datos remotos quieren modificar estas sesiones ya registradas. Decide para cada una:</div>
+    <div id="mo-conflictos-lista"></div>
+    <div class="br2">
+      <button class="bcan" onclick="document.getElementById('mo-conflictos').classList.remove('open')">Cerrar</button>
+      <button class="bsav" onclick="resolverTodosLocal()">Mantener todo local</button>
+    </div>
   </div>
 </div>
 
@@ -2238,7 +2299,7 @@ const renders={
     // Reset calentamiento (hidden, kept for compatibility)
     const fCalBody=document.getElementById('f-cal-body');
     if(fCalBody){fCalBody.style.display='none';fCalBody.innerHTML='';}
-  },
+    try{renderBannerConflictos();}catch(e){}  },
   entreno(){
     restoreTimer();
     try{renderDiaPicker();}catch(e){}
@@ -3028,7 +3089,8 @@ function autoRegistrarFecha(){
       ejsSustituidos:ejsSustituidos, ejerciciosRealizados:ejsRealizados,
       completado:true, nota:(ST.notaDia&&ST.notaDia[hoy])||(prev&&prev.nota)||''
     });
-    if(!prev){ rec.auto=true; rec.timestamp=Date.now(); }
+    if(!prev){ rec.auto=true; }
+    rec.timestamp=Date.now(); // siempre actualizar timestamp al registrar sets
     ST.historialFechas[hoy]=rec;
     if(!ST.fechaSesiones) ST.fechaSesiones={};
     ST.fechaSesiones[hoy]=ST.dia;
@@ -4054,6 +4116,67 @@ function renderFinalizarStatus(){
   }
 }
 
+function renderBannerConflictos(){
+  var banner=document.getElementById('banner-conflictos');
+  if(!banner) return;
+  var conflictos=ST.conflictosSync||[];
+  if(!conflictos.length){ banner.style.display='none'; return; }
+  banner.style.display='block';
+  var txt=document.getElementById('banner-conflictos-txt');
+  if(txt) txt.textContent='⚠️ '+conflictos.length+' conflicto'+(conflictos.length>1?'s':'')+' de sincronización pendiente'+(conflictos.length>1?'s':'');
+}
+
+function abrirConflictos(){
+  var conflictos=ST.conflictosSync||[];
+  if(!conflictos.length) return;
+  var lista=document.getElementById('mo-conflictos-lista');
+  lista.innerHTML=conflictos.map(function(c,i){
+    var ejsL=(c.local&&c.local.ejerciciosRealizados||[]).map(function(e){return e.ej;}).join(', ')||'—';
+    var ejsR=(c.remoto&&c.remoto.ejerciciosRealizados||[]).map(function(e){return e.ej;}).join(', ')||'(vacío)';
+    var tsL=c.local&&c.local.timestamp?new Date(c.local.timestamp).toLocaleString('es-ES'):'—';
+    var tsR=c.remoto&&c.remoto.timestamp?new Date(c.remoto.timestamp).toLocaleString('es-ES'):'—';
+    return '<div style="background:var(--bg3);border-radius:var(--rs);padding:.75rem;margin-bottom:.6rem">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:.4rem">📅 '+c.fecha+'</div>'
+      +'<div style="font-size:11px;color:var(--text2);margin-bottom:6px">'
+      +'<div style="margin-bottom:3px"><strong style="color:var(--green-text)">LOCAL</strong> ('+tsL+'): '+ejsL+'</div>'
+      +'<div><strong style="color:var(--orange-text)">REMOTO</strong> ('+tsR+'): '+ejsR+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<button onclick="resolverConflicto('+i+',\'local\')" style="flex:1;padding:7px;border:none;background:var(--green-bg);color:var(--green-text);border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">✅ Mantener local</button>'
+      +'<button onclick="resolverConflicto('+i+',\'remoto\')" style="flex:1;padding:7px;border:none;background:var(--orange-bg);color:var(--orange-text);border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">📥 Usar remoto</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+  document.getElementById('mo-conflictos').classList.add('open');
+}
+
+function resolverConflicto(idx, decision){
+  var conflictos=ST.conflictosSync||[];
+  var c=conflictos[idx];
+  if(!c) return;
+  if(decision==='remoto'){
+    if(!ST.historialFechas) ST.historialFechas={};
+    ST.historialFechas[c.fecha]=c.remoto;
+  }
+  // Si es 'local', ya está guardado — no hacer nada
+  ST.conflictosSync.splice(idx,1);
+  save();
+  // Re-renderizar lista
+  if(ST.conflictosSync.length){
+    abrirConflictos();
+  } else {
+    document.getElementById('mo-conflictos').classList.remove('open');
+  }
+  renderBannerConflictos();
+}
+
+function resolverTodosLocal(){
+  ST.conflictosSync=[];
+  save();
+  document.getElementById('mo-conflictos').classList.remove('open');
+  renderBannerConflictos();
+}
+
 function renderAvisoSalto(dB){
   var el=document.getElementById('e-aviso-salto');
   if(!el) return;
@@ -5025,7 +5148,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v103';
+const APP_VERSION='v104';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

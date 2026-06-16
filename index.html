@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v104</title>
+<title>Entreno Boyle v105</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -225,7 +225,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v104"
+      version: "v105"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -3077,9 +3077,10 @@ function autoRegistrarFecha(){
     var ejsRealizados=[];
     Object.keys(ST.sets||{}).forEach(function(k){
       if(k.indexOf('d'+ST.dia+'_')!==0) return;
-      var ej=k.replace(/^d\d+_/,'');
+      var esFinisher=k.indexOf('d'+ST.dia+'_fin_')===0;
+      var ej=esFinisher?'🔥 '+k.replace(/^d\d+_fin_/,'').replace(/_/g,' '):k.replace(/^d\d+_/,'');
       var sets=(ST.sets[k]||[]).filter(Boolean);
-      if(sets.length) ejsRealizados.push({ej:ej,sets:sets});
+      if(sets.length) ejsRealizados.push({ej:ej,sets:sets,finisher:esFinisher});
     });
     if(!ST.historialFechas) ST.historialFechas={};
     var prev=ST.historialFechas[hoy];
@@ -4967,28 +4968,44 @@ const PLYOS = {
 
 const FINISHERS = {
   D1: [
-    {n:'Trineo empuje pesado',d:'4x20m carga alta. Postura baja, empuja con todo el cuerpo. 90s descanso.',tipo:'potencia'},
-    {n:'Trineo marcha (técnica sprint)',d:'4x20m carga ligera. Patrón de carrera. 60s descanso.',tipo:'potencia'},
-    {n:'KB Swing pesado',d:'5x10 reps. Cadera atrás y adelante explosivo. 60s descanso.',tipo:'metabolico'},
+    // Potencia / Velocidad
+    {n:'Trineo empuje pesado',d:'4×20m carga alta. Postura baja, empuja con todo el cuerpo. 90s descanso.',tipo:'potencia'},
+    {n:'Trineo empuje a una mano',d:'3×15m por lado. Estabilización del core unilateral. 60s descanso.',tipo:'potencia'},
+    {n:'Trineo marcha (técnica sprint)',d:'4×20m carga ligera. Patrón de carrera. 60s descanso.',tipo:'potencia'},
+    {n:'KB Swing pesado',d:'5×10 reps. Cadera atrás y adelante explosivo. 60s descanso.',tipo:'potencia'},
+    // Metabólico
     {n:'Push-up / Row Circuit',d:'3 rondas: 10 push-up + 10 DB Row por lado. Sin descanso entre ejercicios.',tipo:'metabolico'},
+    {n:'KB Swing bilateral',d:'4×10. Finalizador de potencia de cadera. 60s descanso.',tipo:'metabolico'},
   ],
   D2: [
-    {n:'Farmer Walk bilateral',d:'4x30m con KB pesado. Erguido, core activo. 60s descanso.',tipo:'potencia'},
-    {n:'Suitcase Carry',d:'3x20m por lado. No inclinarse hacia el lado cargado. Antilateral puro.',tipo:'potencia'},
-    {n:'Trineo arrastre hacia atrás',d:'4x20m. Cuádriceps sin compresión articular. Ideal si hay molestia de rodilla.',tipo:'metabolico'},
-    {n:'KB Swing unilateral',d:'4x8 por lado. Transferencia de potencia unilateral. 45s descanso.',tipo:'metabolico'},
+    // Potencia / Velocidad
+    {n:'Farmer Walk bilateral',d:'4×30m con KB pesado. Erguido, core activo. 60s descanso.',tipo:'potencia'},
+    {n:'Suitcase Carry',d:'3×20m por lado. No inclinarse hacia el lado cargado. Antilateral puro.',tipo:'potencia'},
+    {n:'Trineo arrastre hacia atrás',d:'4×20m. Cuádriceps sin compresión articular. Ideal si hay molestia de rodilla.',tipo:'potencia'},
+    {n:'Trineo arrastre lateral',d:'3×15m por lado. Activa abductores y estabilizadores de cadera.',tipo:'potencia'},
+    // Metabólico
+    {n:'KB Swing unilateral',d:'4×8 por lado. Transferencia de potencia unilateral. 45s descanso.',tipo:'metabolico'},
+    {n:'Trineo arrastre con cuerda (remo)',d:'4×10 tirones. Patrón de remo horizontal. 60s descanso.',tipo:'metabolico'},
   ],
   D3: [
-    {n:'Trineo empuje ligero',d:'4x20m velocidad máxima. Carga muy ligera, sprint técnico.',tipo:'potencia'},
-    {n:'KB Swing pesado',d:'5x10. Alternativa al trineo si no disponible.',tipo:'metabolico'},
-    {n:'Battle Ropes',d:'4x20s máxima intensidad. 40s descanso. Solo si disponible.',tipo:'metabolico'},
+    // Potencia / Velocidad
+    {n:'Trineo empuje ligero',d:'4×20m velocidad máxima. Carga muy ligera, sprint técnico.',tipo:'potencia'},
+    {n:'Trineo empuje con arnés al pecho',d:'4×20m. Patrón de aceleración/sprint. Bajo impacto rodilla.',tipo:'potencia'},
+    {n:'KB Swing pesado',d:'5×10. Alternativa al trineo si no disponible.',tipo:'potencia'},
+    // Metabólico
+    {n:'Battle Ropes',d:'4×20s máxima intensidad. 40s descanso. Solo si disponible.',tipo:'metabolico'},
     {n:'Push-up / Row Circuit',d:'3 rondas: 10 push-up + 10 DB Row. Sin descanso entre ejercicios.',tipo:'metabolico'},
+    {n:'Trineo arrastre con cuerda (remo)',d:'3×12 tirones. Patrón de tirón horizontal. 60s descanso.',tipo:'metabolico'},
   ],
   D4: [
-    {n:'Trineo arrastre con correa al pecho',d:'4x20m. Patrón de carrera, bajo impacto. Ideal fin de semana.',tipo:'potencia'},
-    {n:'Farmer Walk bilateral',d:'3x30m. Versión más corta — el D4 ya es muy exigente.',tipo:'potencia'},
-    {n:'Suitcase Carry',d:'3x20m por lado. Complementa el antilateral del día.',tipo:'metabolico'},
-    {n:'KB Swing bilateral',d:'4x10. Finalizador de potencia de cadera. 60s descanso.',tipo:'metabolico'},
+    // Potencia / Velocidad
+    {n:'Trineo arrastre con correa al pecho',d:'4×20m. Patrón de carrera, bajo impacto. Ideal fin de semana.',tipo:'potencia'},
+    {n:'Trineo arrastre hacia atrás',d:'3×20m. Sin compresión articular. Ideal para rodilla.',tipo:'potencia'},
+    {n:'Farmer Walk bilateral',d:'3×30m. Versión más corta — el D4 ya es muy exigente.',tipo:'potencia'},
+    // Metabólico
+    {n:'Suitcase Carry',d:'3×20m por lado. Complementa el antilateral del día.',tipo:'metabolico'},
+    {n:'KB Swing bilateral',d:'4×10. Finalizador de potencia de cadera. 60s descanso.',tipo:'metabolico'},
+    {n:'Trineo arrastre lateral',d:'3×15m por lado. Abductores y estabilizadores. Bajo impacto.',tipo:'metabolico'},
   ],
 };
 
@@ -5148,7 +5165,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v104';
+const APP_VERSION='v105';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5587,7 +5604,9 @@ function calSelDia(fecha){
   if(diaNum){
     const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
     if(sesKeys.length){
-      // Calcular tonelaje total del día
+      const sesKeysEj=sesKeys.filter(k=>!k.includes('_fin_'));
+      const sesKeysFin=sesKeys.filter(k=>k.includes('_fin_'));
+      // Calcular tonelaje total del día (ejercicios + finishers)
       var volDia=0, serDia=0;
       sesKeys.forEach(function(k){
         var sets=(ST.sets[k]||[]).filter(Boolean);
@@ -5597,26 +5616,31 @@ function calSelDia(fecha){
         +'<div style="flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--orange)">'+Math.round(volDia)+'</div><div style="font-size:10px;color:var(--text2)">kg tonelaje</div></div>'
         +'<div style="flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">'+serDia+'</div><div style="font-size:10px;color:var(--text2)">series</div></div>'
         +'</div>';
-      const ejsHTML=sesKeys.map(k=>{
-        const ej=k.replace(/^d\d+_/,'');
-        const sets=(ST.sets[k]||[]).filter(Boolean);
+
+      function renderEjRow(k, isFinisher){
+        var ej=isFinisher ? k.replace(/^d\d+_fin_/,'').replace(/_/g,' ') : k.replace(/^d\d+_/,'');
+        var sets=(ST.sets[k]||[]).filter(Boolean);
         if(!sets.length) return '';
-        const maxRpe=sets.reduce((a,s)=>Math.max(a,s.rpe||0),0);
-        const ejColor=maxRpe>=9?'var(--red)':maxRpe>=8?'var(--orange)':'var(--text)';
-        const setsStr=sets.map((s,i)=>{
-          const rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
+        var maxRpe=sets.reduce(function(a,s){return Math.max(a,s.rpe||0);},0);
+        var ejColor=maxRpe>=9?'var(--red)':maxRpe>=8?'var(--orange)':'var(--text)';
+        var setsStr=sets.map(function(s,i){
+          var rpeCol=s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text2)';
           var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
-          var notaStr=s.n?` <span style="color:var(--text3);font-style:italic">(${s.n})</span>`:'';
-          return`<span style="color:${rpeCol}">S${i+1}: ${s.p}kg×${val} R${s.rpe}${notaStr}</span>`;
+          var notaStr=s.n?' <span style="color:var(--text3);font-style:italic">('+s.n+')</span>':'';
+          return '<span style="color:'+rpeCol+'">S'+(i+1)+': '+s.p+'kg×'+val+' R'+s.rpe+'</span>'+notaStr;
         }).join(' · ');
-        // Variante: primero del set, luego ST.variantes, luego nombre base
-        const varMostrar=sets[0]&&sets[0].v?sets[0].v:(ST.variantes&&ST.variantes[ej]&&ST.variantes[ej]!==ej?ST.variantes[ej]:ej);
-        const varTag=varMostrar!==ej?`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px;margin-left:4px">${varMostrar}</span>`:'';
-        return `<div class="prow" style="flex-direction:column;align-items:flex-start;gap:2px">
-          <span style="font-size:12px;font-weight:600;color:${ejColor}">${ej}${varTag}</span>
-          <span style="font-size:11px">${setsStr}</span>
-        </div>`;
-      }).filter(Boolean).join('');
+        var varMostrar=sets[0]&&sets[0].v?sets[0].v:(ST.variantes&&ST.variantes[ej]&&ST.variantes[ej]!==ej?ST.variantes[ej]:ej);
+        var varTag=(!isFinisher&&varMostrar!==ej)?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 7px;margin-left:4px">'+varMostrar+'</span>':'';
+        var finTag=isFinisher?'<span style="font-size:10px;background:var(--orange-bg);color:var(--orange-text);border-radius:10px;padding:1px 7px;margin-left:4px">🔥 Finisher</span>':'';
+        return '<div class="prow" style="flex-direction:column;align-items:flex-start;gap:2px">'
+          +'<span style="font-size:12px;font-weight:600;color:'+ejColor+'">'+ej+varTag+finTag+'</span>'
+          +'<span style="font-size:11px">'+setsStr+'</span>'
+          +'</div>';
+      }
+
+      const ejsHTML=sesKeysEj.map(function(k){return renderEjRow(k,false);}).filter(Boolean).join('');
+      const finHTML=sesKeysFin.map(function(k){return renderEjRow(k,true);}).filter(Boolean).join('');
+      const todoHTML=ejsHTML+(finHTML?'<div style="font-size:10px;font-weight:800;color:var(--orange-text);text-transform:uppercase;letter-spacing:.06em;margin:.4rem 0 .2rem">Finishers</div>'+finHTML:'');
       // Dia Boyle y semana — ST.diaBoyle[diaNum] puede ser objeto {b,sem} o string legacy
       var dBraw=ST.diaBoyle&&ST.diaBoyle[diaNum]!=null?ST.diaBoyle[diaNum]:(CICLO[(parseInt(diaNum)-1)%12]||{});
       var dBkey=typeof dBraw==='object'?(dBraw.b||''):dBraw;
@@ -5625,10 +5649,10 @@ function calSelDia(fecha){
       var semBoyle=dBsem?'S'+dBsem:'';
       var badgesBoyle=(nomBoyle?'<span style="color:var(--blue-text);background:var(--blue-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+nomBoyle+'</span>':'')+
         (semBoyle?' <span style="color:var(--orange-text);background:var(--orange-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+semBoyle+'</span>':'');
-      if(ejsHTML) htmlE=`<div>
+      if(todoHTML) htmlE=`<div>
         <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${badgesBoyle?' · '+badgesBoyle:''}</div>
         ${statsHtml}
-        ${ejsHTML}
+        ${todoHTML}
       </div>`;
     }
   }
@@ -5652,24 +5676,54 @@ function calSelDia(fecha){
     // Ejercicios de historialFechas
     var ejsHtml='';
     if(histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){
+      var ejsNorm=histSes.ejerciciosRealizados.filter(function(e){return !e.finisher;});
+      var ejsFin=histSes.ejerciciosRealizados.filter(function(e){return e.finisher;});
+      function renderHistEj(e){
+        var setsStr=(e.sets||[]).map(function(s,i){
+          var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+          var notaStr=s.n?' <em style="color:var(--text3);font-size:10px">('+s.n+')</em>':'';
+          return 'S'+(i+1)+': '+s.p+'kg×'+val+' R'+(s.rpe||'—')+notaStr;
+        }).join(' · ');
+        var nombre=e.ej.replace(/^🔥 /,'');
+        return '<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+nombre+'</span>'+(setsStr?' — '+setsStr:'')+'</div>';
+      }
       ejsHtml='<div style="margin-top:6px">';
-      histSes.ejerciciosRealizados.forEach(function(e){
-        var setsStr=(e.sets||[]).map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
-        ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+e.ej+'</span>'+(setsStr?' — '+setsStr:'')+'</div>';
-      });
+      ejsNorm.forEach(function(e){ ejsHtml+=renderHistEj(e); });
+      if(ejsFin.length){
+        ejsHtml+='<div style="font-size:10px;font-weight:800;color:var(--orange-text);text-transform:uppercase;letter-spacing:.06em;margin:.35rem 0 .15rem">🔥 Finishers</div>';
+        ejsFin.forEach(function(e){ ejsHtml+=renderHistEj(e); });
+      }
       ejsHtml+='</div>';
     } else if(diaNum){
       // Fallback: usar sets de ST.sets si historial no tiene ejercicios
-      var sesKeys2=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
+      var sesKeys2=Object.keys(ST.sets||{}).filter(function(k){return k.startsWith('d'+diaNum+'_');});
       if(sesKeys2.length){
+        var sesKeys2Ej=sesKeys2.filter(function(k){return !k.includes('_fin_');});
+        var sesKeys2Fin=sesKeys2.filter(function(k){return k.includes('_fin_');});
         ejsHtml='<div style="margin-top:6px">';
-        sesKeys2.forEach(function(k){
+        sesKeys2Ej.forEach(function(k){
           var ej=k.replace(/^d\d+_/,'');
           var sets=(ST.sets[k]||[]).filter(Boolean);
           if(!sets.length) return;
-          var setsStr=sets.map(function(s,i){return 'S'+(i+1)+': '+s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
+          var setsStr=sets.map(function(s,i){
+            var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+            return 'S'+(i+1)+': '+s.p+'kg×'+val+' R'+(s.rpe||'—');
+          }).join(' · ');
           ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+ej+'</span> — '+setsStr+'</div>';
         });
+        if(sesKeys2Fin.length){
+          ejsHtml+='<div style="font-size:10px;font-weight:800;color:var(--orange-text);text-transform:uppercase;letter-spacing:.06em;margin:.35rem 0 .15rem">🔥 Finishers</div>';
+          sesKeys2Fin.forEach(function(k){
+            var ej=k.replace(/^d\d+_fin_/,'').replace(/_/g,' ');
+            var sets=(ST.sets[k]||[]).filter(Boolean);
+            if(!sets.length) return;
+            var setsStr=sets.map(function(s,i){
+              var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+              return 'S'+(i+1)+': '+s.p+'kg×'+val+' R'+(s.rpe||'—');
+            }).join(' · ');
+            ejsHtml+='<div style="font-size:11px;padding:3px 0;border-bottom:.5px solid var(--border);color:var(--text2)"><span style="font-weight:600;color:var(--text)">'+ej+'</span> — '+setsStr+'</div>';
+          });
+        }
         ejsHtml+='</div>';
       }
     }

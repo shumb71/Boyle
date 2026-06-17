@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v105</title>
+<title>Entreno Boyle v106</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -172,6 +172,11 @@ function aplicarRemoto(parsed){
       if(k==='historialFechas'){
         var lComp=l&&l.completado;
         var rComp=r&&r.completado;
+        // NUNCA sobreescribir entrada confirmada local
+        if(l&&l.confirmado){
+          merged[clave]=l;
+          return;
+        }
         // Remoto quiere vaciar/eliminar una sesión completa local → conflicto
         if(lComp && !rComp){
           conflictos.push({fecha:clave,local:l,remoto:r});
@@ -225,7 +230,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v105"
+      version: "v106"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -1011,6 +1016,27 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </label>
     </div>
     <div class="br2"><button class="bcan" onclick="document.getElementById('mo-set').classList.remove('open')">Cancelar</button><button class="bsav" onclick="guardar()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL CONFLICTOS SYNC -->
+<div class="mo" id="mo-add-finisher" onclick="closeMo(event,'mo-add-finisher')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">➕ Añadir finisher</div>
+    <div class="ig"><label>Nombre</label><input type="text" id="mo-fin-nombre" placeholder="Ej: Trineo ligero 4×20m"></div>
+    <div class="ig"><label>Descripción (opcional)</label><input type="text" id="mo-fin-desc" placeholder="Series, distancia, descanso…"></div>
+    <div class="ig">
+      <label>Tipo</label>
+      <select id="mo-fin-tipo" style="width:100%;padding:10px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:15px;background:var(--bg);color:var(--text);outline:none">
+        <option value="metabolico">Metabólico / Acondicionamiento</option>
+        <option value="potencia">Potencia / Velocidad</option>
+      </select>
+    </div>
+    <div class="br2">
+      <button class="bcan" onclick="document.getElementById('mo-add-finisher').classList.remove('open')">Cancelar</button>
+      <button class="bsav" onclick="confirmarAddFinisherCustom()">Añadir</button>
+    </div>
   </div>
 </div>
 
@@ -4042,7 +4068,6 @@ function mostrarResumenSesion(sesionData){
 function finalizarSesion(){
   var dB=getDiaBoyle();
   if(!dB){alert('Día de descanso — no hay sesión que registrar.');return;}
-  // Validar que hay sets con peso real registrados
   var tieneSetReal=Object.keys(ST.sets||{}).some(function(k){
     if(!k.startsWith('d'+ST.dia+'_')) return false;
     return (ST.sets[k]||[]).some(function(s){return s&&(s.p>0||s.r>0);});
@@ -4051,26 +4076,29 @@ function finalizarSesion(){
     if(!confirm('No hay ejercicios registrados para hoy. ¿Quieres registrar la sesión igualmente?')) return;
   }
   var hoy=hoyLocal();
+  // Comprobar si ya existe sesión confirmada
+  var existing=ST.historialFechas&&ST.historialFechas[hoy];
+  if(existing&&existing.completado&&existing.confirmado){
+    if(!confirm('Ya hay una sesión confirmada para hoy ('+existing.fase+' '+existing.diaBoyleReal+'). ¿Sobreescribir?')) return;
+  }
   var fase=getFaseActual(ST.sem);
   var semEnFase=getSemEnFase(ST.sem);
-  // Detectar si hubo variación (dia Boyle diferente al asignado por ciclo)
   var dBProg=CICLO[(ST.dia-1)%12].b;
   var variacion=!!(ST.diaBoyle&&ST.diaBoyle[ST.dia]&&ST.diaBoyle[ST.dia]!==dBProg);
-  // Detectar si hay ejercicios sustituidos respecto al programa base
   var ejsBase=EJS_FASES[fase][dB]||[];
   var ejsReales=getEjs(dB);
   var ejsSustituidos=ejsReales.filter(function(e){return ejsBase.indexOf(e)<0;});
   if(ejsSustituidos.length) variacion=true;
-  // Recoger ejercicios realizados con pesos
   var ejsRealizados=[];
   Object.keys(ST.sets||{}).forEach(function(k){
     if(!k.startsWith('d'+ST.dia+'_')) return;
-    var ej=k.replace(/^d\d+_/,'');
+    var esFinisher=k.indexOf('d'+ST.dia+'_fin_')===0;
+    var ej=esFinisher?'🔥 '+k.replace(/^d\d+_fin_/,'').replace(/_/g,' '):k.replace(/^d\d+_/,'');
     var sets=(ST.sets[k]||[]).filter(Boolean);
-    if(sets.length) ejsRealizados.push({ej:ej,sets:sets});
+    if(sets.length) ejsRealizados.push({ej:ej,sets:sets,finisher:esFinisher});
   });
-  // Guardar en historialFechas
   if(!ST.historialFechas) ST.historialFechas={};
+  var lockTs=Date.now();
   ST.historialFechas[hoy]={
     diaCiclo:ST.dia,
     fase:fase,
@@ -4082,22 +4110,21 @@ function finalizarSesion(){
     ejsSustituidos:ejsSustituidos,
     ejerciciosRealizados:ejsRealizados,
     completado:true,
+    confirmado:true,
+    lockTimestamp:lockTs,
     manual:true,
     nota:(ST.notaDia&&ST.notaDia[hoy])||'',
-    timestamp:Date.now(),
+    timestamp:lockTs,
   };
-  // fechaSesiones: clave=fecha, valor=día ciclo
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   ST.fechaSesiones[hoy]=ST.dia;
   save();
   renderFinalizarStatus();
   exportarExcelDrive(true);
   appendSesionToSheets(ST.historialFechas[hoy]);
-  // Mostrar resumen de sesión
   var elapsed=ST.timerInicio?Date.now()-ST.timerInicio:0;
   ST.historialFechas[hoy].duracion_min=elapsed>0?Math.round(elapsed/60000):null;
   mostrarResumenSesion(ST.historialFechas[hoy]);
-  // Re-render calendario si está activo
   if(document.getElementById('s-cal').classList.contains('active')) renders.cal();
 }
 
@@ -4194,6 +4221,7 @@ function renderAvisoSalto(dB){
 }
 
 function renderFaseBanner(){
+  var fase=getFaseActual(ST.sem);
   var semEnFase=getSemEnFase(ST.sem);
   // Nombres y datos EXACTOS del Excel boyle24.xlsx
   var faseNoms={
@@ -5034,36 +5062,128 @@ function renderPlyoBody(){
   body.innerHTML=nota+items;
 }
 
+function _finKey(nombre){
+  return 'd'+ST.dia+'_fin_'+nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑüÜ]/g,'');
+}
+
+function abrirSetFinisher(nombre){
+  var key=_finKey(nombre);
+  var sets=(ST.sets[key]||[]).filter(Boolean);
+  var serie=sets.length;
+  mEj='__fin__'+nombre;
+  mSer=serie;
+  var tipoEj=EJ_TIPO_SET[nombre]||'distancia';
+  setTipoSet(tipoEj);
+  document.getElementById('mo-title').textContent='🔥 '+nombre+' — Serie '+(serie+1);
+  document.getElementById('m-p').value='';
+  document.getElementById('m-r').value=10;
+  document.getElementById('m-t').value='';
+  document.getElementById('m-d').value='';
+  document.getElementById('m-rpe').value=7;
+  document.getElementById('m-n').value='';
+  document.getElementById('mo-ultima').style.display='none';
+  var chk=document.getElementById('m-all');
+  chk.checked=false;
+  document.getElementById('tog-track').style.background='var(--bg3)';
+  document.getElementById('tog-thumb').style.transform='translateX(0)';
+  document.getElementById('mo-set').classList.add('open');
+  setTimeout(function(){document.getElementById('m-p').focus();},150);
+}
+
+function abrirAddFinisherCustom(){
+  document.getElementById('mo-fin-nombre').value='';
+  document.getElementById('mo-fin-desc').value='';
+  document.getElementById('mo-fin-tipo').value='metabolico';
+  document.getElementById('mo-add-finisher').classList.add('open');
+  setTimeout(function(){document.getElementById('mo-fin-nombre').focus();},200);
+}
+
+function confirmarAddFinisherCustom(){
+  var nombre=document.getElementById('mo-fin-nombre').value.trim();
+  if(!nombre){alert('Escribe el nombre del finisher');return;}
+  var desc=document.getElementById('mo-fin-desc').value.trim()||'Finisher personalizado.';
+  var tipo=document.getElementById('mo-fin-tipo').value||'metabolico';
+  var dB=getDiaBoyle();
+  if(!dB){alert('No hay día de entreno activo');return;}
+  if(!ST.finishersCustom) ST.finishersCustom={};
+  if(!ST.finishersCustom[dB]) ST.finishersCustom[dB]=[];
+  ST.finishersCustom[dB].push({n:nombre,d:desc,tipo:tipo,_custom:true});
+  save();
+  document.getElementById('mo-add-finisher').classList.remove('open');
+  renderFinisherBody();
+}
+
+function eliminarFinisherCustom(dB, nombre){
+  if(!ST.finishersCustom||!ST.finishersCustom[dB]) return;
+  ST.finishersCustom[dB]=ST.finishersCustom[dB].filter(function(f){return f.n!==nombre;});
+  save();
+  renderFinisherBody();
+}
+
 function renderFinisherBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("finisher-body");
   if(!body) return;
-  var finishers=FINISHERS[dB];
-  if(!finishers||!finishers.length){
-    body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay finishers definidos para este día.</div>";
-    return;
-  }
+  var base=FINISHERS[dB]||[];
+  var custom=(ST.finishersCustom&&ST.finishersCustom[dB])||[];
+  var finishers=base.concat(custom);
   var sv=semaforo(ST.sliders.d,ST.sliders.f);
   var esFatiga=sv.cls==='sem-r';
   var rec="<div style=\"font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem\">"
     +(esFatiga?"⚠️ Fatiga alta — elige finisher metabólico (KB Swing, Farmer Walk). Evita trineo pesado.":"💡 Elige un finisher según el tiempo y equipo disponible.")
     +"</div>";
-  // Separar por tipo
+
+  function renderFinisher(f, isCustom){
+    var key=_finKey(f.n);
+    var sets=(ST.sets[key]||[]).filter(Boolean);
+    var completado=sets.length>0;
+    var fnSafe=f.n.replace(/'/g,"\\'");
+    var checkHtml='<div style="width:26px;height:26px;border-radius:50%;border:.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:'+(completado?'var(--green-bg)':'var(--bg3)')+';border-color:'+(completado?'rgba(99,153,34,.35)':'var(--border2)')+'">'+
+      (completado?'<span style="font-size:14px">✓</span>':'')+'</div>';
+    var setsHtml='';
+    if(sets.length){
+      setsHtml='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">';
+      sets.forEach(function(s,i){
+        var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+        setsHtml+='<span style="font-size:11px;background:var(--green-bg);color:var(--green-text);border-radius:10px;padding:2px 8px">S'+(i+1)+': '+s.p+'kg×'+val+'</span>';
+      });
+      setsHtml+='</div>';
+    }
+    var delBtn=isCustom?'<button onclick="eliminarFinisherCustom(\''+dB+'\',\''+fnSafe+'\')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:3px 8px;font-size:11px;cursor:pointer;margin-left:4px">✕</button>':'';
+    return "<div style=\"padding:.55rem 0;border-bottom:.5px solid var(--border)\">"
+      +"<div style=\"display:flex;align-items:flex-start;gap:8px\">"
+      +checkHtml
+      +"<div style=\"flex:1\">"
+      +"<div style=\"font-size:13px;font-weight:700;color:var(--text)\">"+f.n+"</div>"
+      +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+f.d+"</div>"
+      +setsHtml
+      +"</div>"
+      +"<div style=\"display:flex;gap:4px;flex-shrink:0;align-items:flex-start;margin-top:2px\">"
+      +"<button onclick=\"abrirSetFinisher('"+fnSafe+"')\" style=\"border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer\">＋ Set</button>"
+      +delBtn
+      +"</div>"
+      +"</div>"
+      +"</div>";
+  }
+
   var potencia=finishers.filter(function(f){return f.tipo==="potencia";});
   var metabolico=finishers.filter(function(f){return f.tipo==="metabolico";});
+
   function renderGrupo(lista,titulo,color){
     if(!lista.length) return "";
     return "<div style=\"font-size:10px;font-weight:800;color:"+color+";text-transform:uppercase;letter-spacing:.06em;margin:.5rem 0 .25rem\">"+titulo+"</div>"
-      +lista.map(function(f){
-        return "<div style=\"padding:.5rem 0;border-bottom:.5px solid var(--border)\">"
-          +"<div style=\"font-size:13px;font-weight:700;color:var(--text)\">"+f.n+"</div>"
-          +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+f.d+"</div>"
-          +"</div>";
-      }).join("");
+      +lista.map(function(f){ return renderFinisher(f, !!f._custom); }).join("");
   }
-  body.innerHTML=rec
-    +renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")
-    +renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)");
+
+  var addBtn="<div style=\"margin-top:.75rem\">"
+    +"<button onclick=\"abrirAddFinisherCustom()\" style=\"width:100%;padding:9px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer\">＋ Añadir finisher personalizado</button>"
+    +"</div>";
+
+  var contenido = finishers.length
+    ? renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")+renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)")
+    : "<div style=\"color:var(--text3);font-size:13px;padding:.3rem 0\">No hay finishers para este día.</div>";
+
+  body.innerHTML=rec+contenido+addBtn;
 }
 
 
@@ -5165,7 +5285,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v105';
+const APP_VERSION='v106';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5826,15 +5946,29 @@ renders.cal=function(){
     const esHoy=fecha===hoyKey;
     const esSel=fecha===calDiaSeleccionado;
     const histSes=ST.historialFechas&&ST.historialFechas[fecha];
-    // Indicadores
+    // Indicadores del día
     let dots='';
-    if(g){
+    // Senderismo/hiking Garmin → punto verde
+    var tieneHiking=g&&g.actividades&&g.actividades.some(function(a){
+      var t=(a.tipo||a.type||'').toLowerCase();
+      return t.indexOf('hik')>=0||t.indexOf('trail')>=0||t.indexOf('senderismo')>=0||t.indexOf('walk')>=0||t.indexOf('camina')>=0;
+    });
+    // Garmin genérico (no hiking) → punto azul
+    var tieneGarmin=g&&!tieneHiking;
+    if(tieneHiking){
+      dots+=`<div style="width:7px;height:7px;border-radius:50%;background:var(--green);margin:0 1px" title="Senderismo"></div>`;
+    } else if(tieneGarmin){
       dots+=`<div style="width:5px;height:5px;border-radius:50%;background:var(--blue);margin:0 1px"></div>`;
-      if(g.fuerza) dots+=`<div style="width:5px;height:5px;border-radius:50%;background:var(--green);margin:0 1px"></div>`;
     }
+    // Sesión de fuerza confirmada → badge F1S1D1
     if(histSes&&histSes.completado){
-      var dotColor=histSes.variacion?'var(--orange)':'var(--green)';
-      dots+=`<div style="width:6px;height:6px;border-radius:50%;background:${dotColor};margin:0 1px"></div>`;
+      var fase2=histSes.fase&&histSes.fase!=='undefined'&&histSes.fase!=='Anterior'?histSes.fase:'';
+      var sem2=histSes.semana&&histSes.semana!=='-'?'S'+histSes.semana:'';
+      var dB2=histSes.diaBoyleReal&&histSes.diaBoyleReal!=='Descanso'?histSes.diaBoyleReal:'';
+      var badge=fase2&&sem2&&dB2?(fase2+sem2+dB2):dB2||'✓';
+      var badgeColor=histSes.confirmado?'var(--green)':histSes.variacion?'var(--orange)':'var(--blue)';
+      var badgeBg=histSes.confirmado?'var(--green-bg)':histSes.variacion?'var(--orange-bg)':'var(--blue-bg)';
+      dots+=`<div style="font-size:8px;font-weight:700;color:${badgeColor};background:${badgeBg};border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">${badge}</div>`;
     }
     // Color fondo
     let bg=esHoy?'var(--bg3)':'var(--bg2)';

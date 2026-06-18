@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v108</title>
+<title>Entreno Boyle v109</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -230,7 +230,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v108"
+      version: "v109"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -885,6 +885,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="card">
       <div class="card-lbl">Datos</div>
       <button class="bkbtn bkexp" onclick="exportar()"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar a Excel (.xlsx)</button>
+      <button class="bkbtn" style="margin-top:.5rem;background:var(--green-bg);color:var(--green-text);border:.5px solid rgba(99,153,34,.3)" onclick="exportarJSON()"><i class="ti ti-download" aria-hidden="true"></i> Backup completo (JSON)</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:.4rem">El JSON incluye todos tus datos — úsalo como copia de seguridad.</div>
     </div>
     <div class="card">
       <div class="card-lbl">Ciclo de turnos</div>
@@ -2796,7 +2798,7 @@ function renderEditarSesion(){
         +'<option value="distancia"'+(tipo==='distancia'?' selected':'')+'>m</option>'
         +'</select>'
         +'<input type="number" value="'+(s.rpe||7)+'" placeholder="RPE" data-ei="'+ei+'" data-si="'+si+'" data-field="rpe" style="width:42px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center" inputmode="numeric">'
-        +'<input type="text" value="'+(s.n||'')+'" placeholder="nota" data-ei="'+ei+'" data-si="'+si+'" data-field="n" style="flex:1;min-width:60px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:11px">'
+        +'<textarea data-ei="'+ei+'" data-si="'+si+'" data-field="n" placeholder="nota" rows="1" style="flex:1;min-width:60px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:11px;resize:vertical;font-family:inherit">'+((s.n||'').replace(/</g,'&lt;'))+'</textarea>'
         +'<button onclick="editEliminarSet('+ei+','+si+')" style="border:none;background:transparent;color:var(--red-text);font-size:14px;cursor:pointer;padding:2px 4px">✕</button>'
         +'</div>';
     });
@@ -2852,7 +2854,7 @@ function guardarEdicionSesion(){
   ses.diaBoyleReal=dB;
   // Recoger todos los inputs
   var contenido=document.getElementById('mo-editar-contenido');
-  var allInputs=contenido.querySelectorAll('input[data-field],select[data-field]');
+  var allInputs=contenido.querySelectorAll('input[data-field],select[data-field],textarea[data-field]');
   allInputs.forEach(function(inp){
     var ei=parseInt(inp.dataset.ei);
     var si=parseInt(inp.dataset.si);
@@ -5386,16 +5388,20 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v108';
+const APP_VERSION='v109';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
-  const data=JSON.stringify(ST,null,2);
-  const blob=new Blob([data],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;
-  a.download='entreno_jose_backup_'+hoyLocal()+'.json';
-  a.click();URL.revokeObjectURL(url);
+  var datos=JSON.stringify(ST, null, 2);
+  var blob=new Blob([datos],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='entreno_boyle_backup_'+hoyLocal()+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  var ok=document.getElementById('backup-ok');
+  if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},3000);}
 }
 
 function exportar(){
@@ -5404,58 +5410,109 @@ function exportar(){
   const fecha=hoyLocal();
   function hdr(v){return{v,t:'s',s:{font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'185FA5'}},alignment:{horizontal:'center'}}};}
   function cel(v,bold){return{v:v??'',t:typeof v==='number'?'n':'s',s:{font:{bold:!!bold}}};}
-  // Series
-  const sRows=[[hdr('Dia'),hdr('Sesion'),hdr('Ejercicio'),hdr('Serie'),hdr('Peso kg'),hdr('Reps'),hdr('Volumen'),hdr('RPE'),hdr('Nota')]];
-  Object.entries(ST.sets).sort((a,b)=>parseInt(a[0].replace('d',''))-parseInt(b[0].replace('d',''))).forEach(([key,sets])=>{
-    const dia=key.split('_')[0].replace('d','');
-    const ej=key.split('_').slice(1).join(' ');
-    const ci=CICLO[(parseInt(dia)-1)%12]||{};
-    const sesNom=SES_NOM[ci.s]||ci.s||'—';
-    (sets||[]).forEach((s,i)=>{if(!s)return;sRows.push([cel('D'+dia),cel(sesNom),cel(ej,true),cel('S'+(i+1)),{v:s.p,t:'n'},{v:s.r,t:'n'},{v:Math.round(s.p*s.r),t:'n'},{v:s.rpe,t:'n'},cel(s.n||'')]);});
+
+  // Función para parsear clave con o sin prefijo de programa
+  function parseKey(key){
+    // Formato nuevo: p20260612_d5_Ejercicio
+    var mNew=key.match(/^p(\d{8})_d(\d+)_(.+)$/);
+    if(mNew) return {programa:mNew[1].replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'), dia:parseInt(mNew[2]), ej:mNew[3]};
+    // Formato legacy: d5_Ejercicio
+    var mLeg=key.match(/^d(\d+)_(.+)$/);
+    if(mLeg) return {programa:'anterior', dia:parseInt(mLeg[1]), ej:mLeg[2]};
+    return null;
+  }
+
+  // Construir mapa fecha→diaCiclo desde historialFechas
+  var fechaMap={};
+  Object.keys(ST.historialFechas||{}).forEach(function(f){
+    var ses=ST.historialFechas[f];
+    if(ses&&ses.diaCiclo) fechaMap[ses.diaCiclo]=fechaMap[ses.diaCiclo]||f;
   });
-  if(sRows.length===1)sRows.push([cel('Sin datos aun'),'','','','','','','','']);
-  const wsSets=XLSX.utils.aoa_to_sheet(sRows);wsSets['!cols']=[{wch:6},{wch:20},{wch:24},{wch:7},{wch:10},{wch:7},{wch:10},{wch:7},{wch:20}];
+  // También desde fechaSesiones
+  Object.keys(ST.fechaSesiones||{}).forEach(function(f){
+    var dc=ST.fechaSesiones[f];
+    if(!fechaMap[dc]) fechaMap[dc]=f;
+  });
+
+  // Hoja 1 — Series registradas
+  const sRows=[[hdr('Fecha'),hdr('Programa'),hdr('Día Ciclo'),hdr('Día Boyle'),hdr('Fase'),hdr('Semana'),hdr('Ejercicio'),hdr('Serie'),hdr('Peso kg'),hdr('Reps/Tiempo/Dist'),hdr('Tipo'),hdr('RPE'),hdr('Nota')]];
+  Object.entries(ST.sets).sort(function(a,b){
+    var pa=parseKey(a[0]), pb=parseKey(b[0]);
+    if(!pa||!pb) return 0;
+    return pa.dia-pb.dia;
+  }).forEach(function([key,sets]){
+    var info=parseKey(key);
+    if(!info) return;
+    var fechaSes=fechaMap[info.dia]||'—';
+    var histSes=ST.historialFechas[fechaSes]||{};
+    var dB=histSes.diaBoyleReal||CICLO[(info.dia-1)%12]&&CICLO[(info.dia-1)%12].b||'—';
+    var fase=histSes.fase||'—';
+    var sem=histSes.semana||'—';
+    (sets||[]).forEach(function(s,i){
+      if(!s) return;
+      var tipo=s.tipo||'reps';
+      var val=tipo==='tiempo'?(s.t||0):tipo==='distancia'?(s.dist||0):(s.r||0);
+      var vol=tipo==='reps'?Math.round(s.p*s.r):0;
+      sRows.push([cel(fechaSes),cel(info.programa),cel(info.dia),cel(dB),cel(fase),cel(sem),cel(info.ej,true),cel('S'+(i+1)),{v:s.p,t:'n'},{v:val,t:'n'},cel(tipo),{v:s.rpe,t:'n'},cel(s.n||'')]);
+    });
+  });
+  if(sRows.length===1) sRows.push([cel('Sin datos aun'),'','','','','','','','','','','','']);
+  const wsSets=XLSX.utils.aoa_to_sheet(sRows);
+  wsSets['!cols']=[{wch:12},{wch:12},{wch:10},{wch:10},{wch:8},{wch:8},{wch:28},{wch:7},{wch:10},{wch:12},{wch:10},{wch:7},{wch:24}];
   XLSX.utils.book_append_sheet(wb,wsSets,'Series registradas');
-  // Progresion ejercicios
+
+  // Hoja 2 — Progresión por ejercicio
   const ejMap={};
-  Object.entries(ST.sets).forEach(([key,sets])=>{
-    const ej=key.split('_').slice(1).join(' ');
-    if(!ejMap[ej])ejMap[ej]={dias:0,mejorPeso:0,mejorVol:0,ultimo:null};
+  Object.entries(ST.sets).forEach(function([key,sets]){
+    var info=parseKey(key);
+    if(!info) return;
+    var ej=info.ej;
+    if(!ejMap[ej]) ejMap[ej]={dias:0,mejorPeso:0,mejorVol:0,ultimo:null,programa:info.programa};
     ejMap[ej].dias++;
-    (sets||[]).forEach(s=>{if(!s)return;if(s.p>ejMap[ej].mejorPeso)ejMap[ej].mejorPeso=s.p;if(s.p*s.r>ejMap[ej].mejorVol)ejMap[ej].mejorVol=s.p*s.r;ejMap[ej].ultimo=s;});
+    (sets||[]).forEach(function(s){
+      if(!s) return;
+      if(s.p>ejMap[ej].mejorPeso) ejMap[ej].mejorPeso=s.p;
+      var v=s.tipo==='reps'||!s.tipo?s.p*s.r:0;
+      if(v>ejMap[ej].mejorVol) ejMap[ej].mejorVol=v;
+      ejMap[ej].ultimo=s;
+    });
   });
-  const pRows=[[hdr('Ejercicio'),hdr('Dias'),hdr('Mejor peso kg'),hdr('Mejor volumen'),hdr('Ultimo peso'),hdr('Ultimas reps'),hdr('Ultimo RPE')]];
-  Object.entries(ejMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([ej,d])=>{
-    pRows.push([cel(ej,true),{v:d.dias,t:'n'},{v:d.mejorPeso,t:'n'},{v:Math.round(d.mejorVol),t:'n'},{v:d.ultimo?d.ultimo.p:0,t:'n'},{v:d.ultimo?d.ultimo.r:0,t:'n'},{v:d.ultimo?d.ultimo.rpe:0,t:'n'}]);
+  const pRows=[[hdr('Ejercicio'),hdr('Programa'),hdr('Sesiones'),hdr('Mejor peso kg'),hdr('Mejor volumen'),hdr('Último peso'),hdr('Últimas reps'),hdr('Último RPE')]];
+  Object.entries(ejMap).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function([ej,d]){
+    var ul=d.ultimo||{};
+    pRows.push([cel(ej,true),cel(d.programa),{v:d.dias,t:'n'},{v:d.mejorPeso,t:'n'},{v:Math.round(d.mejorVol),t:'n'},{v:ul.p||0,t:'n'},{v:ul.r||ul.t||ul.dist||0,t:'n'},{v:ul.rpe||0,t:'n'}]);
   });
-  if(pRows.length===1)pRows.push([cel('Sin datos'),'','','','','','']);
-  const wsProg=XLSX.utils.aoa_to_sheet(pRows);wsProg['!cols']=[{wch:26},{wch:8},{wch:14},{wch:14},{wch:12},{wch:12},{wch:12}];
+  if(pRows.length===1) pRows.push([cel('Sin datos'),'','','','','','','']);
+  const wsProg=XLSX.utils.aoa_to_sheet(pRows);
+  wsProg['!cols']=[{wch:28},{wch:12},{wch:10},{wch:14},{wch:14},{wch:12},{wch:12},{wch:12}];
   XLSX.utils.book_append_sheet(wb,wsProg,'Progresion ejercicios');
-  // Evaluaciones
-  const evRows=[[hdr('Fecha'),hdr('Puntuacion'),hdr('Porcentaje'),hdr('Notas')]];
-  (ST.eval||[]).forEach(ev=>{
-    const total=EVAL_TESTS.reduce((a,t)=>a+(ev.scores&&ev.scores[t.id]!==undefined?ev.scores[t.id]:0),0);
-    const max=EVAL_TESTS.length*3;
-    evRows.push([cel(ev.fecha),{v:total,t:'n'},{v:Math.round(total/max*100),t:'n'},cel(ev.notas||'')]);
+
+  // Hoja 3 — Historial sesiones
+  const hRows=[[hdr('Fecha'),hdr('Fase'),hdr('Semana'),hdr('Día Boyle'),hdr('Confirmada'),hdr('Variación'),hdr('Tonelaje kg'),hdr('Series'),hdr('Nota')]];
+  Object.keys(ST.historialFechas||{}).sort().forEach(function(f){
+    var ses=ST.historialFechas[f];
+    if(!ses||!ses.completado) return;
+    // Calcular tonelaje y series
+    var vol=0,serNum=0;
+    (ses.ejerciciosRealizados||[]).forEach(function(e){
+      (e.sets||[]).forEach(function(s){
+        serNum++;
+        if(s.tipo==='reps'||!s.tipo) vol+=((s.p||0)*(s.r||0));
+      });
+    });
+    hRows.push([cel(f),cel(ses.fase||'—'),cel(ses.semana||'—'),cel(ses.diaBoyleReal||'—'),cel(ses.confirmado?'Sí':'No'),cel(ses.variacion?'Sí':'No'),{v:Math.round(vol),t:'n'},{v:serNum,t:'n'},cel(ses.nota||'')]);
   });
-  if(evRows.length===1)evRows.push([cel('Sin evaluaciones'),'','','']);
-  const wsEv=XLSX.utils.aoa_to_sheet(evRows);wsEv['!cols']=[{wch:18},{wch:12},{wch:12},{wch:40}];
-  XLSX.utils.book_append_sheet(wb,wsEv,'Evaluaciones');
-  // Ciclo
-  const cRows=[[hdr('Dia'),hdr('Turno'),hdr('Hora'),hdr('Sesion'),hdr('Energia')]];
-  CICLO.forEach(c=>cRows.push([cel('Dia '+c.d),cel(tnom(c.t)),cel(c.h),cel(SES_NOM[c.s]||c.s),cel(c.e)]));
-  const wsCiclo=XLSX.utils.aoa_to_sheet(cRows);wsCiclo['!cols']=[{wch:8},{wch:18},{wch:16},{wch:24},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,wsCiclo,'Ciclo');
-  // Progresion 12 semanas
-  const prRows=[[hdr('Semana'),hdr('Series'),hdr('Reps'),hdr('Intensidad %'),hdr('Pausa'),hdr('Descarga')]];
-  PROG.forEach(p=>prRows.push([{v:p.s,t:'n'},{v:p.n,t:'n'},{v:p.r,t:'n'},{v:p.p,t:'n'},cel(p.pa),cel(p.d?'SI':'')]));
-  const wsPr=XLSX.utils.aoa_to_sheet(prRows);wsPr['!cols']=[{wch:10},{wch:8},{wch:8},{wch:14},{wch:14},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,wsPr,'Progresion 12 semanas');
+  if(hRows.length===1) hRows.push([cel('Sin sesiones'),'','','','','','','','']);
+  const wsHist=XLSX.utils.aoa_to_sheet(hRows);
+  wsHist['!cols']=[{wch:12},{wch:8},{wch:8},{wch:10},{wch:12},{wch:10},{wch:14},{wch:8},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,wsHist,'Historial sesiones');
+
+  // Exportar
   const wbOut=XLSX.write(wb,{bookType:'xlsx',type:'binary',cellStyles:true});
   function s2ab(s){const b=new ArrayBuffer(s.length);const v=new Uint8Array(b);for(let i=0;i<s.length;i++)v[i]=s.charCodeAt(i)&0xFF;return b;}
   const blob=new Blob([s2ab(wbOut)],{type:'application/octet-stream'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='entreno_jose_'+fecha+'.xlsx';a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download='entreno_boyle_'+fecha+'.xlsx';a.click();URL.revokeObjectURL(url);
 }
 
 function importarGarmin(input){

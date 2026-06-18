@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v106</title>
+<title>Entreno Boyle v108</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -230,7 +230,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v106"
+      version: "v108"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -1949,13 +1949,44 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
+
+// Prefijo de programa para claves de ST.sets
+function getProgramaPrefix(){
+  var pi=ST.programaInicio||'2026-06-12';
+  return 'p'+pi.replace(/-/g,'')+'_';
+}
+// Clave completa para un día+ejercicio
+function diaKey(dia,ej){
+  return getProgramaPrefix()+'d'+dia+'_'+ej;
+}
+// Prefijo para filtrar sets de un día concreto
+function diaDayPrefix(dia){
+  return getProgramaPrefix()+'d'+dia+'_';
+}
+// Compatibilidad: detectar si una clave es del formato legacy (sin prefijo p)
+function isLegacyKey(k){
+  return /^d\d+_/.test(k);
+}
+// Prefijo legacy para un día (para leer sets antiguos)
+function legacyDayPrefix(dia){
+  return 'd'+dia+'_';
+}
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';
+    // Migrar sets legacy al nuevo formato con prefijo de programa
+    (function(){
+      var prefix=getProgramaPrefix();
+      Object.keys(ST.sets||{}).filter(function(k){return /^d\d+_/.test(k);}).forEach(function(k){
+        var newKey=prefix+k;
+        if(!ST.sets[newKey]) ST.sets[newKey]=ST.sets[k];
+        delete ST.sets[k];
+      });
+    })();
     // Migrar fechaSesiones antiguo (dia→fecha) a nuevo (fecha→dia)
     if(ST.fechaSesiones){
       var fs=ST.fechaSesiones;var migrado=false;
@@ -2064,7 +2095,7 @@ function getUltimaSesion(ej){
   });
   if(!keys.length) return null;
   // Excluir el dia actual
-  const keysNoHoy=keys.filter(k=>!k.startsWith('d'+ST.dia+'_'));
+  const keysNoHoy=keys.filter(k=>!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia)));
   if(!keysNoHoy.length) return null;
   const sets=(ST.sets[keysNoHoy[0]]||[]).filter(Boolean);
   if(!sets.length) return null;
@@ -2359,8 +2390,8 @@ const renders={
         var ejsBloque=bloque.ejs;
         var ejsHtml=ejsBloque.map(function(ej){
           var ejR=ej.replace(/&#39;/g,"'");
-          var key='d'+ST.dia+'_'+ejR;
-          var ss=ST.sets[key]||[];
+          var key=diaDayPrefix(ST.dia)+ejR||ST.sets[legacyDayPrefix(ST.dia)+ejR]?diaDayPrefix(ST.dia)+ejR:legacyDayPrefix(ST.dia)+ejR;
+          var ss=ST.sets[key]||ST.sets[legacyDayPrefix(ST.dia)+ejR]||[];
           var info=EJ_INFO[ej]||{};
           var numSer,rpsLabel;
           var fase=getFaseActual(ST.sem);
@@ -2454,7 +2485,7 @@ const renders={
     calcularAlertaRecuperacion();
     // calentamiento en e-warmup-card
     const hist=document.getElementById('e-hist');
-    const all=Object.entries(ST.sets).filter(([k])=>!k.startsWith('d'+ST.dia+'_')).slice(-6).reverse();
+    const all=Object.entries(ST.sets).filter(([k])=>!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia))).slice(-6).reverse();
     hist.innerHTML=all.length?all.map(([k,v])=>{
       const nm=k.split('_').slice(1).join(' ');
       const last=v&&v.filter(Boolean).pop();
@@ -2718,36 +2749,89 @@ function abrirEditarSesion(fecha){
   _editarFecha = fecha;
   var ses = ST.historialFechas[fecha];
   if(!ses) return;
+  renderEditarSesion();
+  document.getElementById('mo-editar-sesion').classList.add('open');
+}
+
+function renderEditarSesion(){
+  var fecha=_editarFecha;
+  var ses=ST.historialFechas[fecha];
+  if(!ses) return;
   document.getElementById('mo-editar-fecha-lbl').textContent = fecha + ' — ' + (ses.fase||'') + ' · ' + (ses.diaBoyleReal||'—');
   var contenido = document.getElementById('mo-editar-contenido');
-  var html = '';
+  var ejs = ses.ejerciciosRealizados||[];
+  var html='';
+
   // Selector día Boyle
   html += '<div style="margin-bottom:.75rem">'
     +'<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Día Boyle</div>'
     +'<select id="edit-dia-boyle" style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px">'
     +['D1','D2','D3','D4','Descanso'].map(function(d){return '<option value="'+d+'"'+(ses.diaBoyleReal===d?' selected':'')+'>'+d+'</option>';}).join('')
     +'</select></div>';
-  // Ejercicios
-  var ejs = ses.ejerciciosRealizados||[];
+
   html += '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Ejercicios y series</div>';
   html += '<div id="edit-ejs-list">';
+
   ejs.forEach(function(e, ei){
-    html += '<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px" data-ei="'+ei+'">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">'+e.ej+'</div>';
+    var ejSafe=e.ej.replace(/'/g,"\\'");
+    html += '<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:8px">'
+      // Cabecera ejercicio
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+e.ej+'</span>'
+      +'<button onclick="editEliminarEj('+ei+')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:2px 8px;font-size:11px;cursor:pointer">✕ Quitar</button>'
+      +'</div>';
+
+    // Sets
     (e.sets||[]).forEach(function(s,si){
-      html += '<div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px;align-items:center;margin-bottom:4px">'
-        +'<span style="font-size:11px;color:var(--text3)">S'+(si+1)+'</span>'
-        +'<input type="number" value="'+s.p+'" placeholder="kg" data-ei="'+ei+'" data-si="'+si+'" data-field="p" style="padding:4px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">'
-        +'<input type="number" value="'+s.r+'" placeholder="reps" data-ei="'+ei+'" data-si="'+si+'" data-field="r" style="padding:4px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">'
-        +'<input type="number" value="'+s.rpe+'" placeholder="RPE" data-ei="'+ei+'" data-si="'+si+'" data-field="rpe" style="padding:4px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center">'
+      var tipo=s.tipo||'reps';
+      var valLabel=tipo==='tiempo'?'seg':tipo==='distancia'?'m':'reps';
+      var val=tipo==='tiempo'?(s.t||0):tipo==='distancia'?(s.dist||0):(s.r||0);
+      html += '<div style="display:flex;gap:5px;align-items:center;margin-bottom:5px;flex-wrap:wrap">'
+        +'<span style="font-size:11px;color:var(--text3);min-width:20px">S'+(si+1)+'</span>'
+        +'<input type="number" value="'+s.p+'" placeholder="kg" data-ei="'+ei+'" data-si="'+si+'" data-field="p" style="width:52px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center" inputmode="decimal">'
+        +'<input type="number" value="'+val+'" placeholder="'+valLabel+'" data-ei="'+ei+'" data-si="'+si+'" data-field="val" style="width:52px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center" inputmode="numeric">'
+        +'<select data-ei="'+ei+'" data-si="'+si+'" data-field="tipo" style="padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:11px">'
+        +'<option value="reps"'+(tipo==='reps'?' selected':'')+'>Reps</option>'
+        +'<option value="tiempo"'+(tipo==='tiempo'?' selected':'')+'>Seg</option>'
+        +'<option value="distancia"'+(tipo==='distancia'?' selected':'')+'>m</option>'
+        +'</select>'
+        +'<input type="number" value="'+(s.rpe||7)+'" placeholder="RPE" data-ei="'+ei+'" data-si="'+si+'" data-field="rpe" style="width:42px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;text-align:center" inputmode="numeric">'
+        +'<input type="text" value="'+(s.n||'')+'" placeholder="nota" data-ei="'+ei+'" data-si="'+si+'" data-field="n" style="flex:1;min-width:60px;padding:5px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:11px">'
+        +'<button onclick="editEliminarSet('+ei+','+si+')" style="border:none;background:transparent;color:var(--red-text);font-size:14px;cursor:pointer;padding:2px 4px">✕</button>'
         +'</div>';
     });
+
+    // Botón añadir set al ejercicio
+    html += '<button onclick="editAnadirSet('+ei+')" style="width:100%;padding:5px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:12px;cursor:pointer;margin-top:2px">＋ Añadir set</button>';
     html += '</div>';
   });
-  // Botón añadir ejercicio
-  html += '</div><button onclick="editAnadirEj()" style="width:100%;padding:8px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:4px">+ Añadir ejercicio</button>';
+
+  html += '</div>';
+  html += '<button onclick="editAnadirEj()" style="width:100%;padding:9px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:4px">＋ Añadir ejercicio</button>';
   contenido.innerHTML = html;
-  document.getElementById('mo-editar-sesion').classList.add('open');
+}
+
+function editEliminarSet(ei, si){
+  var ses=ST.historialFechas[_editarFecha];
+  if(!ses||!ses.ejerciciosRealizados[ei]) return;
+  ses.ejerciciosRealizados[ei].sets.splice(si,1);
+  renderEditarSesion();
+}
+
+function editEliminarEj(ei){
+  var ses=ST.historialFechas[_editarFecha];
+  if(!ses||!ses.ejerciciosRealizados) return;
+  if(!confirm('¿Eliminar "'+ses.ejerciciosRealizados[ei].ej+'" de esta sesión?')) return;
+  ses.ejerciciosRealizados.splice(ei,1);
+  renderEditarSesion();
+}
+
+function editAnadirSet(ei){
+  var ses=ST.historialFechas[_editarFecha];
+  if(!ses||!ses.ejerciciosRealizados[ei]) return;
+  var ultimoSet=ses.ejerciciosRealizados[ei].sets.slice(-1)[0]||{p:0,r:0,rpe:7,n:'',tipo:'reps'};
+  ses.ejerciciosRealizados[ei].sets.push(Object.assign({},ultimoSet,{n:''}));
+  renderEditarSesion();
 }
 
 function editAnadirEj(){
@@ -2755,8 +2839,8 @@ function editAnadirEj(){
   if(!nombre) return;
   var ses=ST.historialFechas[_editarFecha];
   if(!ses.ejerciciosRealizados) ses.ejerciciosRealizados=[];
-  ses.ejerciciosRealizados.push({ej:nombre,sets:[{p:0,r:0,rpe:7}]});
-  abrirEditarSesion(_editarFecha);
+  ses.ejerciciosRealizados.push({ej:nombre,sets:[{p:0,r:0,rpe:7,n:'',tipo:'reps'}]});
+  renderEditarSesion();
 }
 
 function guardarEdicionSesion(){
@@ -2766,26 +2850,43 @@ function guardarEdicionSesion(){
   // Guardar día Boyle
   var dB=document.getElementById('edit-dia-boyle').value;
   ses.diaBoyleReal=dB;
-  // Guardar sets de cada ejercicio
-  var inputs=document.querySelectorAll('#mo-editar-contenido input[data-field]');
-  inputs.forEach(function(inp){
+  // Recoger todos los inputs
+  var contenido=document.getElementById('mo-editar-contenido');
+  var allInputs=contenido.querySelectorAll('input[data-field],select[data-field]');
+  allInputs.forEach(function(inp){
     var ei=parseInt(inp.dataset.ei);
     var si=parseInt(inp.dataset.si);
     var field=inp.dataset.field;
-    if(ses.ejerciciosRealizados[ei]&&ses.ejerciciosRealizados[ei].sets[si]){
-      ses.ejerciciosRealizados[ei].sets[si][field]=parseFloat(inp.value)||0;
-      // También actualizar Firebase sets subcollection
-      var ej=ses.ejerciciosRealizados[ei].ej;
-      var docId=_editarFecha+'_d'+(ses.diaCiclo||0)+'_'+ej.replace(/[^a-zA-Z0-9]/g,'_')+'_s'+(si+1);
-      if(fbReady&&fbUser){
-        var update={};update[field]=parseFloat(inp.value)||0;
-        fbDb.collection('usuarios').doc(fbUser.uid).collection('sets').doc(docId).update(update).catch(function(){});
-      }
+    if(isNaN(ei)||isNaN(si)) return;
+    var ej=ses.ejerciciosRealizados[ei];
+    if(!ej||!ej.sets[si]) return;
+    if(field==='val'){
+      var tipo=ej.sets[si].tipo||'reps';
+      var v=parseFloat(inp.value)||0;
+      if(tipo==='reps') ej.sets[si].r=v;
+      else if(tipo==='tiempo') ej.sets[si].t=v;
+      else if(tipo==='distancia') ej.sets[si].dist=v;
+    } else if(field==='tipo'){
+      ej.sets[si].tipo=inp.value;
+    } else if(field==='p'||field==='rpe'){
+      ej.sets[si][field]=parseFloat(inp.value)||0;
+    } else if(field==='n'){
+      ej.sets[si].n=inp.value||'';
     }
   });
+  // Actualizar también ST.sets con prefijo correcto
+  var pi=ses.programaInicio||ST.programaInicio||'2026-06-12';
+  var prefix='p'+pi.replace(/-/g,'')+'_';
+  var dc=ses.diaCiclo||0;
+  ses.ejerciciosRealizados.forEach(function(e){
+    var key=prefix+'d'+dc+'_'+e.ej;
+    ST.sets[key]=e.sets;
+  });
+  ses.timestamp=Date.now();
+  ses.confirmado=true;
+  ses.lockTimestamp=Date.now();
   save();
   document.getElementById('mo-editar-sesion').classList.remove('open');
-  // Refrescar calendario
   if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
   var t=document.getElementById('fb-toast');
   if(t){t.textContent='✅ Sesión actualizada';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},2500);}
@@ -3009,8 +3110,8 @@ function openMo(ej,serie){
   mEj=(ej||'').replace(/&#39;/g,"'");
   mSer=serie;
   document.getElementById('mo-title').textContent=ej+' — Serie '+(serie+1);
-  const key='d'+ST.dia+'_'+ej;
-  const prev=(ST.sets[key]||[])[serie];
+  const key=diaDayPrefix(ST.dia)+ej;
+  const prev=(ST.sets[key]||ST.sets[legacyDayPrefix(ST.dia)+ej]||[])[serie];
   // Determinar tipo del ejercicio
   var tipoEj=EJ_TIPO_SET[ej]||'reps';
   setTipoSet(prev&&prev.tipo?prev.tipo:tipoEj);
@@ -3038,7 +3139,7 @@ function guardar(){
   var ejClean = (mEj||'').replace(/&#39;/g,"'").replace(/&amp;/g,'&').replace(/&quot;/g,'"');
   var esFinisher = ejClean.indexOf('__fin__')===0;
   var finNombre = esFinisher ? ejClean.replace('__fin__','') : null;
-  var key = esFinisher ? _finKey(finNombre) : 'd'+ST.dia+'_'+ejClean;
+  var key = esFinisher ? _finKey(finNombre) : diaKey(ST.dia,ejClean);
   if(!ST.sets[key])ST.sets[key]=[];
   var peso=parseFloat(document.getElementById('m-p').value)||0;
   var rpe=parseInt(document.getElementById('m-rpe').value)||7;
@@ -3088,7 +3189,7 @@ function autoRegistrarFecha(){
     if(!dB||dB==='Descanso') return; // solo dias de entreno
     // ¿hay al menos una serie con datos reales hoy (dia de ciclo actual)?
     var hayDatos=Object.keys(ST.sets||{}).some(function(k){
-      return k.indexOf('d'+ST.dia+'_')===0 && (ST.sets[k]||[]).some(function(s){return s&&(s.p>0||s.r>0);});
+      return (k.startsWith(diaDayPrefix(ST.dia))||k.startsWith(legacyDayPrefix(ST.dia))) && (ST.sets[k]||[]).some(function(s){return s&&(s.p>0||s.r>0);});
     });
     if(!hayDatos) return;
     var hoy=hoyLocal();
@@ -3102,8 +3203,8 @@ function autoRegistrarFecha(){
     if(ejsSustituidos.length) variacion=true;
     var ejsRealizados=[];
     Object.keys(ST.sets||{}).forEach(function(k){
-      if(k.indexOf('d'+ST.dia+'_')!==0) return;
-      var esFinisher=k.indexOf('d'+ST.dia+'_fin_')===0;
+      if(!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia))) return;
+      var esFinisher=k.indexOf(diaDayPrefix(ST.dia)+'fin_')===0||k.indexOf(legacyDayPrefix(ST.dia)+'fin_')===0;
       var ej=esFinisher?'🔥 '+k.replace(/^d\d+_fin_/,'').replace(/_/g,' '):k.replace(/^d\d+_/,'');
       var sets=(ST.sets[k]||[]).filter(Boolean);
       if(sets.length) ejsRealizados.push({ej:ej,sets:sets,finisher:esFinisher});
@@ -3178,11 +3279,11 @@ function recuperarEntrenosPasados(){
 }
 
 function toggleEjCheck(ej){
-  const key='d'+ST.dia+'_'+ej;
+  const key=diaDayPrefix(ST.dia)+ej;
   if(!ST.checksManual) ST.checksManual={};
-  const keyM='d'+ST.dia+'_'+ej;
+  const keyM=diaDayPrefix(ST.dia)+ej;
   // Si ya tiene datos reales, el check no se puede desmarcar manualmente (solo con datos)
-  const tieneDatos=(ST.sets[key]||[]).filter(Boolean).length>0;
+  const tieneDatos=(ST.sets[key]||ST.sets[legacyDayPrefix(ST.dia)+ej]||[]).filter(Boolean).length>0;
   if(tieneDatos) return; // ignorar click si hay datos reales
   ST.checksManual[keyM]=!ST.checksManual[keyM];
   save();
@@ -3191,8 +3292,8 @@ function toggleEjCheck(ej){
 
 function ejEstaHecho(ej){
   var ejC=(ej||'').replace(/&#39;/g,"'");
-  var key='d'+ST.dia+'_'+ejC;
-  var tieneDatos=(ST.sets[key]||[]).filter(Boolean).length>0;
+  var key=diaDayPrefix(ST.dia)+ejC;
+  var tieneDatos=(ST.sets[key]||ST.sets[legacyDayPrefix(ST.dia)+ejC]||[]).filter(Boolean).length>0;
   if(tieneDatos) return true;
   return !!(ST.checksManual&&ST.checksManual[key]);
 }
@@ -4069,7 +4170,7 @@ function finalizarSesion(){
   var dB=getDiaBoyle();
   if(!dB){alert('Día de descanso — no hay sesión que registrar.');return;}
   var tieneSetReal=Object.keys(ST.sets||{}).some(function(k){
-    if(!k.startsWith('d'+ST.dia+'_')) return false;
+    if(!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia))) return false;
     return (ST.sets[k]||[]).some(function(s){return s&&(s.p>0||s.r>0);});
   });
   if(!tieneSetReal){
@@ -4091,7 +4192,7 @@ function finalizarSesion(){
   if(ejsSustituidos.length) variacion=true;
   var ejsRealizados=[];
   Object.keys(ST.sets||{}).forEach(function(k){
-    if(!k.startsWith('d'+ST.dia+'_')) return;
+    if(!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia))) return;
     var esFinisher=k.indexOf('d'+ST.dia+'_fin_')===0;
     var ej=esFinisher?'🔥 '+k.replace(/^d\d+_fin_/,'').replace(/_/g,' '):k.replace(/^d\d+_/,'');
     var sets=(ST.sets[k]||[]).filter(Boolean);
@@ -5063,7 +5164,7 @@ function renderPlyoBody(){
 }
 
 function _finKey(nombre){
-  return 'd'+ST.dia+'_fin_'+nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑüÜ]/g,'');
+  return diaDayPrefix(ST.dia)+'fin_'+nombre.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_áéíóúÁÉÍÓÚñÑüÜ]/g,'');
 }
 
 function abrirSetFinisher(nombre){
@@ -5285,7 +5386,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v106';
+const APP_VERSION='v108';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5722,7 +5823,7 @@ function calSelDia(fecha){
   var diaNum=fechaSesiones[fecha]!=null?String(fechaSesiones[fecha]):null;
   if(!diaNum) diaNum=Object.keys(fechaSesiones).find(dd=>fechaSesiones[dd]===fecha);
   if(diaNum){
-    const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith('d'+diaNum+'_'));
+    const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith(getProgramaPrefix()+'d'+diaNum+'_')||k.startsWith('d'+diaNum+'_'));
     if(sesKeys.length){
       const sesKeysEj=sesKeys.filter(k=>!k.includes('_fin_'));
       const sesKeysFin=sesKeys.filter(k=>k.includes('_fin_'));
@@ -5816,7 +5917,7 @@ function calSelDia(fecha){
       ejsHtml+='</div>';
     } else if(diaNum){
       // Fallback: usar sets de ST.sets si historial no tiene ejercicios
-      var sesKeys2=Object.keys(ST.sets||{}).filter(function(k){return k.startsWith('d'+diaNum+'_');});
+      var sesKeys2=Object.keys(ST.sets||{}).filter(function(k){return k.startsWith(getProgramaPrefix()+'d'+diaNum+'_')||k.startsWith('d'+diaNum+'_');});
       if(sesKeys2.length){
         var sesKeys2Ej=sesKeys2.filter(function(k){return !k.includes('_fin_');});
         var sesKeys2Fin=sesKeys2.filter(function(k){return k.includes('_fin_');});
@@ -5851,7 +5952,7 @@ function calSelDia(fecha){
     // Calcular tonelaje para el bloque histSes
     var volHist=0, serHist=0;
     if(diaNum){
-      Object.keys(ST.sets||{}).filter(function(k){return k.startsWith('d'+diaNum+'_');}).forEach(function(k){
+      Object.keys(ST.sets||{}).filter(function(k){return k.startsWith(getProgramaPrefix()+'d'+diaNum+'_')||k.startsWith('d'+diaNum+'_');}).forEach(function(k){
         (ST.sets[k]||[]).filter(Boolean).forEach(function(s){
           if(s.tipo==='reps'||!s.tipo){ volHist+=(s.p||0)*(s.r||0); }
           serHist++;

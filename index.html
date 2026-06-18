@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v109</title>
+<title>Entreno Boyle v110</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -230,7 +230,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v109"
+      version: "v110"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -687,6 +687,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="c-list"></div>
     </div>
 
+    <!-- HISTORIAL DE PROGRAMACIÓN -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+        <div class="card-lbl" style="margin-bottom:0">Historial de programación</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="cb" onclick="histProgNav(-1)" id="btn-histprog-prev"><i class="ti ti-chevron-left"></i></button>
+          <div class="clbl" id="histprog-lbl" style="min-width:80px;text-align:center;font-size:11px">Ciclo actual</div>
+          <button class="cb" onclick="histProgNav(1)" id="btn-histprog-next" style="opacity:.3;pointer-events:none"><i class="ti ti-chevron-right"></i></button>
+        </div>
+      </div>
+      <div id="histprog-body"></div>
+    </div>
+
     <!-- PROGRESION SEMANA -->
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
@@ -698,7 +711,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         </div>
       </div>
       <div id="c-prog"></div>
-      <button onclick="recalcularTodoCiclo()" style="width:100%;margin-top:.75rem;padding:10px;border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🔄 Recalcular todo el ciclo</button>
     </div>
 
     <!-- FASES BOYLE -->
@@ -817,15 +829,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div style="color:var(--text2);font-size:14px">Importa JSONs de Garmin para ver tus datos en el calendario</div>
     </div>
     <!-- LEYENDA Y CUMPLIMIENTO -->
-    <div class="card" id="cal-cumplimiento">
-      <div class="card-lbl">📊 Cumplimiento del mes</div>
-      <div id="cal-cumpl-stats"></div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:.6rem">
-        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">Completada</span></div>
-        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:var(--orange)"></div><span style="font-size:11px;color:var(--text2)">Con variación</span></div>
-        <div style="display:flex;align-items:center;gap:4px"><div style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></div><span style="font-size:11px;color:var(--text2)">Garmin</span></div>
-      </div>
-    </div>
   </div>
 
   <!-- GARMIN -->
@@ -3434,6 +3437,7 @@ function renderCicloBoyle(){
   if(semlbl) semlbl.textContent='Sem '+ST.sem;
   var dialbl=document.getElementById('c-dialbl');
   if(dialbl) dialbl.textContent='Dia '+ST.dia;
+  try{renderHistProg();}catch(e){}
 }
 
 function abrirCambiarDia(){abrirCambiarDiaEnCiclo(ST.dia);}
@@ -3942,6 +3946,114 @@ document.addEventListener('visibilitychange',function(){
 // Auto-volcado cada 15 minutos
 setInterval(function(){ exportarExcelDrive(true); }, 15*60*1000);
 
+// HISTORIAL DE PROGRAMACIÓN
+var _histProgOffset=0; // 0=actual, -1=bloque anterior, -2=dos bloques antes...
+
+function histProgNav(dir){
+  _histProgOffset+=dir;
+  // No pasar del actual
+  if(_histProgOffset>0) _histProgOffset=0;
+  renderHistProg();
+}
+
+function renderHistProg(){
+  var body=document.getElementById('histprog-body');
+  var lbl=document.getElementById('histprog-lbl');
+  var btnPrev=document.getElementById('btn-histprog-prev');
+  var btnNext=document.getElementById('btn-histprog-next');
+  if(!body) return;
+
+  // Calcular qué bloque de 12 días mostrar
+  // Offset 0 = ciclo actual (días 1-12 de ST.dia)
+  // Offset -1 = ciclo anterior (días 13-24 antes)
+  var offset=_histProgOffset; // negativo = hacia atrás
+
+  // Obtener todas las fechas con sesión registrada ordenadas
+  var fechasDias=Object.keys(ST.historialFechas||{}).filter(function(f){
+    return ST.historialFechas[f]&&ST.historialFechas[f].completado;
+  }).sort();
+
+  if(!fechasDias.length){
+    body.innerHTML='<div style="color:var(--text3);font-size:13px;padding:.5rem 0">No hay sesiones registradas aún.</div>';
+    lbl.textContent='Sin historial';
+    return;
+  }
+
+  // Agrupar por bloques de 12 sesiones
+  var bloques=[];
+  for(var i=0;i<fechasDias.length;i+=12){
+    bloques.push(fechasDias.slice(i,i+12));
+  }
+  // El bloque actual es el último
+  var totalBloques=bloques.length;
+  var idxBloque=totalBloques-1+offset; // offset 0 = último bloque
+  if(idxBloque<0) idxBloque=0;
+  if(idxBloque>=totalBloques) idxBloque=totalBloques-1;
+
+  // Actualizar botones
+  btnPrev.style.opacity=idxBloque>0?'1':'0.3';
+  btnPrev.style.pointerEvents=idxBloque>0?'auto':'none';
+  btnNext.style.opacity=idxBloque<totalBloques-1?'1':'0.3';
+  btnNext.style.pointerEvents=idxBloque<totalBloques-1?'auto':'none';
+
+  var bloque=bloques[idxBloque];
+  var desde=bloque[0];
+  var hasta=bloque[bloque.length-1];
+  lbl.textContent=desde.slice(5)+' → '+hasta.slice(5);
+
+  // Renderizar sesiones del bloque
+  var html='';
+  bloque.forEach(function(fecha){
+    var ses=ST.historialFechas[fecha];
+    if(!ses) return;
+    var dc=ses.diaCiclo||'—';
+    var dB=ses.diaBoyleReal||'—';
+    var fase=ses.fase||'—';
+    var sem=ses.semana||'—';
+    var prefix=getProgramaPrefix();
+    // Buscar sets de esta sesión
+    var ejsKeys=Object.keys(ST.sets||{}).filter(function(k){
+      return (k.startsWith(prefix+'d'+dc+'_')||k.startsWith('d'+dc+'_'))&&!k.includes('_fin_');
+    });
+    var ejsHtml='';
+    if(ses.ejerciciosRealizados&&ses.ejerciciosRealizados.length){
+      ejsHtml=ses.ejerciciosRealizados.filter(function(e){return !e.finisher;}).map(function(e){
+        var setsStr=(e.sets||[]).map(function(s,i){
+          var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+          return 'S'+(i+1)+': '+s.p+'kg×'+val;
+        }).join(' · ');
+        return '<div style="font-size:11px;color:var(--text2);padding:2px 0;border-bottom:.5px solid var(--border)"><span style="font-weight:600;color:var(--text)">'+e.ej+'</span>'+(setsStr?' — '+setsStr:'')+'</div>';
+      }).join('');
+    } else if(ejsKeys.length){
+      ejsHtml=ejsKeys.map(function(k){
+        var ej=k.replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
+        var sets=(ST.sets[k]||[]).filter(Boolean);
+        if(!sets.length) return '';
+        var setsStr=sets.map(function(s,i){
+          var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+          return 'S'+(i+1)+': '+s.p+'kg×'+val;
+        }).join(' · ');
+        return '<div style="font-size:11px;color:var(--text2);padding:2px 0;border-bottom:.5px solid var(--border)"><span style="font-weight:600;color:var(--text)">'+ej+'</span> — '+setsStr+'</div>';
+      }).filter(Boolean).join('');
+    }
+
+    var confirmBadge=ses.confirmado?'<span style="font-size:9px;background:var(--green-bg);color:var(--green-text);border-radius:8px;padding:1px 5px;margin-left:4px">✓</span>':'';
+    html+='<div style="margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:.5px solid var(--border2)">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+      +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+fecha+'</span>'
+      +'<span style="font-size:11px;background:var(--blue-bg);color:var(--blue-text);border-radius:8px;padding:2px 7px;font-weight:700">'+fase+' S'+sem+' '+dB+'</span>'+confirmBadge
+      +'</div>'
+      +ejsHtml
+      +'</div>';
+  });
+
+  body.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sin datos para este bloque.</div>';
+
+  // Inicializar offset si es la primera vez
+  _histProgOffset=idxBloque-(totalBloques-1);
+}
+
+
 function recalcularTodoCiclo(){
   // Recalcular solo desde el día actual hacia adelante — nunca tocar días anteriores
   var diaDesde = ST.dia || 1;
@@ -4201,12 +4313,20 @@ function finalizarSesion(){
     if(sets.length) ejsRealizados.push({ej:ej,sets:sets,finisher:esFinisher});
   });
   if(!ST.historialFechas) ST.historialFechas={};
+  // Blindar semana y fase — nunca cambiar retroactivamente
+  var existing2=ST.historialFechas[hoy];
+  if(existing2&&existing2.confirmado&&existing2.semana&&existing2.fase){
+    // Mantener semana y fase originales
+    var lockSem=existing2.semana;
+    var lockFase=existing2.fase;
+    var lockSemEnFase=existing2.semEnFase;
+  }
   var lockTs=Date.now();
   ST.historialFechas[hoy]={
     diaCiclo:ST.dia,
-    fase:fase,
-    semana:ST.sem,
-    semEnFase:semEnFase,
+    fase:lockFase||fase,
+    semana:lockSem||ST.sem,
+    semEnFase:lockSemEnFase||semEnFase,
     diaBoyleProg:dBProg||null,
     diaBoyleReal:dB,
     variacion:variacion,
@@ -5388,7 +5508,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v109';
+const APP_VERSION='v110';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

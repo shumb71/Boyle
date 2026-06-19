@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v110</title>
+<title>Entreno Boyle v111</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -230,7 +230,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v110"
+      version: "v111"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -514,6 +514,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         </div>
         <span style="font-size:16px;color:var(--orange-text)">›</span>
       </div>
+    </div>
+    <!-- BANNER SALUD -->
+    <div id="banner-salud" style="display:none;background:var(--red-bg,#fff0f0);border:.5px solid rgba(200,0,0,.2);border-radius:var(--rs);padding:10px 12px;margin-bottom:.75rem">
+      <div style="font-size:13px;font-weight:700;color:var(--red-text,#c00);margin-bottom:4px">⚠️ Problema de conexión</div>
+      <div id="banner-salud-txt" style="font-size:12px;color:var(--red-text,#c00);opacity:.85"></div>
+      <button onclick="intentarReconectar()" style="margin-top:6px;border:none;background:var(--red-text,#c00);color:#fff;border-radius:var(--rs);padding:5px 12px;font-size:12px;cursor:pointer;font-weight:700">Reconectar</button>
     </div>
     <div id="sync-panel" style="display:none;border-radius:var(--rs);padding:8px 12px;margin-bottom:.75rem;font-size:12px">
       <div style="display:flex;align-items:center;gap:8px">
@@ -1000,6 +1006,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="mh"></div>
     <div class="mt" id="mo-title">Registrar serie</div>
     <div id="mo-ultima" style="background:var(--blue-bg);border-radius:var(--rs);padding:.6rem .9rem;margin-bottom:.75rem;font-size:13px;color:var(--blue-text);display:none"></div>
+    <!-- Sets ya registrados -->
+    <div id="mo-sets-registrados" style="display:none;margin-bottom:.75rem">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px">Sets registrados</div>
+      <div id="mo-sets-lista"></div>
+    </div>
     <!-- Selector tipo -->
     <div style="display:flex;gap:6px;margin-bottom:.75rem">
       <button id="mbt-reps" onclick="setTipoSet('reps')" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:12px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff">Reps</button>
@@ -1020,7 +1031,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <span id="tog-thumb" style="position:absolute;height:22px;width:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
       </label>
     </div>
-    <div class="br2"><button class="bcan" onclick="document.getElementById('mo-set').classList.remove('open')">Cancelar</button><button class="bsav" onclick="guardar()">Guardar</button></div>
+    <div class="br2"><button class="bcan" onclick="document.getElementById('mo-set').classList.remove('open')">Cancelar</button><button class="bsav" onclick="guardar()">Guardar set</button></div>
   </div>
 </div>
 
@@ -2361,7 +2372,8 @@ const renders={
     // Reset calentamiento (hidden, kept for compatibility)
     const fCalBody=document.getElementById('f-cal-body');
     if(fCalBody){fCalBody.style.display='none';fCalBody.innerHTML='';}
-    try{renderBannerConflictos();}catch(e){}  },
+    try{renderBannerConflictos();}catch(e){}
+    try{checkSalud();}catch(e){}  },
   entreno(){
     restoreTimer();
     try{renderDiaPicker();}catch(e){}
@@ -3114,20 +3126,40 @@ function setTipoSet(tipo){
 function openMo(ej,serie){
   mEj=(ej||'').replace(/&#39;/g,"'");
   mSer=serie;
-  document.getElementById('mo-title').textContent=ej+' — Serie '+(serie+1);
-  const key=diaDayPrefix(ST.dia)+ej;
-  const prev=(ST.sets[key]||ST.sets[legacyDayPrefix(ST.dia)+ej]||[])[serie];
-  // Determinar tipo del ejercicio
-  var tipoEj=EJ_TIPO_SET[ej]||'reps';
+  var ejClean=mEj;
+  var key=diaDayPrefix(ST.dia)+ejClean;
+  var legKey=legacyDayPrefix(ST.dia)+ejClean;
+  var setsRegistrados=(ST.sets[key]||ST.sets[legKey]||[]).filter(Boolean);
+  // Título dinámico
+  document.getElementById('mo-title').textContent=ejClean+' — Serie '+(setsRegistrados.length+1);
+  // Mostrar sets ya registrados
+  var setsEl=document.getElementById('mo-sets-registrados');
+  var listaEl=document.getElementById('mo-sets-lista');
+  if(setsRegistrados.length>0){
+    setsEl.style.display='block';
+    listaEl.innerHTML=setsRegistrados.map(function(s,i){
+      var val=s.tipo==='tiempo'?(s.t||0)+'s':s.tipo==='distancia'?(s.dist||0)+'m':(s.r||0)+' reps';
+      var ejSafe=ejClean.replace(/'/g,"\\'");
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:.5px solid var(--border)">'
+        +'<span style="font-size:12px;color:var(--text)"><strong>S'+(i+1)+'</strong> '+s.p+'kg × '+val+' RPE'+s.rpe+(s.n?' <em style="color:var(--text3)">('+s.n+')</em>':'')+'</span>'
+        +'<button onclick="eliminarSetModal(\''+ejSafe+'\','+i+')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer">✕</button>'
+        +'</div>';
+    }).join('');
+  } else {
+    setsEl.style.display='none';
+  }
+  // Precargar con valores del último set si existe
+  var prev=setsRegistrados[serie]||setsRegistrados[setsRegistrados.length-1];
+  var tipoEj=EJ_TIPO_SET[ejClean]||'reps';
   setTipoSet(prev&&prev.tipo?prev.tipo:tipoEj);
   document.getElementById('m-p').value=prev?prev.p:'';
   document.getElementById('m-r').value=prev?prev.r:10;
   document.getElementById('m-t').value=prev?prev.t||'':'';
   document.getElementById('m-d').value=prev?prev.dist||'':'';
   document.getElementById('m-rpe').value=prev?prev.rpe:7;
-  document.getElementById('m-n').value=prev?prev.n:'';
-  // Mostrar ultima sesion
-  const ult=getUltimaSesion(ej);
+  document.getElementById('m-n').value='';
+  // Última sesión
+  const ult=getUltimaSesion(ejClean);
   const ultEl=document.getElementById('mo-ultima');
   if(ult){ultEl.style.display='block';ultEl.textContent='Ultima vez — Dia '+ult.dia+': '+ult.peso+'kg × '+ult.reps+' reps · RPE '+ult.rpe;}
   else{ultEl.style.display='none';}
@@ -3138,6 +3170,19 @@ function openMo(ej,serie){
   document.getElementById('tog-thumb').style.transform='translateX(0)';
   document.getElementById('mo-set').classList.add('open');
   setTimeout(()=>document.getElementById('m-p').focus(),150);
+}
+
+function eliminarSetModal(ej, idx){
+  var ejClean=ej.replace(/&#39;/g,"'");
+  var key=diaDayPrefix(ST.dia)+ejClean;
+  var legKey=legacyDayPrefix(ST.dia)+ejClean;
+  var useKey=ST.sets[key]?key:legKey;
+  if(!ST.sets[useKey]) return;
+  ST.sets[useKey].splice(idx,1);
+  save();
+  // Re-abrir modal con datos actualizados
+  openMo(ejClean, Math.max(0,(ST.sets[useKey]||[]).filter(Boolean).length));
+  renders.entreno();
 }
 function closeMo(e,id){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.remove('open');}
 function guardar(){
@@ -3168,9 +3213,11 @@ function guardar(){
     var pr=PROG[(ST.sem-1)%12];
     var info=EJ_INFO[ejClean]||{};
     var num=info.tipo==='fijo'?(parseInt(info.series)||3):pr.n;
-    for(var i=0;i<num;i++) ST.sets[key][i]=Object.assign({},setData);
+    ST.sets[key]=[];
+    for(var i=0;i<num;i++) ST.sets[key].push(Object.assign({},setData));
   } else {
-    ST.sets[key][mSer]=setData;
+    // Siempre añadir al final
+    ST.sets[key].push(setData);
   }
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   var fechaHoy=hoyLocal();
@@ -4367,6 +4414,47 @@ function renderFinalizarStatus(){
   }
 }
 
+function checkSalud(){
+  var problemas=[];
+  if(!fbReady) problemas.push('Firebase no está conectado — los datos no se guardan en la nube.');
+  if(!fbUser) problemas.push('No hay sesión activa — inicia sesión con Google.');
+  // Verificar SW actualizado
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(function(reg){
+      if(reg&&reg.waiting){
+        problemas.push('Hay una actualización pendiente de la app — recarga para aplicarla.');
+      }
+      mostrarBannerSalud(problemas);
+    }).catch(function(){ mostrarBannerSalud(problemas); });
+  } else {
+    mostrarBannerSalud(problemas);
+  }
+}
+
+function mostrarBannerSalud(problemas){
+  var banner=document.getElementById('banner-salud');
+  var txt=document.getElementById('banner-salud-txt');
+  if(!banner||!txt) return;
+  if(problemas.length){
+    banner.style.display='block';
+    txt.innerHTML=problemas.map(function(p){return '• '+p;}).join('<br>');
+  } else {
+    banner.style.display='none';
+  }
+}
+
+function intentarReconectar(){
+  // Forzar recarga limpia
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){r.unregister();});
+      window.location.reload(true);
+    });
+  } else {
+    window.location.reload(true);
+  }
+}
+
 function renderBannerConflictos(){
   var banner=document.getElementById('banner-conflictos');
   if(!banner) return;
@@ -5508,7 +5596,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v110';
+const APP_VERSION='v111';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -6016,7 +6104,9 @@ function calSelDia(fecha){
         +'</div>';
 
       function renderEjRow(k, isFinisher){
-        var ej=isFinisher ? k.replace(/^d\d+_fin_/,'').replace(/_/g,' ') : k.replace(/^d\d+_/,'');
+        var ej=isFinisher
+          ? k.replace(/^p\d+_d\d+_fin_/,'').replace(/^d\d+_fin_/,'').replace(/_/g,' ')
+          : k.replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
         var sets=(ST.sets[k]||[]).filter(Boolean);
         if(!sets.length) return '';
         var maxRpe=sets.reduce(function(a,s){return Math.max(a,s.rpe||0);},0);

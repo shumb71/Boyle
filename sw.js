@@ -1,6 +1,6 @@
 // sw.js — Entreno Boyle · network-first para el HTML (siempre la última versión si hay red)
 // Sube el número de CACHE en cada despliegue para purgar lo viejo.
-const CACHE = 'entreno-boyle-v112';
+const CACHE = 'entreno-boyle-v113';
 
 // Al instalar: activar de inmediato (sin esperar a que se cierren pestañas)
 self.addEventListener('install', (e) => {

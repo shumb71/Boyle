@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v112</title>
+<title>Entreno Boyle v113</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -247,7 +247,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v112"
+      version: "v113"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -2499,7 +2499,8 @@ const renders={
         return '<div style="margin-bottom:.75rem;border:1px solid '+colorBloque+';border-radius:var(--rs);overflow:hidden">'
           +'<div style="background:'+bgBloque+';padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between">'
           +'<span style="font-size:11px;font-weight:800;color:'+colorBloque+';text-transform:uppercase;letter-spacing:.06em">'+labelTipo+' '+(bi+1)+'</span>'
-          +'<span style="font-size:11px;color:var(--text2)">'+bloque.lbl.replace(/^(TRISET|PAR) \d+ — /,'')+'</span>'
+          +'<span style="font-size:11px;color:var(--text2);flex:1;margin:0 8px">'+bloque.lbl.replace(/^(TRISET|PAR) \d+ — /,'')+'</span>'
+          +'<button onclick="anadirEjBloque('+bi+')" style="border:none;background:'+colorBloque+';color:#fff;border-radius:50%;width:22px;height:22px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1" title="Añadir ejercicio a este bloque">＋</button>'
           +'</div>'
           +'<div style="padding:0 .75rem">'+ejsHtml+'</div>'
           +(bloque.nota?'<div style="font-size:11px;color:var(--text3);padding:.3rem .75rem;font-style:italic">&#128204; '+bloque.nota+'</div>':'')
@@ -4210,7 +4211,39 @@ function recalcularTodoCiclo(){
   document.getElementById('mo-recalcular').classList.add('open');
 }
 
+function anadirEjBloque(bloqueIdx){
+  var dB=getDiaBoyle();
+  if(!dB) return;
+  // Abrir modal de añadir ejercicio con contexto del bloque
+  _anadirBloqueIdx=bloqueIdx;
+  abrirAnadirEj();
+}
+
+function _getEjListaCustom(){
+  var dB=getDiaBoyle();
+  if(!dB) return [];
+  var fase=getFaseActual(ST.sem);
+  var faseEjs=EJS_FASES[fase];
+  if(ST.sesionCustom&&ST.sesionCustom[ST.dia]&&ST.sesionCustom[ST.dia].ejs) return ST.sesionCustom[ST.dia].ejs.slice();
+  return (faseEjs&&faseEjs[dB])?faseEjs[dB].slice():(EJS_DEF[dB]?EJS_DEF[dB].slice():[]);
+}
+
+function _calcPosicionEnBloque(bloqueIdx){
+  var dB=getDiaBoyle();
+  if(!dB||!GRUPOS_DIA[dB]) return -1;
+  var grupos=GRUPOS_DIA[dB];
+  var pos=0;
+  for(var i=0;i<=bloqueIdx&&i<grupos.length;i++){
+    if(i<bloqueIdx) pos+=grupos[i].n;
+    else pos+=grupos[i].n; // al final del bloque
+  }
+  return pos;
+}
+
+var _anadirBloqueIdx=-1; // -1 = al final, >=0 = bloque concreto
+
 function abrirAnadirEj(){
+  _anadirBloqueIdx=-1; // botón general — al final
   var mo=document.getElementById('mo-anadir');
   document.getElementById('mo-anadir-input').value='';
   document.getElementById('mo-anadir-sugg').innerHTML='';
@@ -4246,8 +4279,19 @@ function confirmarAnadirEj(){
     var faseEjs=EJS_FASES[fase];
     ST.sesionCustom[ST.dia]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
   }
-  if(ST.sesionCustom[ST.dia].ejs.indexOf(nombre)<0) ST.sesionCustom[ST.dia].ejs.push(nombre);
+  var lista=ST.sesionCustom[ST.dia].ejs;
+  if(lista.indexOf(nombre)<0){
+    if(_anadirBloqueIdx>=0){
+      // Insertar al final del bloque indicado
+      var pos=_calcPosicionEnBloque(_anadirBloqueIdx);
+      if(pos>=0&&pos<=lista.length) lista.splice(pos,0,nombre);
+      else lista.push(nombre);
+    } else {
+      lista.push(nombre);
+    }
+  }
   if(!EJ_INFO[nombre]) EJ_INFO[nombre]={tipo:'prog',series:String(series),reps:reps,tecnica:''};
+  _anadirBloqueIdx=-1;
   save();
   document.getElementById('mo-anadir').classList.remove('open');
   renders.entreno();
@@ -5671,7 +5715,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v112';
+const APP_VERSION='v113';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

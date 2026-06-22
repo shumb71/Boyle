@@ -1420,18 +1420,36 @@
     },
     "2026-06-22": {
       "fecha": "2026-06-22",
-      "pasos": 1277,
-      "calorias_dia": 758.0,
-      "calorias_activas": 38.0,
-      "distancia_km": 1.05,
-      "minutos_activos": 0,
+      "pasos": 6135,
+      "calorias_dia": 2218.0,
+      "calorias_activas": 412.0,
+      "distancia_km": 5.07,
+      "minutos_activos": 20,
       "fc_reposo": 46,
-      "estres_medio": 25,
+      "estres_medio": 23,
       "sueno_total_min": 325,
       "sueno_profundo_min": 98,
       "sueno_ligero_min": 203,
       "sueno_rem_min": 24,
-      "sueno_puntuacion": 63
+      "sueno_puntuacion": 63,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 58,
+          "calorias": 390.0,
+          "fc_media": 113.0,
+          "fc_max": 173.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 58,
+        "calorias": 390.0,
+        "fc_media": 113.0,
+        "fc_max": 173.0
+      }
     }
   },
   "actualizado": "2026-06-22"

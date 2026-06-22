@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v111</title>
+<title>Entreno Boyle v112</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -63,11 +63,14 @@ function initFirebase() {
           }
           try{
             var parsed=JSON.parse(doc.data().datos);
-            // Comparar timestamps — Firebase siempre gana si es >= local
+            // PROTECCIÓN dispositivo nuevo: si local no tiene sesiones pero Firebase sí, usar Firebase siempre
+            var localSesiones=Object.keys(ST.historialFechas||{}).length;
+            var remoteSesiones=Object.keys(parsed.historialFechas||{}).length;
             var fbTime=parsed._localSaveTime||0;
             var localData=localStorage.getItem('jose_v9');
             var localTime=localData?JSON.parse(localData)._localSaveTime||0:0;
-            if(fbTime>=localTime){
+            var esDispositivoNuevo=localSesiones===0&&remoteSesiones>0;
+            if(esDispositivoNuevo||fbTime>=localTime){
               aplicarRemoto(parsed);
               // Migraciones de seguridad
               if(!ST.warmupCheck) ST.warmupCheck={};
@@ -223,6 +226,20 @@ function saveFirebase() {
     actualizarDotSync('error');
     return;
   }
+  // PROTECCIÓN: nunca guardar si hay 0 sesiones cuando antes había datos
+  var nSes=Object.keys(ST.historialFechas||{}).length;
+  var nSets=Object.keys(ST.sets||{}).length;
+  var prevSes=ST._lastKnownSesiones||0;
+  if(nSes===0&&prevSes>0){
+    console.warn('saveFirebase BLOQUEADO: 0 sesiones cuando antes había '+prevSes);
+    actualizarDotSync('error');
+    var b=document.getElementById('banner-salud');
+    var t=document.getElementById('banner-salud-txt');
+    if(b&&t){b.style.display='block';t.innerHTML='⚠️ Guardado bloqueado: se detectaron 0 sesiones cuando antes había '+prevSes+'. Recarga la app.';}
+    return;
+  }
+  if(nSes>0) ST._lastKnownSesiones=nSes;
+  if(nSets>0) ST._lastKnownSets=nSets;
   clearTimeout(syncDebounceTimer);
   syncDebounceTimer = setTimeout(() => {
     updateSyncUI("saving");
@@ -230,7 +247,7 @@ function saveFirebase() {
     fbDb.collection("usuarios").doc(fbUser.uid).set({
       datos: JSON.stringify(ST),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v111"
+      version: "v112"
     }).then(() => {
       updateSyncUI("saved");
       actualizarDotSync('ok');
@@ -895,7 +912,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="card-lbl">Datos</div>
       <button class="bkbtn bkexp" onclick="exportar()"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar a Excel (.xlsx)</button>
       <button class="bkbtn" style="margin-top:.5rem;background:var(--green-bg);color:var(--green-text);border:.5px solid rgba(99,153,34,.3)" onclick="exportarJSON()"><i class="ti ti-download" aria-hidden="true"></i> Backup completo (JSON)</button>
-      <div style="font-size:11px;color:var(--text3);margin-top:.4rem">El JSON incluye todos tus datos — úsalo como copia de seguridad.</div>
+      <button class="bkbtn" style="margin-top:.5rem;background:var(--orange-bg);color:var(--orange-text);border:.5px solid rgba(200,120,0,.3)" onclick="document.getElementById('input-restore-json').click()"><i class="ti ti-upload" aria-hidden="true"></i> Restaurar desde backup (JSON)</button>
+      <input type="file" id="input-restore-json" accept=".json" style="display:none" onchange="restaurarDesdeJSON(this)">
+      <div style="font-size:11px;color:var(--text3);margin-top:.4rem">El JSON incluye todos tus datos — úsalo como copia de seguridad o para restaurar.</div>
     </div>
     <div class="card">
       <div class="card-lbl">Ciclo de turnos</div>
@@ -2438,7 +2457,11 @@ const renders={
           for(var pi=0;pi<numSer;pi++){
             var st=ss[pi];
             if(st){vol+=st.p*st.r;done++;}
-            var lbl=st?(st.p+'x'+st.r+' R'+st.rpe):('S'+(pi+1));
+            var lbl=st?(function(s){
+              var tipo=s.tipo||'reps';
+              var val=tipo==='tiempo'?(s.t||0)+'s':tipo==='distancia'?(s.dist||0)+'m':(s.r||0);
+              return s.p+'x'+val+' R'+s.rpe;
+            })(st):('S'+(pi+1));
             var spanEl='<span class="pill'+(st?' done':'')+'" data-ej="'+ejSafe+'" data-pi="'+pi+'" onclick="openMo2(this)">'+ lbl +'</span>';
             pillsArr.push(spanEl);
           }
@@ -3939,6 +3962,57 @@ function buildEntrenoExcel(){
   }
 }
 
+async function backupJSONDrive(){
+  var token=await getGdriveToken();
+  if(!token) return; // silencioso — no molestar al usuario
+  try{
+    var folderId=await getOrCreateDriveFolder();
+    if(!folderId) return;
+    // Subcarpeta backups
+    var backupFolderId=await getOrCreateSubFolder(folderId,'backups');
+    if(!backupFolderId) return;
+    var fecha=hoyLocal();
+    var nombre='backup_'+fecha+'.json';
+    var datos=JSON.stringify(ST, null, 2);
+    var metadata={name:nombre,mimeType:'application/json',parents:[backupFolderId]};
+    // Buscar si ya existe backup de hoy y sobreescribir
+    var searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D\''+nombre+'\'%20and%20\''+backupFolderId+'\'%20in%20parents%20and%20trashed%3Dfalse&fields=files(id)',{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    var searchData=await searchResp.json();
+    var existingId=searchData.files&&searchData.files[0]&&searchData.files[0].id;
+    var method=existingId?'PATCH':'POST';
+    var url=existingId
+      ?'https://www.googleapis.com/upload/drive/v3/files/'+existingId+'?uploadType=multipart'
+      :'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    var form=new FormData();
+    if(!existingId) form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file',new Blob([datos],{type:'application/json'}));
+    await fetch(url,{method:method,headers:{'Authorization':'Bearer '+token},body:form});
+    console.log('Backup JSON guardado en Drive:', nombre);
+  }catch(e){
+    console.warn('backupJSONDrive error:',e);
+  }
+}
+
+async function getOrCreateSubFolder(parentId, nombre){
+  if(!token) return null;
+  try{
+    var searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D\''+nombre+'\'%20and%20\''+parentId+'\'%20in%20parents%20and%20mimeType%3D\'application%2Fvnd.google-apps.folder\'%20and%20trashed%3Dfalse&fields=files(id)',{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    var searchData=await searchResp.json();
+    if(searchData.files&&searchData.files[0]) return searchData.files[0].id;
+    var createResp=await fetch('https://www.googleapis.com/drive/v3/files',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({name:nombre,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})
+    });
+    var created=await createResp.json();
+    return created.id||null;
+  }catch(e){return null;}
+}
+
 async function exportarExcelDrive(silencioso){
   var token=await getGdriveToken();
   if(!token){
@@ -4391,6 +4465,7 @@ function finalizarSesion(){
   save();
   renderFinalizarStatus();
   exportarExcelDrive(true);
+  backupJSONDrive(); // backup automático JSON a Drive
   appendSesionToSheets(ST.historialFechas[hoy]);
   var elapsed=ST.timerInicio?Date.now()-ST.timerInicio:0;
   ST.historialFechas[hoy].duracion_min=elapsed>0?Math.round(elapsed/60000):null;
@@ -5596,7 +5671,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v111';
+const APP_VERSION='v112';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -5610,6 +5685,34 @@ function exportarJSON(){
   URL.revokeObjectURL(url);
   var ok=document.getElementById('backup-ok');
   if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},3000);}
+}
+
+function restaurarDesdeJSON(input){
+  var file=input.files[0];
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var parsed=JSON.parse(e.target.result);
+      var nSes=Object.keys(parsed.historialFechas||{}).length;
+      var nSets=Object.keys(parsed.sets||{}).length;
+      var fecha=parsed._localSaveTime?new Date(parsed._localSaveTime).toLocaleString('es-ES'):'desconocida';
+      if(!confirm('Este backup tiene:\n• '+nSes+' sesiones registradas\n• '+nSets+' claves de ejercicios\n• Guardado: '+fecha+'\n\n¿Restaurar? Esto sobreescribirá todos los datos actuales.')){
+        input.value='';
+        return;
+      }
+      ST=Object.assign({},ST,parsed);
+      ST._lastKnownSesiones=nSes;
+      ST._lastKnownSets=nSets;
+      save();
+      renders.hoy();renders.entreno();renders.ciclo();
+      alert('✅ Datos restaurados correctamente: '+nSes+' sesiones, '+nSets+' ejercicios.');
+    }catch(err){
+      alert('❌ Error al leer el backup: '+err.message);
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
 }
 
 function exportar(){

@@ -1453,18 +1453,28 @@
     },
     "2026-06-23": {
       "fecha": "2026-06-23",
-      "pasos": 135,
-      "calorias_dia": 747.0,
-      "calorias_activas": 4.0,
-      "distancia_km": 0.11,
-      "minutos_activos": 0,
+      "pasos": 2381,
+      "calorias_dia": 1340.0,
+      "calorias_activas": 180.0,
+      "distancia_km": 2.58,
+      "minutos_activos": 17,
       "fc_reposo": 45,
-      "estres_medio": 20,
+      "estres_medio": 23,
       "sueno_total_min": 504,
       "sueno_profundo_min": 53,
       "sueno_ligero_min": 385,
       "sueno_rem_min": 66,
-      "sueno_puntuacion": 80
+      "sueno_puntuacion": 80,
+      "actividades": [
+        {
+          "nombre": "Ojén Natación en aguas abiertas",
+          "tipo": "open_water_swimming",
+          "duracion_min": 27,
+          "calorias": 172.0,
+          "fc_media": 103.0,
+          "fc_max": 129.0
+        }
+      ]
     }
   },
   "actualizado": "2026-06-23"

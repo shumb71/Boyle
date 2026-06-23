@@ -37,7 +37,9 @@ const FIREBASE_CONFIG = {
 let fbApp = null, fbDb = null, fbAuth = null, fbUser = null;
 let fbReady = false;
 let syncDebounceTimer = null;
-let fbUnsubscribe = null; // listener en tiempo real
+let fbUnsubscribe = null; // listener config v2
+let fbUnsubSesiones = null; // listener sesiones v2
+const FB_COL_V2 = 'usuarios_v2';
 
 function initFirebase() {
   try {
@@ -56,40 +58,45 @@ function initFirebase() {
         fbReady = true;
         updateSyncUI("connected", user.displayName || user.email);
         // Siempre cargar desde Firebase al arrancar — es la fuente de verdad
-        fbDb.collection("usuarios").doc(user.uid).get().then(function(doc){
-          if(!doc.exists||!doc.data()||!doc.data().datos){
-            _fbLoadReady=true; // no hay datos remotos, permitir save
-            return;
+        // v2.0: intentar cargar desde subcollecciones
+        fbDb.collection(FB_COL_V2).doc(user.uid).get().then(function(cfgDoc){
+          if(cfgDoc.exists&&cfgDoc.data()._v>=2){
+            return cargarDesdeSubcollections(user.uid).catch(function(e){
+              console.error('subcol load error:',e);actualizarDotSync('error');
+            }).finally(function(){_fbLoadReady=true;});
           }
-          try{
-            var parsed=JSON.parse(doc.data().datos);
-            // PROTECCIÓN dispositivo nuevo: si local no tiene sesiones pero Firebase sí, usar Firebase siempre
-            var localSesiones=Object.keys(ST.historialFechas||{}).length;
-            var remoteSesiones=Object.keys(parsed.historialFechas||{}).length;
-            var fbTime=parsed._localSaveTime||0;
-            var localData=localStorage.getItem('jose_v9');
-            var localTime=localData?JSON.parse(localData)._localSaveTime||0:0;
-            var esDispositivoNuevo=localSesiones===0&&remoteSesiones>0;
-            if(esDispositivoNuevo||fbTime>=localTime){
-              aplicarRemoto(parsed);
-              // Migraciones de seguridad
-              if(!ST.warmupCheck) ST.warmupCheck={};
-              if(!ST.fechaSesiones) ST.fechaSesiones={};
-              if(!ST.variantes) ST.variantes={};
-              if(!ST.diaBoyle) ST.diaBoyle={};
-              if(!ST.variantesCustom) ST.variantesCustom={};
-              ST._localSaveTime=Date.now();
-              localStorage.setItem('jose_v9',JSON.stringify(ST));
-              renders.hoy();renders.entreno();renders.ciclo();
-              updateSyncUI("synced-remote");
-              actualizarDotSync('ok');
-            } else {
-              // Local más reciente — subir a Firebase
-              actualizarDotSync('ok');
-              saveFirebase();
+          // Fallback: blob antiguo (dispositivo sin migración previa)
+          return fbDb.collection('usuarios').doc(user.uid).get().then(function(doc){
+            if(!doc.exists||!doc.data()||!doc.data().datos){
+              _fbLoadReady=true; return;
             }
-          }catch(e){console.warn('Firebase load error:',e);actualizarDotSync('error');}
-          finally{_fbLoadReady=true;}
+            try{
+              var parsed=JSON.parse(doc.data().datos);
+              var localSesiones=Object.keys(ST.historialFechas||{}).length;
+              var remoteSesiones=Object.keys(parsed.historialFechas||{}).length;
+              var fbTime=parsed._localSaveTime||0;
+              var localData=localStorage.getItem('jose_v9');
+              var localTime=localData?JSON.parse(localData)._localSaveTime||0:0;
+              var esDispositivoNuevo=localSesiones===0&&remoteSesiones>0;
+              if(esDispositivoNuevo||fbTime>=localTime){
+                aplicarRemoto(parsed);
+                if(!ST.warmupCheck) ST.warmupCheck={};
+                if(!ST.fechaSesiones) ST.fechaSesiones={};
+                if(!ST.variantes) ST.variantes={};
+                if(!ST.diaBoyle) ST.diaBoyle={};
+                if(!ST.variantesCustom) ST.variantesCustom={};
+                ST._localSaveTime=Date.now();
+                localStorage.setItem('jose_v9',JSON.stringify(ST));
+                renders.hoy();renders.entreno();renders.ciclo();
+                updateSyncUI("synced-remote");
+                actualizarDotSync('ok');
+              } else {
+                actualizarDotSync('ok');
+                saveFirebase();
+              }
+            }catch(e){console.warn('Firebase load error:',e);actualizarDotSync('error');}
+            finally{_fbLoadReady=true;}
+          });
         }).catch(function(){_fbLoadReady=true;});
         suscribirCambiosRemoto();
       } else {
@@ -97,6 +104,7 @@ function initFirebase() {
         fbReady = false;
         _fbLoadReady=true;
         if (fbUnsubscribe) { fbUnsubscribe(); fbUnsubscribe = null; }
+        if (fbUnsubSesiones) { fbUnsubSesiones(); fbUnsubSesiones = null; }
         updateSyncUI("logged-out");
         actualizarDotSync('error');
       }
@@ -240,53 +248,74 @@ function saveFirebase() {
   }
   if(nSes>0) ST._lastKnownSesiones=nSes;
   if(nSets>0) ST._lastKnownSets=nSets;
+  // v2.0: guardar config en subcollección (no más blob)
   clearTimeout(syncDebounceTimer);
-  syncDebounceTimer = setTimeout(() => {
+  syncDebounceTimer = setTimeout(function() {
     updateSyncUI("saving");
     actualizarDotSync('saving');
-    fbDb.collection("usuarios").doc(fbUser.uid).set({
-      datos: JSON.stringify(ST),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      version: "v113"
-    }).then(() => {
-      updateSyncUI("saved");
-      actualizarDotSync('ok');
-    }).catch(e => {
-      console.error("Firestore save error:", e);
-      updateSyncUI("error");
-      actualizarDotSync('error');
-    });
+    var cfg=getConfigFields();
+    cfg.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+    fbDb.collection(FB_COL_V2).doc(fbUser.uid).set(cfg,{merge:true})
+      .then(function(){
+        updateSyncUI("saved");
+        actualizarDotSync('ok');
+      }).catch(function(e){
+        console.error("Firestore save error:", e);
+        updateSyncUI("error");
+        actualizarDotSync('error');
+      });
   }, 2000);
 }
 
-// Escucha cambios en tiempo real desde otros dispositivos
+// v2.0: escucha cambios en subcollecciones desde otros dispositivos
 function suscribirCambiosRemoto() {
   if (fbUnsubscribe) fbUnsubscribe();
-  fbUnsubscribe = fbDb.collection("usuarios").doc(fbUser.uid)
-    .onSnapshot(doc => {
+  if (fbUnsubSesiones) fbUnsubSesiones();
+  // Listener config doc
+  fbUnsubscribe = fbDb.collection(FB_COL_V2).doc(fbUser.uid)
+    .onSnapshot(function(doc) {
       if (!doc.exists) return;
-      const data = doc.data();
-      if (!data || !data.datos) return;
-      // Solo actualizar si vino de otro dispositivo (serverTimestamp)
-      const remoto = data.updatedAt ? data.updatedAt.toMillis() : 0;
-      const local = ST._localSaveTime || 0;
-      if (remoto > local + 3000) { // margen 3s para evitar loop
-        try {
-          const parsed = JSON.parse(data.datos);
-          aplicarRemoto(parsed);
-          if(!ST.warmupCheck) ST.warmupCheck={};
-          if(!ST.fechaSesiones) ST.fechaSesiones={};
-          if(!ST.variantes) ST.variantes={};
-          if(!ST.diaBoyle) ST.diaBoyle={};
-          ST._localSaveTime = Date.now();
-          save();
-          renders.hoy(); renders.entreno(); renders.ciclo();
-          updateSyncUI("synced-remote");
-          actualizarDotSync('ok');
-          mostrarToastSync();
-        } catch(e) { console.error("Parse remoto:", e); }
+      var data = doc.data();
+      if (!data || !data._v) return;
+      var remoto = data.updatedAt ? data.updatedAt.toMillis() : 0;
+      var local = ST._localSaveTime || 0;
+      if (remoto > local + 3000) {
+        aplicarConfigRemoto(data);
+        save();
+        renders.hoy(); renders.entreno(); renders.ciclo();
+        updateSyncUI("synced-remote");
+        actualizarDotSync('ok');
+        mostrarToastSync();
       }
-    }, e => console.error("Snapshot error:", e));
+    }, function(e) { console.error("Snapshot config error:", e); });
+  // Listener sesiones recientes (último mes)
+  var hace30=new Date(); hace30.setDate(hace30.getDate()-30);
+  var fechaMin=hace30.toISOString().substring(0,10);
+  fbUnsubSesiones = fbDb.collection(FB_COL_V2).doc(fbUser.uid)
+    .collection('sesiones').where('fecha','>=',fechaMin)
+    .onSnapshot(function(snap){
+      var changed=false;
+      snap.docChanges().forEach(function(change){
+        if(change.type==='modified'||change.type==='added'){
+          var d=change.doc.data(); if(!d.fecha) return;
+          var prev=ST.historialFechas&&ST.historialFechas[d.fecha];
+          var tsR=d.timestamp||0,tsL=prev?(prev.timestamp||0):0;
+          if(!prev||(!(prev.confirmado&&tsL>tsR)&&tsR>=tsL)){
+            if(!ST.historialFechas) ST.historialFechas={};
+            ST.historialFechas[d.fecha]=d;
+            if(!ST.fechaSesiones) ST.fechaSesiones={};
+            ST.fechaSesiones[d.fecha]=d.diaCiclo||0;
+            changed=true;
+          }
+        }
+      });
+      if(changed){
+        ST._localSaveTime=Date.now();
+        localStorage.setItem('jose_v9',JSON.stringify(ST));
+        try{renders.hoy();}catch(e){}
+        try{var sc=document.getElementById('s-cal');if(sc&&sc.classList.contains('active'))renders.cal();}catch(e){}
+      }
+    },function(e){console.error('sesiones snapshot error:',e);});
 }
 
 function mostrarToastSync() {
@@ -499,12 +528,28 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   // --- MANIFEST (fichero externo manifest.json) ---
   document.getElementById('pwa-manifest').setAttribute('href', './manifest.json');
 
-  // --- SERVICE WORKER (fichero externo sw.js) ---
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('./sw.js?v=101', {scope: './'})
-      .then(reg => console.log('SW registrado:', reg.scope))
-      .catch(err => console.warn('SW error:', err));
-  }
+  // --- SERVICE WORKER v2: kill switch + registro nuevo ─────────────────
+  (async function(){
+    if(!('serviceWorker' in navigator)) return;
+    try{
+      var regs=await navigator.serviceWorker.getRegistrations();
+      var cacheKeys=await caches.keys();
+      var tieneViejaSW=regs.some(function(r){return r.active&&!r.active.scriptURL.includes('v=102');});
+      var tieneViejaCache=cacheKeys.some(function(k){return !k.startsWith('boyle-v2');});
+      if(tieneViejaSW||tieneViejaCache){
+        console.log('[v114] Limpiando SW y caches anteriores...');
+        await Promise.all(regs.map(function(r){return r.unregister();}));
+        await Promise.all(cacheKeys.map(function(k){return caches.delete(k);}));
+        if(!sessionStorage.getItem('v114-clean')){
+          sessionStorage.setItem('v114-clean','1');
+          window.location.reload(); return;
+        }
+      }
+    }catch(e){console.warn('[v114] SW cleanup error',e);}
+    navigator.serviceWorker.register('./sw.js?v=102', {scope: './'})
+      .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
+      .catch(function(err){console.warn('SW error:', err);});
+  })();
 })();
 </script>
 </head>
@@ -1993,6 +2038,108 @@ function getProgramaPrefix(){
   var pi=ST.programaInicio||'2026-06-12';
   return 'p'+pi.replace(/-/g,'')+'_';
 }
+// === v2.0: helpers y funciones de guardado granular ========================
+function ejSlugFb(ej){
+  return ej.normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+function getConfigFields(){
+  return {
+    dia:ST.dia,sem:ST.sem,cicloAnclaje:ST.cicloAnclaje||null,
+    programaInicio:ST.programaInicio||null,sliders:ST.sliders||{},
+    ejs:ST.ejs||{},ejsCustom:ST.ejsCustom||{},ejsImgs:ST.ejsImgs||{},
+    variantes:ST.variantes||{},variantesCustom:ST.variantesCustom||{},
+    variantesEliminadas:ST.variantesEliminadas||{},
+    warmupCustom:ST.warmupCustom||{},warmupRemoved:ST.warmupRemoved||{},
+    restTimes:ST.restTimes||{},nutTipo:ST.nutTipo||'auto',nut:ST.nut||{},
+    sesionCustom:ST.sesionCustom||{},diaBoyle:ST.diaBoyle||{},
+    eval:ST.eval||[],planDia:ST.planDia||{},notaDia:ST.notaDia||{},
+    googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
+    _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
+  };
+}
+function saveSetV2(fecha,ej){
+  if(!fbReady||!fbUser||!fecha||!ej) return;
+  var dia=(ST.fechaSesiones&&ST.fechaSesiones[fecha])||ST.dia;
+  var key=getProgramaPrefix()+'d'+dia+'_'+ej;
+  var legKey='d'+dia+'_'+ej;
+  var sets=(ST.sets[key]||ST.sets[legKey]||[]).filter(Boolean);
+  var docId=fecha+'_'+ejSlugFb(ej);
+  fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sets').doc(docId).set({
+    fecha:fecha,ejercicio:ej,diaCiclo:dia,sets:sets,
+    checkManual:!!(ST.checksManual&&ST.checksManual[key]),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+  }).catch(function(e){console.warn('saveSet error',e);});
+}
+var _sesDebTimers={};
+function saveSesionV2(fecha){
+  if(!fbReady||!fbUser||!fecha) return;
+  var ses=ST.historialFechas&&ST.historialFechas[fecha];
+  if(!ses) return;
+  clearTimeout(_sesDebTimers[fecha]);
+  _sesDebTimers[fecha]=setTimeout(function(){
+    var doc=Object.assign({},ses,{fecha:fecha,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sesiones').doc(fecha).set(doc,{merge:true})
+      .catch(function(e){console.warn('saveSesion error',e);});
+  },500);
+}
+function aplicarConfigRemoto(data){
+  var campos=['dia','sem','cicloAnclaje','programaInicio','sliders','ejs','ejsCustom',
+    'ejsImgs','variantes','variantesCustom','diaBoyle','sesionCustom','restTimes',
+    'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','eval',
+    'googleLoginHint','sheetsId','variantesEliminadas'];
+  campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
+  ST._localSaveTime=Date.now();
+}
+async function cargarDesdeSubcollections(uid){
+  var cfgDoc=await fbDb.collection(FB_COL_V2).doc(uid).get();
+  if(cfgDoc.exists) aplicarConfigRemoto(cfgDoc.data());
+  if(!ST.historialFechas) ST.historialFechas={};
+  if(!ST.fechaSesiones) ST.fechaSesiones={};
+  var sesSnap=await fbDb.collection(FB_COL_V2).doc(uid).collection('sesiones').get();
+  sesSnap.forEach(function(doc){
+    var d=doc.data(); if(!d.fecha) return;
+    var prev=ST.historialFechas[d.fecha];
+    var tsR=d.timestamp||0,tsL=prev?(prev.timestamp||0):0;
+    if(!prev||(!(prev.confirmado&&tsL>tsR))) {
+      ST.historialFechas[d.fecha]=d;
+      ST.fechaSesiones[d.fecha]=d.diaCiclo||0;
+    }
+  });
+  if(!ST.sets) ST.sets={};
+  var progInicio=ST.programaInicio||'2026-06-12';
+  var setsSnap=await fbDb.collection(FB_COL_V2).doc(uid).collection('sets')
+    .where('fecha','>=',progInicio).get();
+  var setsByDiaEj={};
+  setsSnap.forEach(function(doc){
+    var d=doc.data(); if(!d.fecha||!d.ejercicio||!d.sets||!d.diaCiclo) return;
+    var mk=String(d.diaCiclo)+'_'+d.ejercicio;
+    if(!setsByDiaEj[mk]||d.fecha>setsByDiaEj[mk].fecha) setsByDiaEj[mk]=d;
+    ST.fechaSesiones[d.fecha]=d.diaCiclo;
+  });
+  var prefix=getProgramaPrefix();
+  Object.keys(setsByDiaEj).forEach(function(mk){
+    var d=setsByDiaEj[mk];
+    ST.sets[prefix+'d'+d.diaCiclo+'_'+d.ejercicio]=d.sets;
+  });
+  // Migrar sets legacy al nuevo formato si los hay
+  Object.keys(ST.sets||{}).filter(function(k){return /^d\d+_/.test(k);}).forEach(function(k){
+    var nk=prefix+k; if(!ST.sets[nk]) ST.sets[nk]=ST.sets[k]; delete ST.sets[k];
+  });
+  if(ST.variantesCustom) Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});
+  if(ST.sheetsId) try{_sheetsId=ST.sheetsId;}catch(e){}
+  try{migrarDiaBoyle();}catch(e){}
+  if(!ST.warmupCheck) ST.warmupCheck={};
+  if(!ST.variantes) ST.variantes={};
+  if(!ST.diaBoyle) ST.diaBoyle={};
+  if(!ST.variantesCustom) ST.variantesCustom={};
+  ST._localSaveTime=Date.now();
+  localStorage.setItem('jose_v9',JSON.stringify(ST));
+  renders.hoy();renders.entreno();renders.ciclo();
+  updateSyncUI("synced-remote");
+  actualizarDotSync('ok');
+}
+// ==========================================================================
 // Clave completa para un día+ejercicio
 function diaKey(dia,ej){
   return getProgramaPrefix()+'d'+dia+'_'+ej;
@@ -2927,6 +3074,8 @@ function guardarEdicionSesion(){
   ses.confirmado=true;
   ses.lockTimestamp=Date.now();
   save();
+  saveSesionV2(_editarFecha);
+  if(ses.ejerciciosRealizados) ses.ejerciciosRealizados.forEach(function(e){saveSetV2(_editarFecha,e.ej);});
   document.getElementById('mo-editar-sesion').classList.remove('open');
   if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
   var t=document.getElementById('fb-toast');
@@ -3204,6 +3353,7 @@ function eliminarSetModal(ej, idx){
   if(!ST.sets[useKey]) return;
   ST.sets[useKey].splice(idx,1);
   save();
+  saveSetV2(hoyLocal(),ejClean);
   // Re-abrir modal con datos actualizados
   openMo(ejClean, Math.max(0,(ST.sets[useKey]||[]).filter(Boolean).length));
   renders.entreno();
@@ -3248,6 +3398,7 @@ function guardar(){
   ST.fechaSesiones[fechaHoy]=ST.dia;
   save();
   autoRegistrarFecha();
+  if(!esFinisher) saveSetV2(fechaHoy,ejClean);
   if(!esFinisher){
     var serie=document.getElementById('m-all').checked?'Todas':mSer+1;
     var varActual=ST.variantes&&ST.variantes[ejClean]?ST.variantes[ejClean]:'';
@@ -3299,6 +3450,7 @@ function autoRegistrarFecha(){
     if(!ST.fechaSesiones) ST.fechaSesiones={};
     ST.fechaSesiones[hoy]=ST.dia;
     save();
+    saveSesionV2(hoy);
     try{ renderFinalizarStatus(); }catch(e){}
     try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
   }catch(e){ console.warn('autoRegistrarFecha',e); }
@@ -4507,6 +4659,7 @@ function finalizarSesion(){
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   ST.fechaSesiones[hoy]=ST.dia;
   save();
+  saveSesionV2(hoy);
   renderFinalizarStatus();
   exportarExcelDrive(true);
   backupJSONDrive(); // backup automático JSON a Drive
@@ -5715,7 +5868,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v113';
+const APP_VERSION='v114';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

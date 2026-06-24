@@ -1478,13 +1478,44 @@
     },
     "2026-06-24": {
       "fecha": "2026-06-24",
-      "pasos": 78,
-      "calorias_dia": 111.0,
-      "calorias_activas": 1.0,
-      "distancia_km": 0.06,
-      "minutos_activos": 0,
-      "fc_reposo": 48,
-      "estres_medio": 24
+      "pasos": 2648,
+      "calorias_dia": 1434.0,
+      "calorias_activas": 247.0,
+      "distancia_km": 2.66,
+      "minutos_activos": 29,
+      "fc_reposo": 43,
+      "estres_medio": 20,
+      "sueno_total_min": 487,
+      "sueno_profundo_min": 86,
+      "sueno_ligero_min": 324,
+      "sueno_rem_min": 78,
+      "sueno_puntuacion": 88,
+      "actividades": [
+        {
+          "nombre": "Ojén Natación en aguas abiertas",
+          "tipo": "open_water_swimming",
+          "duracion_min": 15,
+          "calorias": 77.0,
+          "fc_media": 92.0,
+          "fc_max": 112.0
+        },
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 30,
+          "calorias": 167.0,
+          "fc_media": 100.0,
+          "fc_max": 156.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 30,
+        "calorias": 167.0,
+        "fc_media": 100.0,
+        "fc_max": 156.0
+      }
     }
   },
   "actualizado": "2026-06-24"

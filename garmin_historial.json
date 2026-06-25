@@ -1479,7 +1479,7 @@
     "2026-06-24": {
       "fecha": "2026-06-24",
       "pasos": 2648,
-      "calorias_dia": 1465.0,
+      "calorias_dia": 2346.0,
       "calorias_activas": 247.0,
       "distancia_km": 2.66,
       "minutos_activos": 29,
@@ -1519,13 +1519,13 @@
     },
     "2026-06-25": {
       "fecha": "2026-06-25",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
+      "pasos": 60,
+      "calorias_dia": 1008.0,
+      "calorias_activas": 0.0,
+      "distancia_km": 0.05,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": 54
     }
   },
   "actualizado": "2026-06-25"

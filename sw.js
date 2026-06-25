@@ -1,4 +1,4 @@
-const CACHE = 'boyle-v2-103';
+const CACHE = 'boyle-v2-104';
 const ASSETS = ['./'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

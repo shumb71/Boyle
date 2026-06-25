@@ -1519,13 +1519,13 @@
     },
     "2026-06-25": {
       "fecha": "2026-06-25",
-      "pasos": 2993,
-      "calorias_dia": 1980.0,
-      "calorias_activas": 325.0,
-      "distancia_km": 2.78,
+      "pasos": 5901,
+      "calorias_dia": 2510.0,
+      "calorias_activas": 411.0,
+      "distancia_km": 5.19,
       "minutos_activos": 30,
       "fc_reposo": 48,
-      "estres_medio": 27,
+      "estres_medio": 33,
       "actividades": [
         {
           "nombre": "Natación en aguas abiertas",

@@ -1558,7 +1558,7 @@
       "pasos": 2396,
       "calorias_dia": 1175.0,
       "calorias_activas": 23.0,
-      "distancia_km": 1.99,
+      "distancia_km": 2.55,
       "minutos_activos": 0,
       "fc_reposo": 44,
       "estres_medio": 16,
@@ -1566,7 +1566,17 @@
       "sueno_profundo_min": 113,
       "sueno_ligero_min": 159,
       "sueno_rem_min": 19,
-      "sueno_puntuacion": 60
+      "sueno_puntuacion": 60,
+      "actividades": [
+        {
+          "nombre": "Ojén Natación en aguas abiertas",
+          "tipo": "open_water_swimming",
+          "duracion_min": 41,
+          "calorias": 166.0,
+          "fc_media": 83.0,
+          "fc_max": 125.0
+        }
+      ]
     }
   },
   "actualizado": "2026-06-26"

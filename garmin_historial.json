@@ -1727,13 +1727,13 @@
     },
     "2026-07-03": {
       "fecha": "2026-07-03",
-      "pasos": 35,
-      "calorias_dia": 685.0,
-      "calorias_activas": 0.0,
-      "distancia_km": 0.03,
+      "pasos": 2887,
+      "calorias_dia": 1023.0,
+      "calorias_activas": 57.0,
+      "distancia_km": 2.38,
       "minutos_activos": 0,
-      "fc_reposo": null,
-      "estres_medio": 54
+      "fc_reposo": 51,
+      "estres_medio": 32
     }
   },
   "actualizado": "2026-07-03"

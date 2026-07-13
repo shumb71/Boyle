@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v117</title>
+<title>Entreno Boyle v118</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=117', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=118', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -2062,12 +2062,15 @@ function getConfigFields(){
 function saveSetV2(fecha,ej){
   if(!fbReady||!fbUser||!fecha||!ej) return;
   var dia=(ST.fechaSesiones&&ST.fechaSesiones[fecha])||ST.dia;
-  var key=getProgramaPrefix()+'d'+dia+'_'+ej;
+  var ses=ST.historialFechas&&ST.historialFechas[fecha];
+  var sem=(ses&&ses.semana)||ST.sem||1;
+  var key=getProgramaPrefix()+'s'+sem+'_d'+dia+'_'+ej;
+  var oldKey=getProgramaPrefix()+'d'+dia+'_'+ej;
   var legKey='d'+dia+'_'+ej;
-  var sets=(ST.sets[key]||ST.sets[legKey]||[]).filter(Boolean);
+  var sets=(ST.sets[key]||ST.sets[oldKey]||ST.sets[legKey]||[]).filter(Boolean);
   var docId=fecha+'_'+ejSlugFb(ej);
   fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sets').doc(docId).set({
-    fecha:fecha,ejercicio:ej,diaCiclo:dia,sets:sets,
+    fecha:fecha,ejercicio:ej,diaCiclo:dia,sem:sem,sets:sets,
     checkManual:!!(ST.checksManual&&ST.checksManual[key]),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
   }).catch(function(e){console.warn('saveSet error',e);});
@@ -2131,19 +2134,32 @@ async function cargarDesdeSubcollections(uid){
   var setsByDiaEj={};
   setsSnap.forEach(function(doc){
     var d=doc.data(); if(!d.fecha||!d.ejercicio||!d.sets||!d.diaCiclo) return;
-    var mk=String(d.diaCiclo)+'_'+d.ejercicio;
+    // Distinguir por semana cuando el documento la trae (docs guardados desde v118 en adelante);
+    // los antiguos sin semana se agrupan aparte para no mezclarse con una semana real.
+    var mk=String(d.diaCiclo)+'_'+d.ejercicio+'_'+(d.sem!=null?d.sem:'x');
     if(!setsByDiaEj[mk]||d.fecha>setsByDiaEj[mk].fecha) setsByDiaEj[mk]=d;
     ST.fechaSesiones[d.fecha]=d.diaCiclo;
   });
   var prefix=getProgramaPrefix();
   Object.keys(setsByDiaEj).forEach(function(mk){
     var d=setsByDiaEj[mk];
-    ST.sets[prefix+'d'+d.diaCiclo+'_'+d.ejercicio]=d.sets;
+    var semTag=d.sem!=null?d.sem:0; // sin semana registrada -> bucket neutro 's0'
+    ST.sets[prefix+'s'+semTag+'_d'+d.diaCiclo+'_'+d.ejercicio]=d.sets;
   });
-  // Migrar sets legacy al nuevo formato si los hay
+  // Migrar sets legacy (formato anterior a v101, sin prefijo) al nuevo formato
   Object.keys(ST.sets||{}).filter(function(k){return /^d\d+_/.test(k);}).forEach(function(k){
     var nk=prefix+k; if(!ST.sets[nk]) ST.sets[nk]=ST.sets[k]; delete ST.sets[k];
   });
+  // Cualquier resto del formato intermedio v101-v116 (prefijo+dia, sin semana) va al bucket neutro
+  (function(){
+    var reOld=new RegExp('^'+prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'d(\\d+)_');
+    Object.keys(ST.sets||{}).forEach(function(k){
+      var m=k.match(reOld); if(!m) return;
+      var nk=prefix+'s0_d'+m[1]+'_'+k.slice(m[0].length);
+      if(!ST.sets[nk]) ST.sets[nk]=ST.sets[k];
+      delete ST.sets[k];
+    });
+  })();
   if(ST.variantesCustom) Object.keys(ST.variantesCustom).forEach(function(k){VARIANTES[k]=ST.variantesCustom[k];});
   if(ST.sheetsId) try{_sheetsId=ST.sheetsId;}catch(e){}
   try{migrarDiaBoyle();}catch(e){}
@@ -2192,8 +2208,10 @@ function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.p
         delete ST.sets[k];
       });
     })();
-    // Migrar sets del formato intermedio v101-v116 (prefijo+dia, sin semana) al nuevo formato con semana.
-    // No se pierde ningún dato: solo se renombra la clave, conservando los valores tal cual.
+    // Migrar sets del formato intermedio v101-v116 (prefijo+dia, sin semana) a un bucket de
+    // semana "desconocida" (s0) que nunca coincide con ninguna semana real de verdad. Así el
+    // dato queda intacto (sigue saliendo en "última vez" e historial de peso) pero no contamina
+    // el check de "hecho" de ninguna fase, evitando el cruce entre semanas/fases.
     (function(){
       var prefix=getProgramaPrefix();
       var reOld=new RegExp('^'+prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'d(\\d+)_');
@@ -2201,11 +2219,29 @@ function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.p
         var m=k.match(reOld);
         if(!m) return;
         var dia=m[1], resto=k.slice(m[0].length);
-        var newKey=prefix+'s'+(ST.sem||1)+'_d'+dia+'_'+resto;
+        var newKey=prefix+'s0_d'+dia+'_'+resto;
         if(newKey===k) return;
         if(!ST.sets[newKey]) ST.sets[newKey]=ST.sets[k];
         delete ST.sets[k];
       });
+    })();
+    // FIX v118 — la migración de v117 etiquetó por error datos antiguos de OTRAS semanas con la
+    // semana ACTUAL, mezclando fases (F1 aparecía como "hecho" en F2). Limpieza de un solo uso:
+    // mueve lo que haya en el bucket de la semana actual al bucket de semana desconocida (s0),
+    // sin borrar ningún valor. Se ejecuta una única vez (ST._v118SemFixDone).
+    (function(){
+      if(ST._v118SemFixDone) return;
+      var prefix=getProgramaPrefix();
+      var semPrefix='s'+(ST.sem||1)+'_d';
+      var curBucket=prefix+semPrefix;
+      Object.keys(ST.sets||{}).forEach(function(k){
+        if(k.indexOf(curBucket)!==0) return;
+        var resto=k.slice(curBucket.length); // '{dia}_{ej}'
+        var newKey=prefix+'s0_d'+resto;
+        if(!ST.sets[newKey]) ST.sets[newKey]=ST.sets[k];
+        delete ST.sets[k];
+      });
+      ST._v118SemFixDone=true;
     })();
     // Migrar fechaSesiones antiguo (dia→fecha) a nuevo (fecha→dia)
     if(ST.fechaSesiones){
@@ -3164,12 +3200,13 @@ function guardarEdicionSesion(){
       ej.sets[si].n=inp.value||'';
     }
   });
-  // Actualizar también ST.sets con prefijo correcto
+  // Actualizar también ST.sets con prefijo correcto (incluye la semana de esa sesión)
   var pi=ses.programaInicio||ST.programaInicio||'2026-06-12';
   var prefix='p'+pi.replace(/-/g,'')+'_';
   var dc=ses.diaCiclo||0;
+  var semSes=ses.semana!=null?ses.semana:0;
   ses.ejerciciosRealizados.forEach(function(e){
-    var key=prefix+'d'+dc+'_'+e.ej;
+    var key=prefix+'s'+semSes+'_d'+dc+'_'+e.ej;
     ST.sets[key]=e.sets;
   });
   ses.timestamp=Date.now();
@@ -5975,7 +6012,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v117';
+const APP_VERSION='v118';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

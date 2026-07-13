@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v119</title>
+<title>Entreno Boyle v120</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=119', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=120', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1919,7 +1919,7 @@ const CAL={
   ],
 };
 const PROG=[
-  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:2,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:2,r:8,p:60,pa:'90 seg',d:true},
+  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:3,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:2,r:8,p:60,pa:'90 seg',d:true},
   {s:5,n:3,r:8,p:72,pa:'2 min'},{s:6,n:3,r:8,p:74,pa:'2-3 min'},{s:7,n:4,r:6,p:78,pa:'3 min'},{s:8,n:2,r:8,p:65,pa:'90 seg',d:true},
   {s:9,n:3,r:6,p:75,pa:'3-4 min'},{s:10,n:4,r:5,p:80,pa:'4 min'},{s:11,n:4,r:5,p:82,pa:'4-5 min'},{s:12,n:2,r:6,p:65,pa:'2 min',d:true},
 ];
@@ -2699,8 +2699,11 @@ const renders={
           var repsTarget=getRepsTarget(ejR,fase,semEnFase,diaBoyleKey);
           if(info.tipo==='fijo'){numSer=parseInt(info.series)||3;rpsLabel=info.reps||'--';}
           else if(repsTarget){
-            numSer=pr.n;
             var rVal=repsTarget.r!==undefined?repsTarget.r:pr.r;
+            // Si el esquema trae varios valores separados por coma (ej. "5,5,5,5+"), ese es
+            // el número real de series a registrar esa semana, aunque no coincida con PROG.n
+            // (los ejercicios principales a veces añaden una serie extra a mitad de fase).
+            numSer=(typeof rVal==='string'&&rVal.indexOf(',')>=0)?rVal.split(',').length:pr.n;
             rpsLabel=info.reps?(rVal+' '+info.reps):String(rVal);
           }
           else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
@@ -3525,7 +3528,15 @@ function guardar(){
   if(document.getElementById('m-all').checked){
     var pr=PROG[(ST.sem-1)%12];
     var info=EJ_INFO[ejClean]||{};
-    var num=info.tipo==='fijo'?(parseInt(info.series)||3):pr.n;
+    var num;
+    if(info.tipo==='fijo'){
+      num=parseInt(info.series)||3;
+    } else {
+      var faseAll=getFaseActual(ST.sem), semEnFaseAll=getSemEnFase(ST.sem), diaBoyleAll=getDiaBoyle()||'D1';
+      var repsTargetAll=getRepsTarget(ejClean,faseAll,semEnFaseAll,diaBoyleAll);
+      var rValAll=repsTargetAll&&repsTargetAll.r!==undefined?repsTargetAll.r:pr.r;
+      num=(typeof rValAll==='string'&&rValAll.indexOf(',')>=0)?rValAll.split(',').length:pr.n;
+    }
     ST.sets[key]=[];
     for(var i=0;i<num;i++) ST.sets[key].push(Object.assign({},setData));
   } else {
@@ -6012,7 +6023,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v119';
+const APP_VERSION='v120';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

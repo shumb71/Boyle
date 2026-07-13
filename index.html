@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v118</title>
+<title>Entreno Boyle v119</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=118', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=119', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1919,9 +1919,9 @@ const CAL={
   ],
 };
 const PROG=[
-  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:2,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:2,r:8,p:60,pa:'90 seg'},
-  {s:5,n:3,r:8,p:72,pa:'2 min'},{s:6,n:3,r:8,p:74,pa:'2-3 min'},{s:7,n:4,r:6,p:78,pa:'3 min'},{s:8,n:2,r:8,p:65,pa:'90 seg'},
-  {s:9,n:3,r:6,p:75,pa:'3-4 min'},{s:10,n:4,r:5,p:80,pa:'4 min'},{s:11,n:4,r:5,p:82,pa:'4-5 min'},{s:12,n:2,r:6,p:65,pa:'2 min'},
+  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:2,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:2,r:8,p:60,pa:'90 seg',d:true},
+  {s:5,n:3,r:8,p:72,pa:'2 min'},{s:6,n:3,r:8,p:74,pa:'2-3 min'},{s:7,n:4,r:6,p:78,pa:'3 min'},{s:8,n:2,r:8,p:65,pa:'90 seg',d:true},
+  {s:9,n:3,r:6,p:75,pa:'3-4 min'},{s:10,n:4,r:5,p:80,pa:'4 min'},{s:11,n:4,r:5,p:82,pa:'4-5 min'},{s:12,n:2,r:6,p:65,pa:'2 min',d:true},
 ];
 const COMIDAS={
   Manana:[{h:'06:15',n:'Desayuno pre-turno',d:'Avena 60g + proteina 30g + leche + platano',k:510,p:42,hc:65,g:7},{h:'10:00',n:'Media manana',d:'Yogur griego 0% 200g + nueces 15g + manzana',k:300,p:22,hc:25,g:9},{h:'14:30',n:'Pre-entreno',d:'Arroz 80g + pollo 160g + verduras + AOVE',k:530,p:42,hc:62,g:9},{h:'18:30',n:'Post-entreno',d:'Proteina 35g + platano + leche 200ml',k:380,p:40,hc:38,g:4},{h:'21:00',n:'Cena ligera',d:'Salmon o merluza 180g + ensalada + 2 huevos',k:420,p:48,hc:12,g:18}],
@@ -6012,7 +6012,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v118';
+const APP_VERSION='v119';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v120</title>
+<title>Entreno Boyle v121</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=120', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=121', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -628,6 +628,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <div class="screen" id="s-entreno">
     <div class="ph"><h1>Entreno</h1><span id="e-sem" style="font-size:13px;color:var(--text2)">Semana 1</span><div id="fb-dot-entreno" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <div id="e-dia-picker"></div>
+    <div style="text-align:right;margin:-.35rem 0 .6rem 0">
+      <button onclick="abrirEliminarEntrenoHoy()" style="border:none;background:transparent;color:var(--red-text,#dc2626);font-size:11px;cursor:pointer;padding:2px 4px">🗑 Eliminar entreno de hoy</button>
+    </div>
     <!-- FASE ACTUAL -->
     <div id="e-fase-banner" style="margin-bottom:.75rem;padding:.5rem .75rem;border-radius:var(--rs);background:var(--blue-bg);border:.5px solid rgba(91,143,255,.2);display:flex;align-items:center;justify-content:space-between">
       <div>
@@ -1179,10 +1182,10 @@ const SES_NOM={
 
 // ESTRUCTURA DEL PROGRAMA (para la pantalla Programa/consulta)
 const BOYLE_FASES=[
-  {id:'F1', n:'Fase 1 — Acumulacion',  desc:'3x8 al 60-77%. Tempo 3/1/1. Aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
-  {id:'F2', n:'Fase 2 — Peaking',      desc:'4-6x3 al 90-97%. Cargas altas, pocas reps. CNS.',   sems:'Sem 4-6',  color:'var(--orange)'},
-  {id:'F3', n:'Fase 3 — Fuerza',       desc:'3-5x5 al 80-87%. Fuerza maxima con volumen medio.', sems:'Sem 7-9',  color:'var(--green)'},
-  {id:'F4', n:'Fase 4 — Peaking 2',    desc:'4-6x3 al 90-97%. Segundo pico de intensidad.',      sems:'Sem 10-12',color:'var(--red-text)'},
+  {id:'F1', n:'Fase 1 — Acumulacion',  desc:'2-3x10 al 60-68%. Tempo 3/1/1. Aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
+  {id:'F2', n:'Fase 2 — Peaking',      desc:'2-3 series al 60-74% (sem.4 descarga). Cargas altas, CNS.',   sems:'Sem 4-6',  color:'var(--orange)'},
+  {id:'F3', n:'Fase 3 — Fuerza',       desc:'2-4 series al 65-78% (sem.8 descarga). Complejos fuerza+potencia.', sems:'Sem 7-9',  color:'var(--green)'},
+  {id:'F4', n:'Fase 4 — Peaking 2',    desc:'2-4 series al 65-82% (sem.12 descarga). Igual que F3, mas intensidad.',      sems:'Sem 10-12',color:'var(--red-text)'},
 ];
 
 // PROGRAMA DE 4 DIAS BOYLE — fiel al Excel boyle24.xlsx (la biblia)
@@ -2269,9 +2272,13 @@ function save(){
 }
 load();
 
+function sesionCustomKey(dia,ses){
+  return dia+'_'+(ses||'');
+}
 function getEjs(ses){
-  // Si hay custom para este dia de ciclo especifico, usarlo primero
-  const hoy=ST.sesionCustom&&ST.sesionCustom[ST.dia];
+  // Si hay custom para este dia de ciclo Y este día D1-D4 específico, usarlo primero
+  const customKey=sesionCustomKey(ST.dia,ses);
+  const hoy=ST.sesionCustom&&ST.sesionCustom[customKey];
   if(hoy&&hoy.ejs) return hoy.ejs;
   // Usar ejercicios según fase actual
   var fase=getFaseActual(ST.sem);
@@ -4531,7 +4538,8 @@ function _getEjListaCustom(){
   if(!dB) return [];
   var fase=getFaseActual(ST.sem);
   var faseEjs=EJS_FASES[fase];
-  if(ST.sesionCustom&&ST.sesionCustom[ST.dia]&&ST.sesionCustom[ST.dia].ejs) return ST.sesionCustom[ST.dia].ejs.slice();
+  var ck=sesionCustomKey(ST.dia,dB);
+  if(ST.sesionCustom&&ST.sesionCustom[ck]&&ST.sesionCustom[ck].ejs) return ST.sesionCustom[ck].ejs.slice();
   return (faseEjs&&faseEjs[dB])?faseEjs[dB].slice():(EJS_DEF[dB]?EJS_DEF[dB].slice():[]);
 }
 
@@ -4580,13 +4588,14 @@ function confirmarAnadirEj(){
   var series=parseInt(document.getElementById('mo-anadir-series').value)||3;
   var reps=document.getElementById('mo-anadir-reps').value||'8';
   if(!ST.sesionCustom) ST.sesionCustom={};
-  if(!ST.sesionCustom[ST.dia]){
-    var dB=getDiaBoyle();
+  var dB=getDiaBoyle();
+  var ck=sesionCustomKey(ST.dia,dB);
+  if(!ST.sesionCustom[ck]){
     var fase=getFaseActual(ST.sem);
     var faseEjs=EJS_FASES[fase];
-    ST.sesionCustom[ST.dia]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
+    ST.sesionCustom[ck]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
   }
-  var lista=ST.sesionCustom[ST.dia].ejs;
+  var lista=ST.sesionCustom[ck].ejs;
   if(lista.indexOf(nombre)<0){
     if(_anadirBloqueIdx>=0){
       // Insertar al final del bloque indicado
@@ -4607,20 +4616,67 @@ function confirmarAnadirEj(){
 function quitarEjSesion(ej){
   if(!confirm('Quitar "'+ej+'" de la sesion de hoy?')) return;
   if(!ST.sesionCustom) ST.sesionCustom={};
-  if(!ST.sesionCustom[ST.dia]){
-    var dB=getDiaBoyle();
+  var dB=getDiaBoyle();
+  var ck=sesionCustomKey(ST.dia,dB);
+  if(!ST.sesionCustom[ck]){
     var fase=getFaseActual(ST.sem);
     var faseEjs=EJS_FASES[fase];
-    ST.sesionCustom[ST.dia]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
+    ST.sesionCustom[ck]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
   }
-  ST.sesionCustom[ST.dia].ejs=ST.sesionCustom[ST.dia].ejs.filter(function(e){return e!==ej;});
+  ST.sesionCustom[ck].ejs=ST.sesionCustom[ck].ejs.filter(function(e){return e!==ej;});
   save();renders.entreno();
 }
 
 function resetearSesion(){
   if(!confirm('Resetear sesion al programa base?')) return;
-  if(ST.sesionCustom&&ST.sesionCustom[ST.dia]) delete ST.sesionCustom[ST.dia];
+  var dB=getDiaBoyle();
+  var ck=sesionCustomKey(ST.dia,dB);
+  if(ST.sesionCustom&&ST.sesionCustom[ck]) delete ST.sesionCustom[ck];
   save();renders.entreno();
+}
+
+function abrirEliminarEntrenoHoy(){
+  document.getElementById('mo-elim-hoy').classList.add('open');
+}
+
+function confirmarEliminarEntrenoHoy(){
+  var hoy=hoyLocal();
+  var prefNew=diaDayPrefix(ST.dia);
+  var prefLeg=legacyDayPrefix(ST.dia);
+  var prefOld=(typeof oldProgramaDayPrefix==='function')?oldProgramaDayPrefix(ST.dia):null;
+  // 1. Borrar sets (normales y finishers) del día actual
+  Object.keys(ST.sets||{}).forEach(function(k){
+    if(k.indexOf(prefNew)===0||k.indexOf(prefLeg)===0||(prefOld&&k.indexOf(prefOld)===0)) delete ST.sets[k];
+  });
+  // 2. Borrar checks manuales del día actual
+  if(ST.checksManual){
+    Object.keys(ST.checksManual).forEach(function(k){
+      if(k.indexOf(prefNew)===0||k.indexOf(prefLeg)===0||(prefOld&&k.indexOf(prefOld)===0)) delete ST.checksManual[k];
+    });
+  }
+  // 3. Borrar personalización de ejercicios de hoy (sesionCustom)
+  var dB=getDiaBoyle();
+  var ck=sesionCustomKey(ST.dia,dB);
+  if(ST.sesionCustom&&ST.sesionCustom[ck]) delete ST.sesionCustom[ck];
+  // 4. Borrar el registro de la sesión de hoy en el calendario/historial
+  if(ST.historialFechas&&ST.historialFechas[hoy]) delete ST.historialFechas[hoy];
+  if(ST.fechaSesiones&&ST.fechaSesiones[hoy]) delete ST.fechaSesiones[hoy];
+  if(ST.notaDia&&ST.notaDia[hoy]) delete ST.notaDia[hoy];
+  save();
+  // 5. Borrar también en Firestore si hay sync activo
+  try{
+    if(typeof fbReady!=='undefined'&&fbReady&&fbUser&&typeof fbDb!=='undefined'){
+      fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sesiones').doc(hoy).delete().catch(function(e){console.warn('borrar sesion fb',e);});
+      fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sets').where('fecha','==',hoy).get().then(function(snap){
+        snap.forEach(function(doc){ doc.ref.delete().catch(function(e){console.warn('borrar set fb',e);}); });
+      }).catch(function(e){console.warn('borrar sets fb',e);});
+    }
+  }catch(e){console.warn('eliminar entreno hoy fb',e);}
+  document.getElementById('mo-elim-hoy').classList.remove('open');
+  try{renders.entreno();}catch(e){}
+  try{renders.hoy();}catch(e){}
+  try{var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal();}catch(e){}
+  alert('Entreno de hoy eliminado. Puedes registrar de nuevo desde cero.');
 }
 
 
@@ -5985,12 +6041,13 @@ function confirmarCambioEj(el){
   var dB = getDiaBoyle();
   var fase=getFaseActual(ST.sem);
   var faseEjs=EJS_FASES[fase];
-  if(!ST.sesionCustom[ST.dia]){
-    ST.sesionCustom[ST.dia]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
+  var ck=sesionCustomKey(ST.dia,dB);
+  if(!ST.sesionCustom[ck]){
+    ST.sesionCustom[ck]={ejs:dB&&faseEjs&&faseEjs[dB]?faseEjs[dB].slice():(dB&&EJS_DEF[dB]?EJS_DEF[dB].slice():[])};
   }
-  var idx = ST.sesionCustom[ST.dia].ejs.indexOf(origKey);
-  if(idx>=0) ST.sesionCustom[ST.dia].ejs[idx]=newKey;
-  else ST.sesionCustom[ST.dia].ejs.push(newKey);
+  var idx = ST.sesionCustom[ck].ejs.indexOf(origKey);
+  if(idx>=0) ST.sesionCustom[ck].ejs[idx]=newKey;
+  else ST.sesionCustom[ck].ejs.push(newKey);
   save();
   document.getElementById('mo-cambiar-ej').classList.remove('open');
   renders.entreno();
@@ -6023,7 +6080,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v120';
+const APP_VERSION='v121';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7503,6 +7560,21 @@ checkBackupReminder();
     </div>
     <div id="mo-cd-list"></div>
     <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem" onclick="document.getElementById('mo-cambiardia').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL AÑADIR EJERCICIO A SESION -->
+<div class="mo" id="mo-elim-hoy" onclick="closeMo(event,'mo-elim-hoy')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">🗑 Eliminar entreno de hoy</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:1rem">
+      Esto borra por completo el registro de hoy: series registradas, checks, personalizaciones de ejercicios de hoy,
+      y la sesión del calendario (local y en la nube si estás sincronizado). No afecta a ningún otro día.
+      <br><br><b>No se puede deshacer.</b> ¿Seguro?
+    </div>
+    <button onclick="confirmarEliminarEntrenoHoy()" style="width:100%;padding:12px;border:none;background:var(--red-text,#dc2626);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:.5rem">Sí, eliminar entreno de hoy</button>
+    <button onclick="closeMo(null,'mo-elim-hoy')" style="width:100%;padding:10px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer">Cancelar</button>
   </div>
 </div>
 

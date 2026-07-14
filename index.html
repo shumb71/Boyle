@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v121</title>
+<title>Entreno Boyle v122</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=121', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=122', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -2967,10 +2967,10 @@ function renderBoyleContenido(){
   // Info de fase
   var faseNoms={F1:'Acumulación',F2:'Peaking',F3:'Fuerza + Complejos',F4:'Peaking 2'};
   var faseDesc={
-    F1:'3 series × 8 reps al 60-77%. Tempo 3/1/1. Construir base de volumen.',
-    F2:'3 series × 5 reps al 80-87%. Mayor carga, menos volumen. Transición a fuerza.',
-    F3:'3-5 series × 5 reps con complejos (ejercicio + potencia). Máxima transferencia.',
-    F4:'Igual que F3 con mayor intensidad. Turkish Get-Up completo. Peak del programa.',
+    F1:'2-3 series × 10 reps al 60-68%. Tempo 3/1/1. Construir base de volumen.',
+    F2:'2-3 series × 3-5 reps al 60-74% (sem.4 descarga). Cargas altas, CNS.',
+    F3:'2-4 series × 5-6 reps con complejos (ejercicio + potencia), 65-78%. Máxima transferencia.',
+    F4:'Igual que F3 con mayor intensidad (65-82%). Turkish Get-Up completo. Peak del programa.',
   };
   var semanas=[1,2,3];
   var html='';
@@ -3732,7 +3732,7 @@ function verDiaBoyle(d){
   var semEnFase=getSemEnFase(ST.sem);
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
-  var faseNoms={F1:'F1 — 3x8 · 60-77%',F2:'F2 — 4-6x3 · 90-97%',F3:'F3 — 3-5x5 · 80-87%',F4:'F4 — 4-6x3 · 90-97%'};
+  var faseNoms={F1:'F1 — 2-3x10 · 60-68%',F2:'F2 — 2-3x3-5 · 60-74%',F3:'F3 — 2-4x5-6 · 65-78%',F4:'F4 — 2-4x5-6 · 65-82%'};
   var faseTempo={F1:' · Tempo 3/1/1',F2:'',F3:' · Tempo 3/1/1',F4:''};
   // Ejercicios de EJS_FASES para esta fase y dia
   var ejsFase=(EJS_FASES[fase]&&EJS_FASES[fase][d])||[];
@@ -5019,13 +5019,13 @@ function renderFaseBanner(){
   var semEnFase=getSemEnFase(ST.sem);
   // Nombres y datos EXACTOS del Excel boyle24.xlsx
   var faseNoms={
-    F1:'F1 — Acumulación · 3×8 · 60-77%',
-    F2:'F2 — Peaking · 4-6×3 · 90-97%',
-    F3:'F3 — Fuerza · 3-5×5 · 80-87%',
-    F4:'F4 — Peaking 2 · 4-6×3 · 90-97%'
+    F1:'F1 — Acumulación · 2-3×10 · 60-68%',
+    F2:'F2 — Peaking · 2-3×3-5 · 60-74%',
+    F3:'F3 — Fuerza · 2-4×5-6 · 65-78%',
+    F4:'F4 — Peaking 2 · 2-4×5-6 · 65-82%'
   };
-  var faseReps={F1:'3×8',F2:'4-6×3',F3:'3-5×5',F4:'4-6×3'};
-  var fasePct={F1:'60-77%',F2:'90-97%',F3:'80-87%',F4:'90-97%'};
+  var faseReps={F1:'2-3×10',F2:'2-3×3-5',F3:'2-4×5-6',F4:'2-4×5-6'};
+  var fasePct={F1:'60-68%',F2:'60-74%',F3:'65-78%',F4:'65-82%'};
   var faseTempo={F1:'Tempo 3/1/1',F2:'',F3:'Tempo 3/1/1',F4:''};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
@@ -6080,7 +6080,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v121';
+const APP_VERSION='v122';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

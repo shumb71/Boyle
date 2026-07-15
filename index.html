@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v122</title>
+<title>Entreno Boyle v126</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=122', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=126', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -698,6 +698,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <i class="ti ti-chevron-down" id="finisher-icon" style="color:var(--text3);transition:transform .2s"></i>
       </div>
       <div id="finisher-body" style="display:none;margin-top:.75rem"></div>
+    </div>
+
+    <!-- TRINEO + CONDITIONING (After Lift) -->
+    <div class="card" id="e-sled-card">
+      <div onclick="toggleSection('sled')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="card-lbl" style="margin-bottom:0;color:var(--red-text,#dc2626)">🛷 Trineo + Conditioning</div>
+          <span style="font-size:10px;background:var(--bg3);color:var(--text2);border-radius:10px;padding:1px 8px;font-weight:700">OPCIONAL</span>
+        </div>
+        <i class="ti ti-chevron-down" id="sled-icon" style="color:var(--text3);transition:transform .2s"></i>
+      </div>
+      <div id="sled-body" style="display:none;margin-top:.75rem"></div>
     </div>
 
     <!-- ENFRIAMIENTO EXPANDIBLE -->
@@ -1321,7 +1333,7 @@ const VARIANTES={
   "Standing antirotation hold":["Standing antirotation hold","Half-kneeling antirotation hold","Pallof press caminando"],
   "Suitcase Carry":["Suitcase Carry unilateral","Farmer Walk bilateral","Bottoms-up KB walk"],
   "Farmer Carry":["Farmer Carry bilateral","Suitcase Carry unilateral"],
-  "Turkish Get-Up":["Get-up hasta codo","Get-up hasta puente alto","Turkish Get-Up completo"],
+  "Half-kneeling Windmill":["Windmill sin peso","Windmill con KB ligera","Half-kneeling Windmill"],
   "Supine Floor Slide":["Supine Floor Slide","Wall Slide de pie"],
   "Spiderman pos. lat stretch":["Spiderman lat stretch","Open book","World's greatest stretch"],
 };
@@ -1366,7 +1378,7 @@ const VAR_TIPO={
   "Standing antirotation hold":{"Standing antirotation hold":"base","Half-kneeling antirotation hold":"regresion","Pallof press caminando":"progresion"},
   "Suitcase Carry":{"Suitcase Carry unilateral":"base","Farmer Walk bilateral":"regresion","Bottoms-up KB walk":"progresion"},
   "Farmer Carry":{"Farmer Carry bilateral":"base","Suitcase Carry unilateral":"regresion"},
-  "Turkish Get-Up":{"Get-up hasta codo":"regresion","Get-up hasta puente alto":"base","Turkish Get-Up completo":"progresion"},
+  "Half-kneeling Windmill":{"Windmill sin peso":"regresion","Windmill con KB ligera":"base","Half-kneeling Windmill":"progresion"},
   "Supine Floor Slide":{"Supine Floor Slide":"base","Wall Slide de pie":"regresion"},
   "Spiderman pos. lat stretch":{"Spiderman lat stretch":"base","Open book":"alt","World's greatest stretch":"progresion"},
 };
@@ -1382,7 +1394,7 @@ const EJS_FASES={
     D1:["Hang Clean", "Front Plank", "Trap Bar Deadlift", "Chin-up / Pull-up", "Split Squat (Bottoms-up KB)", "DB Row", "In-line Chop"],
     D2:["Bench Press", "Spiderman pos. lat stretch", "Half-kneeling Overhead Press", "Supine Floor Slide", "Push-up progression", "Half-kneeling push-pull", "Suitcase Carry"],
     D3:["Hang Clean", "Front Plank", "Rear-foot-elevated Split Squat", "Ring Row", "Single-leg RDL (Straight-leg DL)", "X-pull-down", "In-line Lift"],
-    D4:["Dumbbell Incline Bench", "Spiderman pos. lat stretch", "Push-up progression", "Squat Holds", "Turkish Get-Up", "Half-kneeling antirotation hold", "Farmer Carry"],
+    D4:["Dumbbell Incline Bench", "Spiderman pos. lat stretch", "Push-up progression", "Squat Holds", "Half-kneeling Windmill", "Half-kneeling antirotation hold", "Farmer Carry"],
     Descanso:[],
     Mov:["Movilidad activa (Daily Mob)"],
   },
@@ -1390,7 +1402,7 @@ const EJS_FASES={
     D1:["Hang Clean", "Hard-style Front Plank", "Trap Bar Deadlift", "Chin-up / Pull-up", "One-leg Squat", "DB Row", "In-line Iso Hold Chop"],
     D2:["Bench Press", "Spiderman pos. lat stretch", "Standing Overhead Press", "Supine Floor Slide", "Push-up progression", "Half-kneeling push-pull", "Suitcase Carry"],
     D3:["Hang Clean (65-75%)", "Hard-style Front Plank", "Rear-foot-elevated Split Squat", "Ring Row", "Single-leg RDL (Straight-leg DL)", "X-pull-down", "In-line Iso Hold Lift"],
-    D4:["Dumbbell Incline Bench", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Turkish Get-Up", "Half-kneeling antirotation hold", "Farmer Carry"],
+    D4:["Dumbbell Incline Bench", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Half-kneeling Windmill", "Half-kneeling antirotation hold", "Farmer Carry"],
     Descanso:[],
     Mov:["Movilidad activa (Daily Mob)"],
   },
@@ -1398,7 +1410,7 @@ const EJS_FASES={
     D1:["Hang Clean", "Stability Ball Roll-out", "Trap Bar Deadlift + Hurdle Jump", "Chin-up + Med Ball Slam", "One-leg Squat", "DB Row", "Dynamic Chop"],
     D2:["Bench Press + Med Ball", "Spiderman pos. lat stretch", "Standing Overhead Press", "Supine Floor Slide", "Push-up progression", "Dynamic push-pull", "Suitcase Carry"],
     D3:["Hang Clean (65-75%)", "Stability Ball Roll-out", "RFESS + Hurdle Hops", "Ring Row + Med Ball Slam", "Single-leg RDL (Straight-leg DL)", "DB Row", "Dynamic Lift"],
-    D4:["Dumbbell Incline Bench + Med Ball", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Turkish Get-Up", "Standing antirotation hold", "Farmer Carry"],
+    D4:["Dumbbell Incline Bench + Med Ball", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Half-kneeling Windmill", "Standing antirotation hold", "Farmer Carry"],
     Descanso:[],
     Mov:["Movilidad activa (Daily Mob)"],
   },
@@ -1406,7 +1418,7 @@ const EJS_FASES={
     D1:["Hang Clean", "Stability Ball Roll-out", "Trap Bar Deadlift + Hurdle Jump", "Chin-up + Med Ball Slam", "One-leg Squat", "DB Row", "Dynamic Chop"],
     D2:["Bench Press + Med Ball", "Spiderman pos. lat stretch", "Standing Overhead Press", "Supine Floor Slide", "Push-up progression", "Dynamic push-pull", "Suitcase Carry"],
     D3:["Hang Clean (65-75%)", "Stability Ball Roll-out", "RFESS + Hurdle Hops", "Ring Row + Med Ball Slam", "Single-leg RDL (Straight-leg DL)", "DB Row", "Dynamic Lift"],
-    D4:["Dumbbell Incline Bench + Med Ball", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Turkish Get-Up", "Standing antirotation hold", "Farmer Carry"],
+    D4:["Dumbbell Incline Bench + Med Ball", "Spiderman pos. lat stretch", "Push-up progression", "Toe Touch Squat with medicine ball", "Half-kneeling Windmill", "Standing antirotation hold", "Farmer Carry"],
     Descanso:[],
     Mov:["Movilidad activa (Daily Mob)"],
   },
@@ -1473,7 +1485,7 @@ const REPS_FASE={
       "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
       "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
       "Squat Holds":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
-      "Turkish Get-Up":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
+      "Half-kneeling Windmill":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
       "Half-kneeling antirotation hold":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
       "Farmer Carry":[{"s": 1, "r": "25y×2"}, {"s": 2, "r": "25y×2"}, {"s": 3, "r": "25y×2"}],
     },
@@ -1512,7 +1524,7 @@ const REPS_FASE={
       "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
       "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
       "Toe Touch Squat with medicine ball":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
-      "Turkish Get-Up":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
+      "Half-kneeling Windmill":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
       "Half-kneeling antirotation hold":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
       "Farmer Carry":[{"s": 1, "r": "25y×2"}, {"s": 2, "r": "25y×2"}, {"s": 3, "r": "25y×2"}],
     },
@@ -1551,7 +1563,7 @@ const REPS_FASE={
       "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
       "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
       "Toe Touch Squat with medicine ball":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
-      "Turkish Get-Up":[{"s": 1, "r": "2+2"}, {"s": 2, "r": "2+2"}, {"s": 3, "r": "2+2"}],
+      "Half-kneeling Windmill":[{"s": 1, "r": "2+2"}, {"s": 2, "r": "2+2"}, {"s": 3, "r": "2+2"}],
       "Standing antirotation hold":[{"s": 1, "r": "3×25s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
       "Farmer Carry":[{"s": 1, "r": "25y×3"}, {"s": 2, "r": "25y×3"}, {"s": 3, "r": "25y×3"}],
     },
@@ -1590,7 +1602,7 @@ const REPS_FASE={
       "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
       "Push-up progression":[{"s": 1, "r": "10,10,10+"}, {"s": 2, "r": "10,10,10+"}, {"s": 3, "r": "10,10,10+"}],
       "Toe Touch Squat with medicine ball":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
-      "Turkish Get-Up":[{"s": 1, "r": "2+2"}, {"s": 2, "r": "2+2"}, {"s": 3, "r": "2+2"}],
+      "Half-kneeling Windmill":[{"s": 1, "r": "2+2"}, {"s": 2, "r": "2+2"}, {"s": 3, "r": "2+2"}],
       "Standing antirotation hold":[{"s": 1, "r": "3×25s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
       "Farmer Carry":[{"s": 1, "r": "25y×3"}, {"s": 2, "r": "25y×3"}, {"s": 3, "r": "25y×3"}],
     },
@@ -1645,7 +1657,7 @@ const EJ_INFO={
   "Toe Touch Squat with medicine ball":{tipo:"prog",tecnica:"Sentadilla guiada tocando el balón. Patrón seguro de rodilla, bajo riesgo."},
   "Squat Holds":{tipo:"prog",tecnica:"Sostén isométrico en sentadilla. Tolerable en general; baja el rango si molesta la rodilla."},
   "Hang Clean (65-75%)":{tipo:"prog",tecnica:"Hang clean al 65-75%. SIEMPRE primero. Extensión completa de cadera, calidad sobre cantidad."},
-  "Turkish Get-Up":{tipo:"prog",tecnica:"Get-up turco progresivo: hasta codo → puente alto → de pie completo. Estabilidad total."},
+  "Half-kneeling Windmill":{tipo:"prog",tecnica:"Semi-arrodillado, KB o mancuerna en la mano del lado de la pierna adelantada, brazo extendido hacia el techo. Bisagra de cadera lateral manteniendo la vista en el peso y el brazo bloqueado. Antiflexión lateral + estabilidad de hombro."},
   "Suitcase Carry":{tipo:"prog",tecnica:"Caminata con peso a un lado. Antiflexión lateral del core. Tronco recto."},
   "Farmer Carry":{tipo:"prog",tecnica:"Caminata con peso en ambas manos. Agarre y core."},
   'Hang Clean':{tipo:'prog',tecnica:'SIEMPRE primero en la sesion. Desde encima de rodillas. Extension completa de cadera. 3-5 reps max — calidad sobre cantidad.'},
@@ -1682,9 +1694,7 @@ const EJ_INFO={
   'In-line Iso Hold Lift':{tipo:'fijo',series:'3',reps:'8/lado',tecnica:'Igual que el Lift pero con pausa isométrica. Mayor activación.'},
   'Dynamic Chop':{tipo:'fijo',series:'3',reps:'10/lado',tecnica:'De pie, movimiento dinámico diagonal. Máxima velocidad con control. Fase avanzada del in-line chop.'},
   'Dynamic Lift':{tipo:'fijo',series:'3',reps:'10/lado',tecnica:'De pie, movimiento dinámico de abajo hacia arriba. Fase avanzada.'},
-  'Turkish Get-Up':{tipo:'prog',reps:'c/lado',tecnica:'Movimiento completo: suelo → de pie → suelo. KB mirando al techo todo el tiempo. Muy lento y controlado. 3-4 reps por lado.'},
-  'Turkish Get-Up (1st roll to elbow)':{tipo:'prog',reps:'c/lado',tecnica:'Solo la primera fase del TGU: rodar hasta apoyar en el codo. Progresión al Get-Up completo.'},
-  'Turkish Get-Up (full)':{tipo:'prog',reps:'c/lado',tecnica:'Get-Up completo avanzado. Mínimo 2+2 por lado. Incrementar carga gradualmente.'},
+  'Half-kneeling Windmill':{tipo:'prog',reps:'c/lado',tecnica:'Semi-arrodillado, peso en la mano del lado de la pierna adelantada, brazo bloqueado hacia el techo. Bisagra de cadera lateral sin perder de vista el peso. Muy lento y controlado.'},
   'Supine Floor Slide':{tipo:'fijo',series:'3',reps:'10',tecnica:'Tumbado boca arriba, brazos en W. Desliza hacia arriba manteniendo el contacto con el suelo. Movilidad escapular.'},
   'Spiderman pos. lat stretch':{tipo:'fijo',series:'2',reps:'5 respiraciones',tecnica:'Posición de estiramiento lateral tipo araña. 2×5 respiraciones profundas por lado. Movilidad de cadera y columna.'},
   'Suitcase Carry':{tipo:'fijo',series:'3',reps:'25y/lado',tecnica:'KB en una mano, camina recto sin inclinarte. Core antilateral. No tocar con el peso el costado.'},
@@ -1804,99 +1814,517 @@ const ENF={
   Cc:[{n:'Posicion fetal + respiracion',t:'2 min.',tm:'2 min'},{n:'Cuadriceps de pie',t:'30 seg por lado.',tm:'30 seg'},{n:'Psoas en caballero',t:'30 seg por lado.',tm:'30 seg'}],
   Mov:[{n:'Respiracion diafragmatica',t:'3 min. Tumbado, manos en el abdomen.',tm:'3 min'}],
   D1:[{n:'Posicion fetal + respiracion',t:'2 min. Siempre al final.',tm:'2 min'},{n:'Psoas en caballero',t:'40 seg/lado.',tm:'40 seg'},{n:'Isquiotibiales tumbado',t:'40 seg/lado.',tm:'40 seg'},{n:'Gluteo figura 4',t:'40 seg/lado.',tm:'40 seg'}],
-  D2:[{n:'Posicion fetal + respiracion',t:'2 min.',tm:'2 min'},{n:'Aductores en suelo',t:'30 seg.',tm:'30 seg'},{n:'Cuadriceps de pie',t:'40 seg/lado.',tm:'40 seg'},{n:'Gluteo figura 4',t:'40 seg/lado.',tm:'40 seg'}],
+  D2:[{n:'Posicion fetal + respiracion',t:'2 min.',tm:'2 min'},{n:'Pecho en marco de puerta',t:'40 seg. Brazo en L, rota el cuerpo hacia afuera.',tm:'40 seg'},{n:'Dorsal (lat stretch) en barra',t:'40 seg. Colgado o agarrado, cadera atras.',tm:'40 seg'},{n:'Trapecio y cervicales',t:'30 seg por lado.',tm:'30 seg'}],
   D3:[{n:'Posicion fetal + respiracion',t:'2 min.',tm:'2 min'},{n:'Pecho en marco de puerta',t:'40 seg.',tm:'40 seg'},{n:'Trapecio y cervicales',t:'30 seg/lado.',tm:'30 seg'},{n:'Psoas en caballero',t:'40 seg/lado.',tm:'40 seg'}],
-  D4:[{n:'Posicion fetal + respiracion',t:'2 min.',tm:'2 min'},{n:'Psoas en caballero',t:'40 seg/lado.',tm:'40 seg'},{n:'Cuadriceps de pie',t:'40 seg/lado.',tm:'40 seg'},{n:'Gluteo figura 4',t:'40 seg/lado.',tm:'40 seg'}],
+  D4:[{n:'Posicion fetal + respiracion',t:'2 min.',tm:'2 min'},{n:'Pecho en marco de puerta',t:'40 seg.',tm:'40 seg'},{n:'Triceps overhead',t:'30 seg por lado.',tm:'30 seg'},{n:'Dorsal (lat stretch) en barra',t:'40 seg.',tm:'40 seg'}],
   Descanso:[{n:'Posicion fetal + respiracion',t:'3 min.',tm:'3 min'},{n:'Movilidad activa suave',t:'10 min.',tm:'10 min'}],
 };
 
+// Progresión pliométrica (capítulo 9 del libro, ligada a la fase de fuerza F1-F4).
+// Volumen SIEMPRE igual (max 25 contactos/día, 100/semana) — lo que cambia es la complejidad del drill.
+// F4 se queda en el nivel de F3 (con rebote) por precaución con la condropatía femoral medial — no se pasa
+// al nivel 4 (continuo) del libro salvo que se decida lo contrario.
+const PLYO_PROGRESION={
+  F1:{
+    linear:{n:'Linear plyos — Box Jump',d:'3x3 saltos al cajón (fase 1: aterrizaje estable). Aterriza en la misma posición que despegaste. MAX 25 contactos.'},
+    lateral:{n:'Lateral plyos — Lateral Bound and Stick',d:'3x3 por lado (fase 1: aterrizaje estable). Mantén la postura 1 seg antes de rebotar al otro lado. MAX 25 contactos.'}
+  },
+  F2:{
+    linear:{n:'Linear plyos — Hurdle Jump and Stick',d:'3x5 vallas bajas (15-30cm), fase 2: salto SOBRE el obstáculo. Aterrizaje quieto y estable. MAX 25 contactos.'},
+    lateral:{n:'Lateral plyos — Single-leg Lateral Hurdle Hop and Stick',d:'3x6 por lado (3 mediales+3 laterales) sobre mini-vallas, fase 2. Aterrizaje estable, un salto cada vez. MAX 25 contactos.'}
+  },
+  F3:{
+    linear:{n:'Linear plyos — Hurdle Jump With Bounce',d:'3x5 vallas bajas, fase 3: añade un rebote antes del siguiente salto (ciclo estiramiento-acortamiento). MAX 25 contactos.'},
+    lateral:{n:'Lateral plyos — Lateral Hurdle Hop With Bounce',d:'3x6 por lado con un rebote antes del siguiente salto, fase 3. MAX 25 contactos.'}
+  },
+  F4:{
+    linear:{n:'Linear plyos — Hurdle Jump With Bounce',d:'Se mantiene el nivel de fase 3 (con rebote) por precaución con la rodilla — no se pasa al continuo del libro. 3x5 vallas. MAX 25 contactos.'},
+    lateral:{n:'Lateral plyos — Lateral Hurdle Hop With Bounce',d:'Mismo criterio de precaución con la rodilla, se mantiene fase 3. 3x6 por lado. MAX 25 contactos.'}
+  }
+};
+function aplicarProgresionPlyo(cal,fase){
+  var prog=PLYO_PROGRESION[fase]||PLYO_PROGRESION.F1;
+  return cal.map(function(f){
+    return {fase:f.fase,tiempo:f.tiempo,items:f.items.map(function(it){
+      if(it.n.indexOf('Linear plyos')===0) return Object.assign({},it,prog.linear);
+      if(it.n.indexOf('Lateral plyos')===0) return Object.assign({},it,prog.lateral);
+      return it;
+    })};
+  });
+}
+
 // Calentamientos Boyle (para renderCal con claves D1-D4)
+// CAL_BOYLE_FASES — calentamiento fiel a las tablas 11.10-11.13 del libro ("Summer Movement Phase 1-4"),
+// sustituye por completo al calentamiento genérico anterior. Progresa por fase F1-F4, y varía entre
+// movimiento lineal (D1/D3) y movimiento lateral/multidireccional (D2/D4), tal y como marca el libro.
+const CAL_BOYLE_FASES={
+  F1:{
+    linear:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal (zona lumbar/alta)',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones profundas, tumbado, rodillas dobladas.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera (interna y externa)',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado. Rodilla trasera en caja o cojin.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado. A cuatro patas, cadera atras hacia un lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Rotacion toracica a cuatro patas (quadruped T-spine)',d:'10 por lado.',t:''},
+        {n:'Leg lower',d:'10 reps. Tumbado, lumbar pegada al suelo, baja la pierna controlado.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, manten 10 seg cada rep.',t:''},
+        {n:'Mini-band rotacion externa/interna',d:'5 por lado.',t:''},
+        {n:'Mini-band squat',d:'10 reps.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Bear crawl',d:'Desplazamiento a cuatro patas, cadera abajo.',t:''},
+        {n:'Inchworm',d:'Manos al suelo, camina hacia plancha y vuelve.',t:''},
+        {n:'Knee hug',d:'Abraza la rodilla al pecho caminando hacia adelante.',t:''},
+        {n:'Leg cradle',d:'Sujeta tobillo y rodilla, abre la cadera caminando.',t:''},
+        {n:'Reverse lunge to hamstring stretch',d:'Zancada atras + estiramiento isquios, alternando.',t:''},
+        {n:'Single-leg straight-leg deadlift sin peso',d:'5 por lado. Patron del SL-RDL.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Straight-leg walk',d:'Piernas rectas, toca la punta del pie contrario.',t:''},
+        {n:'Straight-leg skip',d:'Version con salto del anterior.',t:''},
+        {n:'High-knee run',d:'Rodillas altas, ritmo rapido.',t:''},
+        {n:'Butt kick',d:'Talon al gluteo, ritmo rapido.',t:''},
+        {n:'High-knee march',d:'Version caminando, mas controlada.',t:''},
+        {n:'Linear skip',d:'20 yardas, skip progresivo hacia mas velocidad.',t:''},
+      ]},
+      {fase:'Speed + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Speed — Half-kneeling sprint',d:'4 por lado. Salida desde semi-arrodillado, fase 1: aprender la mecanica de salida.',t:''},
+        {n:'Linear plyos — Box Jump',d:'3x3 saltos al cajon (fase 1: aterrizaje estable). Aterriza en la misma posicion que despegaste. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Standing chest pass',d:'3x10 contra la pared, a la altura del pecho.',t:''},
+        {n:'Medicine ball — Standing overhead slam',d:'3x10. Lanzamiento por encima de la cabeza hacia el suelo.',t:''},
+        {n:'Activacion especifica — 1 serie al 40%',d:'Del primer ejercicio de fuerza del dia.',t:''},
+      ]},
+    ],
+    lateral:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal (zona lumbar/alta)',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones profundas.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera (interna y externa)',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Supine floor slide',d:'10 reps. Tumbado, brazos en W, desliza hacia arriba.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, manten 10 seg cada rep.',t:''},
+        {n:'Mini-band walk lateral',d:'10 pasos por lado.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Half-kneeling ankle mobility',d:'10 por lado. Rodilla toca pared sin despegar el talon.',t:''},
+        {n:'Body-weight squat',d:'10 reps controladas.',t:''},
+        {n:'Split squat con isometrico 5 seg',d:'5 por lado. Pausa de 5 seg abajo.',t:''},
+        {n:'Lateral squat',d:'5 por lado. Sentadilla lateral, pierna contraria estirada.',t:''},
+        {n:'Rotational squat',d:'5 por lado. Sentadilla + rotacion de tronco hacia la pierna de apoyo.',t:''},
+        {n:'Single-leg straight-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Lateral march',d:'Paso lateral marchando, rodillas altas.',t:''},
+        {n:'Lateral skip',d:'Version con salto del anterior.',t:''},
+        {n:'Cross-behind skip',d:'Skip lateral cruzando el pie por detras.',t:''},
+        {n:'Cross-in-front skip',d:'Skip lateral cruzando el pie por delante.',t:''},
+        {n:'Shuffle',d:'Deslizamiento lateral rapido, rodillas dobladas.',t:''},
+        {n:'Carioca',d:'Paso cruzado lateral alternando delante/detras.',t:''},
+        {n:'Lateral crawl',d:'Desplazamiento lateral a cuatro patas.',t:''},
+      ]},
+      {fase:'Ladder + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Ladder — Shuffle wide + stick',d:'Ida y vuelta. Aterrizaje estable en cada hueco.',t:''},
+        {n:'Ladder — Cross-in-front',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Cross-behind',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — In-in-out-out',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Scissors',d:'Derecha e izquierda.',t:''},
+        {n:'Ladder — Crossover stick',d:'3x cada direccion.',t:''},
+        {n:'Lateral plyos — Lateral Bound and Stick',d:'3x3 por lado (fase 1: aterrizaje estable). Manten la postura 1 seg antes de rebotar al otro lado. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Standing overhead throw',d:'3x10 contra la pared (marca una X arriba).',t:''},
+        {n:'Medicine ball — Standing side toss',d:'3x5 por lado, desde half-kneeling, contra la pared.',t:''},
+      ]},
+    ],
+  },
+  F2:{
+    linear:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Rotacion toracica a cuatro patas',d:'10 por lado.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, 10 seg cada rep.',t:''},
+        {n:'Mini-band rotacion externa/interna',d:'5 por lado.',t:''},
+        {n:'Mini-band squat',d:'10 reps.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Bear crawl',d:'',t:''},
+        {n:'Inchworm',d:'',t:''},
+        {n:'Knee hug',d:'',t:''},
+        {n:'Leg cradle',d:'',t:''},
+        {n:'Backward lunge walk + estiramiento isquios',d:'Zancada atras caminando, con estiramiento.',t:''},
+        {n:'Single-leg straight-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Straight-leg walk',d:'',t:''},
+        {n:'Straight-leg skip',d:'',t:''},
+        {n:'High-knee run',d:'',t:''},
+        {n:'Butt kick con rodillas',d:'Talon al gluteo enfatizando flexion de rodilla.',t:''},
+        {n:'High-knee march',d:'',t:''},
+        {n:'Linear skip',d:'20 yardas.',t:''},
+      ]},
+      {fase:'Speed + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Speed — 2-point start',d:'2-3-4 reps por lado. Salida desde posicion de 2 puntos (fase 2: mas carga en la salida).',t:''},
+        {n:'Linear plyos — Hurdle Jump and Stick',d:'3x5 vallas bajas (15-30cm), fase 2: salto SOBRE el obstaculo. Aterrizaje quieto y estable. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Standing chest pass',d:'3x10.',t:''},
+        {n:'Medicine ball — Standing overhead slam',d:'3x10.',t:''},
+        {n:'Activacion especifica — 1 serie al 40%',d:'Del primer ejercicio de fuerza del dia.',t:''},
+      ]},
+    ],
+    lateral:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Supine floor slide',d:'10 reps.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, 10 seg cada rep.',t:''},
+        {n:'Mini-band walk lateral',d:'10 pasos por lado.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Half-kneeling ankle mobility',d:'10 por lado.',t:''},
+        {n:'Body-weight squat',d:'10 reps.',t:''},
+        {n:'Split squat',d:'5 por lado.',t:''},
+        {n:'Lateral squat',d:'5 por lado.',t:''},
+        {n:'Rotational squat',d:'5 por lado.',t:''},
+        {n:'Single-leg straight-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Lateral skip',d:'',t:''},
+        {n:'Cross-behind skip',d:'',t:''},
+        {n:'Cross-in-front skip',d:'',t:''},
+        {n:'Shuffle',d:'',t:''},
+        {n:'Carioca',d:'',t:''},
+        {n:'Lateral crawl',d:'',t:''},
+      ]},
+      {fase:'Ladder + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Ladder — Shuffle quick + stick',d:'Ida y vuelta, mas rapido que en fase 1.',t:''},
+        {n:'Ladder — 2-in-2-out + stick',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Crossover stick',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Lateral in-in-out-out',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Scissors',d:'Derecha e izquierda.',t:''},
+        {n:'Ladder — Crossover stick to sprint',d:'Termina con sprint de salida.',t:''},
+        {n:'Lateral plyos — Single-leg Lateral Hurdle Hop and Stick',d:'3x6 por lado (3 mediales+3 laterales) sobre mini-vallas, fase 2. Aterrizaje estable, un salto cada vez. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Stepping side toss',d:'3x5 por lado, fase 2: con paso de aproximacion.',t:''},
+      ]},
+    ],
+  },
+  F3:{
+    linear:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Rotacion toracica a cuatro patas',d:'10 por lado.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, 10 seg cada rep.',t:''},
+        {n:'Mini-band rotacion externa/interna',d:'5 por lado.',t:''},
+        {n:'Mini-band squat',d:'10 reps.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Bear crawl',d:'',t:''},
+        {n:'Inchworm',d:'',t:''},
+        {n:'Knee hug',d:'',t:''},
+        {n:'Leg cradle',d:'',t:''},
+        {n:'Backward lunge walk + estiramiento isquios',d:'',t:''},
+        {n:'Single-leg straight-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Straight-leg walk',d:'',t:''},
+        {n:'Straight-leg skip',d:'',t:''},
+        {n:'High-knee run',d:'',t:''},
+        {n:'Butt kick',d:'',t:''},
+        {n:'High-knee march',d:'',t:''},
+        {n:'Linear skip',d:'20 yardas.',t:''},
+      ]},
+      {fase:'Speed + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Speed — Plate sprint',d:'2-3-4 reps por lado. Salida empujando un disco (fase 3: mas resistencia inicial).',t:''},
+        {n:'Linear plyos — Hurdle Jump With Bounce',d:'3x5 vallas bajas, fase 3: añade un rebote antes del siguiente salto (ciclo estiramiento-acortamiento). MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Standing chest pass',d:'3x10.',t:''},
+        {n:'Medicine ball — Standing overhead slam',d:'3x10.',t:''},
+        {n:'Activacion especifica — 1 serie al 40%',d:'Del primer ejercicio de fuerza del dia.',t:''},
+      ]},
+    ],
+    lateral:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Supine floor slide',d:'10 reps.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, 10 seg cada rep.',t:''},
+        {n:'Mini-band walk lateral',d:'10 pasos por lado.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Half-kneeling ankle mobility',d:'10 por lado.',t:''},
+        {n:'Body-weight squat',d:'10 reps.',t:''},
+        {n:'Forward lunge',d:'5 por lado.',t:''},
+        {n:'Lateral lunge',d:'5 por lado.',t:''},
+        {n:'Rotational lunge',d:'5 por lado.',t:''},
+        {n:'Single-leg straight-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Lateral skip',d:'',t:''},
+        {n:'Cross-behind skip',d:'',t:''},
+        {n:'Cross-in-front skip',d:'',t:''},
+        {n:'Shuffle',d:'',t:''},
+        {n:'Carioca',d:'',t:''},
+        {n:'Lateral crawl',d:'',t:''},
+      ]},
+      {fase:'Ladder + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Ladder — Shuffle quick + stick',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — 1-2-3 cross',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Hip switch',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Crossover',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Scissors',d:'Derecha e izquierda.',t:''},
+        {n:'Ladder — Crossover to sprint',d:'Termina con sprint de salida.',t:''},
+        {n:'Lateral plyos — Lateral Hurdle Hop With Bounce',d:'3x6 por lado con un rebote antes del siguiente salto, fase 3. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Stepping side toss',d:'3x5 por lado.',t:''},
+      ]},
+    ],
+  },
+  F4:{
+    linear:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Rotacion toracica a cuatro patas',d:'10 por lado.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, 10 seg cada rep.',t:''},
+        {n:'Mini-band rotacion externa/interna',d:'5 por lado.',t:''},
+        {n:'Mini-band squat',d:'10 reps.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Bear crawl',d:'',t:''},
+        {n:'Inchworm',d:'',t:''},
+        {n:'Knee hug',d:'',t:''},
+        {n:'Leg cradle',d:'',t:''},
+        {n:'Reverse lunge to hamstring stretch',d:'',t:''},
+        {n:'Single-leg stiff-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Straight-leg walk',d:'',t:''},
+        {n:'Straight-leg skip',d:'',t:''},
+        {n:'High-knee run',d:'',t:''},
+        {n:'Butt kick',d:'',t:''},
+        {n:'High-knee march',d:'',t:''},
+        {n:'Linear skip',d:'20 yardas.',t:''},
+      ]},
+      {fase:'Speed + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Speed — Sprinter start',d:'2-3-4 reps por lado. Salida de velocista completa (fase 4: la mas exigente).',t:''},
+        {n:'Linear plyos — Hurdle Jump With Bounce',d:'Se mantiene el nivel de fase 3 (con rebote) por precaucion con la rodilla — no se pasa al continuo del libro. 3x5 vallas. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Sprinter start chest pass',d:'3x10, lanzamiento desde posicion de salida.',t:''},
+        {n:'Medicine ball — Standing overhead slam',d:'3x10.',t:''},
+        {n:'Activacion especifica — 1 serie al 40%',d:'Del primer ejercicio de fuerza del dia.',t:''},
+      ]},
+    ],
+    lateral:[
+      {fase:'Roll and Breathe',tiempo:'3 min',items:[
+        {n:'Foam roll gluteo y rotadores de cadera',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll isquiotibiales',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll gemelos',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll dorsal',d:'10 pasadas.',t:''},
+        {n:'Foam roll hombro posterior',d:'10 pasadas por lado.',t:''},
+        {n:'Foam roll aductores y cuadriceps',d:'10 pasadas por lado.',t:''},
+        {n:'Respiracion supina rodillas flexionadas',d:'10 respiraciones.',t:''},
+      ]},
+      {fase:'Stretch Circuit',tiempo:'3 min',items:[
+        {n:'Rotacion 90/90 de cadera',d:'5 respiraciones por lado.',t:''},
+        {n:'Estiramiento box hip flexor',d:'5 respiraciones por lado.',t:''},
+        {n:'Adductor rock',d:'5 respiraciones por lado.',t:''},
+        {n:'Spiderman alternado',d:'5 respiraciones por lado.',t:''},
+      ]},
+      {fase:'Correctives',tiempo:'2 min',items:[
+        {n:'Supine floor slide',d:'10 reps.',t:''},
+        {n:'Leg lower',d:'10 reps.',t:''},
+      ]},
+      {fase:'Activation',tiempo:'2 min',items:[
+        {n:'Cook hip lift',d:'3x3, 10 seg cada rep.',t:''},
+        {n:'Mini-band walk lateral',d:'10 pasos por lado.',t:''},
+      ]},
+      {fase:'Movement Prep',tiempo:'3 min',items:[
+        {n:'Half-kneeling ankle mobility',d:'10 por lado.',t:''},
+        {n:'Body-weight squat',d:'10 reps.',t:''},
+        {n:'Forward lunge',d:'5 por lado.',t:''},
+        {n:'Lateral lunge',d:'5 por lado.',t:''},
+        {n:'Rotational lunge',d:'5 por lado.',t:''},
+        {n:'Single-leg stiff-leg deadlift sin peso',d:'5 por lado.',t:''},
+      ]},
+      {fase:'Movement Skills',tiempo:'3 min',items:[
+        {n:'Lateral skip',d:'',t:''},
+        {n:'Cross-behind skip',d:'',t:''},
+        {n:'Cross-in-front skip',d:'',t:''},
+        {n:'Shuffle',d:'',t:''},
+        {n:'Carioca',d:'',t:''},
+        {n:'Lateral crawl',d:'',t:''},
+      ]},
+      {fase:'Ladder + Plyos + Medicine Ball',tiempo:'8 min',items:[
+        {n:'Ladder — Shuffle quick + stick',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — 1-2-3 cross',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Hip switch',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Lateral in-in-out-out',d:'Ida y vuelta.',t:''},
+        {n:'Ladder — Scissors reach-behind',d:'Derecha e izquierda.',t:''},
+        {n:'Ladder — Crossover sprint and return',d:'Termina con sprint de salida y vuelta.',t:''},
+        {n:'Lateral plyos — Lateral Hurdle Hop With Bounce',d:'Se mantiene el nivel de fase 3 por precaucion con la rodilla. 3x6 por lado. MAX 25 contactos.',t:''},
+        {n:'Medicine ball — Shuffle side toss',d:'3x5 por lado, fase 4: con desplazamiento lateral previo.',t:''},
+      ]},
+    ],
+  },
+};
 const CAL_BOYLE={
-  D1:[
-    {fase:'Foam Roll + Estiramientos',tiempo:'7 min',items:[
-      {n:'Foam roll gluteo y TFL',d:'2 min por lado. Peso sobre el foam, movimiento lento.',t:'2 min'},
-      {n:'Foam roll toracica',d:'2 min. Perpendicular a la columna, codos juntos al frente.',t:'2 min'},
-      {n:'Estiramiento estatico psoas',d:'45 seg por lado. Rodilla en suelo, activa el gluteo trasero.',t:'45 seg'},
-    ]},
-    {fase:'Movilidad / Activacion',tiempo:'5 min',items:[
-      {n:'Hip hinge sin peso',d:'10 reps. El patron del Trap Bar DL. Cadera atras, espalda neutra.',t:''},
-      {n:'Movilidad tobillo en pared',d:'10 reps/lado. Pie a 10 cm, rodilla toca pared sin despegar el talon.',t:''},
-      {n:'Rotaciones toracicas en suelo',d:'10 por lado. De lado, rodillas dobladas, brazo rota hacia atras.',t:''},
-      {n:'Activacion gluteo — Bird-dog lento',d:'5 por lado. Lumbar pegada al suelo.',t:''},
-    ]},
-    {fase:'Warm-up Linear + Plyos',tiempo:'8 min',items:[
-      {n:'Carrera lineal progresiva',d:'3x20m acelerando suave. No sprint.',t:''},
-      {n:'Linear plyos — Box Jump',d:'3x3 saltos al cajon. Aterriza en la misma posicion que despegaste. MAX 25 contactos.',t:''},
-      {n:'Chest pass linear sprint',d:'2 lanzamientos de balon medicinal + sprint 10m. Activa el CNS.',t:''},
-      {n:'Hang Clean al 40-50%',d:'3 reps tecnicas muy lentas. Solo activacion del patron.',t:''},
-    ]},
-  ],
-  D2:[
-    {fase:'Foam Roll + Estiramientos',tiempo:'7 min',items:[
-      {n:'Foam roll aductores',d:'1 min. Tumbado boca abajo, pierna abierta sobre el foam.',t:'1 min'},
-      {n:'Foam roll TFL',d:'1 min por lado. Borde del foam bajo la cresta iliaca.',t:'1 min'},
-      {n:'Estiramiento aductores en suelo',d:'30 seg. Plantas de los pies juntas.',t:'30 seg'},
-      {n:'Estiramiento gluteo figura 4',d:'40 seg por lado.',t:'40 seg'},
-    ]},
-    {fase:'Movilidad / Activacion',tiempo:'5 min',items:[
-      {n:'Mini-band walk lateral',d:'2x10 pasos por lado. Rodillas ligeramente dobladas, espalda neutra.',t:''},
-      {n:'Hip hinge unilateral sin peso',d:'8 por lado. Patron del Single-leg RDL.',t:''},
-      {n:'Rotaciones de cadera en suelo',d:'10 por lado. A cuatro patas.',t:''},
-      {n:'Equilibrio unipodal',d:'20 seg por pierna. Pelvis nivelada.',t:''},
-    ]},
-    {fase:'Warm-up Multi-direction + Plyos',tiempo:'8 min',items:[
-      {n:'Lateral shuffle',d:'3x10m por lado. Rodillas dobladas, peso hacia adelante.',t:''},
-      {n:'Lateral plyos — Lateral bound and stick',d:'3x3 por lado. Aterriza estable en un pie. Sin caer.',t:''},
-      {n:'Rotary medball — Side twist throw',d:'3 por lado contra la pared. Desde half-kneeling.',t:''},
-      {n:'Split squat sin peso',d:'8 por lado. Patron del Split Squat. Tronco erguido.',t:''},
-    ]},
-  ],
-  D3:[
-    {fase:'Foam Roll + Estiramientos',tiempo:'7 min',items:[
-      {n:'Foam roll gluteo y TFL',d:'2 min por lado.',t:'2 min'},
-      {n:'Foam roll pectorales',d:'1 min por lado. Tumbado boca abajo, brazo sobre el foam.',t:'1 min'},
-      {n:'Estiramiento pecho en marco',d:'40 seg. Brazo en L apoyado, rota el cuerpo hacia afuera.',t:'40 seg'},
-      {n:'Estiramiento dorsal (lat stretch)',d:'40 seg por lado.',t:'40 seg'},
-    ]},
-    {fase:'Movilidad / Activacion',tiempo:'5 min',items:[
-      {n:'Rotaciones de hombro con palo',d:'10 lentas. Agarre ancho, pasa el palo de adelante a atras.',t:''},
-      {n:'Face pull con goma (ligero)',d:'15 reps. Activa manguito y retractores escapulares.',t:''},
-      {n:'Hip hinge sin peso',d:'10 reps. Para preparar el patron de la sesion.',t:''},
-      {n:'Rotaciones toracicas en suelo',d:'10 por lado.',t:''},
-    ]},
-    {fase:'Warm-up Linear + Plyos',tiempo:'8 min',items:[
-      {n:'Carrera lineal progresiva',d:'3x20m acelerando suave.',t:''},
-      {n:'Linear plyos — Box jump',d:'3x3 saltos. MAX 25 contactos totales en el dia.',t:''},
-      {n:'Chest pass linear sprint',d:'2 lanzamientos de balon + sprint 10m.',t:''},
-      {n:'Activacion especifica — 1 serie al 40%',d:'Del primer ejercicio de fuerza del dia.',t:''},
-    ]},
-  ],
-  D4:[
-    {fase:'Foam Roll + Estiramientos',tiempo:'7 min',items:[
-      {n:'Foam roll gluteo y rotadores',d:'2 min por lado.',t:'2 min'},
-      {n:'Foam roll aductores',d:'1 min.',t:'1 min'},
-      {n:'Estiramiento gluteo figura 4',d:'40 seg por lado.',t:'40 seg'},
-      {n:'Estiramiento psoas en caballero',d:'45 seg por lado.',t:'45 seg'},
-    ]},
-    {fase:'Movilidad / Activacion',tiempo:'5 min',items:[
-      {n:'Mini-band walk lateral',d:'2x10 pasos por lado.',t:''},
-      {n:'Hip hinge unilateral sin peso',d:'8 por lado. Patron del Single-leg RDL.',t:''},
-      {n:'Equilibrio unipodal con alcance',d:'5 alcances por pierna. Prepara el patron.',t:''},
-      {n:'Activacion gluteo medio — Clamshell',d:'10 por lado sin goma. Solo despertar.',t:''},
-    ]},
-    {fase:'Warm-up Multi-direction + Plyos (opcional)',tiempo:'8 min',items:[
-      {n:'Lateral shuffle',d:'3x10m por lado.',t:''},
-      {n:'Lateral plyos — Lateral bound and stick',d:'3x3 por lado. Solo si hay frescura. MAX 25 contactos.',t:''},
-      {n:'Rotary medball — Overhead throw',d:'3 lanzamientos hacia arriba. 2-3 kg.',t:''},
-      {n:'Split squat sin peso (activacion)',d:'8 por lado muy lentos. Patron tecnico.',t:''},
-    ]},
-  ],
   Descanso:[
     {fase:'Movilidad activa (opcional)',tiempo:'20 min',items:[
       {n:'Daily Mobility completo',d:'Ver seccion de movilidad diaria. 12 min de protocolo.',t:'12 min'},
       {n:'Paseo suave',d:'20-30 min caminando. Sin intensidad.',t:'20-30 min'},
     ]},
   ],
+};
+// SLED_COND_FASES — "After Lift": trineo + conditioning, fiel a las tablas 11.10-11.13 del libro.
+// Volumen aproximado (esa sección del libro venía peor escaneada) — si quieres precisión exacta,
+// conviene contrastarlo contra el libro físico antes de forzar cargas altas de trineo.
+const SLED_COND_FASES={
+  F1:{
+    linear:[
+      {n:'Sled push/drag',d:'4 series de 7-8 segundos de empuje/arrastre a máxima intensidad controlada. Descanso completo entre series.',rest:90},
+      {n:'Conditioning — 150-yard shuttle',d:'3 repeticiones. Ida y vuelta a máxima velocidad sostenible.',rest:120},
+      {n:'Conditioning — Assault bike (solo Día 3)',d:'1 milla a ritmo fuerte y constante.',rest:0},
+    ],
+    lateral:[
+      {n:'Sled crossover',d:'3 series ida y vuelta (patrón lateral, cruzando delante del trineo).',rest:90},
+      {n:'Conditioning — Slide board',d:'6 repeticiones de 30-60 segundos.',rest:60},
+    ],
+  },
+  F2:{
+    linear:[
+      {n:'Sled push/drag',d:'5 series de 7-8 segundos.',rest:90},
+      {n:'Conditioning — 150-yard shuttle',d:'4 repeticiones.',rest:120},
+      {n:'Conditioning — Assault bike (solo Día 3)',d:'1 milla a ritmo fuerte y constante.',rest:0},
+    ],
+    lateral:[
+      {n:'Sled crossover',d:'4 series ida y vuelta.',rest:90},
+      {n:'Conditioning — Slide board',d:'7 repeticiones de 30-60 segundos.',rest:60},
+    ],
+  },
+  F3:{
+    linear:[
+      {n:'Sled push/drag',d:'5 series de 7-8 segundos.',rest:90},
+      {n:'Conditioning — 150-yard shuttle',d:'4 repeticiones.',rest:120},
+      {n:'Conditioning — Assault bike (solo Día 3)',d:'1 milla a ritmo fuerte y constante.',rest:0},
+    ],
+    lateral:[
+      {n:'Sled crossover',d:'4 series ida y vuelta.',rest:90},
+      {n:'Conditioning — Slide board',d:'7 repeticiones de 30-60 segundos.',rest:60},
+    ],
+  },
+  F4:{
+    linear:[
+      {n:'Sled push/drag',d:'6 series de 7-8 segundos.',rest:90},
+      {n:'Conditioning — 150-yard shuttle',d:'5 repeticiones.',rest:120},
+      {n:'Conditioning — Assault bike (solo Día 3)',d:'1 milla a ritmo fuerte y constante.',rest:0},
+    ],
+    lateral:[
+      {n:'Sled crossover',d:'5 series ida y vuelta.',rest:90},
+      {n:'Conditioning — Slide board',d:'8 repeticiones de 30-60 segundos.',rest:60},
+    ],
+  },
 };
 const CAL={
   A:[
@@ -2970,7 +3398,7 @@ function renderBoyleContenido(){
     F1:'2-3 series × 10 reps al 60-68%. Tempo 3/1/1. Construir base de volumen.',
     F2:'2-3 series × 3-5 reps al 60-74% (sem.4 descarga). Cargas altas, CNS.',
     F3:'2-4 series × 5-6 reps con complejos (ejercicio + potencia), 65-78%. Máxima transferencia.',
-    F4:'Igual que F3 con mayor intensidad (65-82%). Turkish Get-Up completo. Peak del programa.',
+    F4:'Igual que F3 con mayor intensidad (65-82%). Peak del programa.',
   };
   var semanas=[1,2,3];
   var html='';
@@ -5065,7 +5493,7 @@ function getEjImgs(ej){
 // CALENTAMIENTO / ENFRIAMIENTO EXPANDIBLES
 // ══════════════════════════════════════
 function toggleSection(id){
-  var bodyMap={warmup:'warmup-body',enf:'e-enf',plyo:'plyo-body',finisher:'finisher-body'};
+  var bodyMap={warmup:'warmup-body',enf:'e-enf',plyo:'plyo-body',finisher:'finisher-body',sled:'sled-body'};
   var body=document.getElementById(bodyMap[id]||id);
   var icon=document.getElementById(id+'-icon');
   if(!body) return;
@@ -5077,6 +5505,7 @@ function toggleSection(id){
     else if(id==='enf') renderEnfBody();
     else if(id==='plyo') renderPlyoBody();
     else if(id==='finisher') renderFinisherBody();
+    else if(id==='sled') renderSledBody();
   }
 }
 
@@ -5264,7 +5693,9 @@ function renderWarmupBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("warmup-body");
   if(!body||!dB) return;
-  var cal=CAL_BOYLE[dB]||[];
+  var fase=getFaseActual(ST.sem);
+  var isLinear=dB==='D1'||dB==='D3';
+  var cal=dB==='Descanso'?(CAL_BOYLE.Descanso||[]):((CAL_BOYLE_FASES[fase]||CAL_BOYLE_FASES.F1)[isLinear?'linear':'lateral']||[]);
   var d=wuGetData();
   var checkKey=d.checkKey, checks=d.checks, removed=d.removed, custom=d.custom;
 
@@ -5371,7 +5802,10 @@ function restaurarWarmupProtocolo(checkKey){
 function actualizarWarmupBadge(){
   var dB=getDiaBoyle();
   if(!dB) return;
-  var cal=CAL_BOYLE[dB]; if(!cal) return;
+  var fase=getFaseActual(ST.sem);
+  var isLinear=dB==='D1'||dB==='D3';
+  var cal=dB==='Descanso'?(CAL_BOYLE.Descanso||[]):((CAL_BOYLE_FASES[fase]||CAL_BOYLE_FASES.F1)[isLinear?'linear':'lateral']||[]);
+  if(!cal||!cal.length) return;
   var checkKey='wu_d'+ST.dia;
   var checks=(ST.warmupCheck&&ST.warmupCheck[checkKey])||{};
   var removed=(ST.warmupRemoved&&ST.warmupRemoved[checkKey])||[];
@@ -5479,7 +5913,7 @@ const EJ_BASE = [
   {id:"toe_touch",n:"Toe Touch Squat with medicine ball",cat:"Rodilla Unilat",key:"Toe Touch Squat with medicine ball"},
   {id:"squat_holds",n:"Squat Holds",cat:"Rodilla Unilat",key:"Squat Holds"},
   {id:"hang_6575",n:"Hang Clean (65-75%)",cat:"Explosivo",key:"Hang Clean (65-75%)"},
-  {id:"tgu",n:"Turkish Get-Up",cat:"Core",key:"Turkish Get-Up"},
+  {id:"windmill",n:"Half-kneeling Windmill",cat:"Core",key:"Half-kneeling Windmill"},
   {id:"suitcase",n:"Suitcase Carry",cat:"Traccion",key:"Suitcase Carry"},
   {id:"farmer",n:"Farmer Carry",cat:"Traccion",key:"Farmer Carry"},
 ];
@@ -5832,6 +6266,32 @@ const FINISHERS = {
 };
 
 
+function renderSledBody(){
+  var dB=getDiaBoyle();
+  var body=document.getElementById("sled-body");
+  if(!body||!dB) return;
+  if(dB==='Descanso'){
+    body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">No hay trineo/conditioning en día de descanso.</div>";
+    return;
+  }
+  var fase=getFaseActual(ST.sem);
+  var isLinear=dB==='D1'||dB==='D3';
+  var lista=((SLED_COND_FASES[fase]||SLED_COND_FASES.F1)[isLinear?'linear':'lateral'])||[];
+  var nota="<div style=\"font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;line-height:1.5\">Después de las series de fuerza, antes del enfriamiento. Volumen aproximado (tabla 11.10-11.13 del libro) — contrasta contra el libro físico si quieres precisión exacta antes de cargar mucho peso en el trineo. En días de turno de noche o con poca frescura, se puede omitir sin problema.</div>";
+  var items=lista.map(function(p){
+    return "<div style=\"padding:.5rem 0;border-bottom:.5px solid var(--border)\">"
+      +"<div style=\"font-size:13px;font-weight:700;color:var(--red-text,#dc2626)\">"+p.n+"</div>"
+      +"<div style=\"font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4\">"+p.d+"</div>"
+      +(p.rest?("<div style=\"margin-top:5px;display:flex;align-items:center;gap:6px\">"
+      +"<span style=\"font-size:11px;color:var(--text3)\">⏱ Descanso:</span>"
+      +"<span style=\"font-size:12px;font-weight:700;color:var(--text)\">"+p.rest+"s</span>"
+      +"<button data-ej=\"sled_"+p.n.replace(/ /g,'_')+"_\" onclick=\"startRestTimer(this.dataset.ej)\" style=\"border:none;background:var(--red-text,#dc2626);color:#fff;border-radius:12px;padding:2px 10px;font-size:11px;cursor:pointer;font-weight:700\">▶ GO</button>"
+      +"</div>"):"")
+      +"</div>";
+  }).join("");
+  body.innerHTML=nota+items;
+}
+
 function renderPlyoBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("plyo-body");
@@ -6080,7 +6540,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v122';
+const APP_VERSION='v126';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7713,7 +8173,7 @@ const EJ_TAG={
   'In-line Lift':'ej:lift','In-line Iso Hold Lift':'ej:lift','Dynamic Lift':'ej:lift',
   'Half-kneeling push-pull':'ej:push-pull','Dynamic push-pull':'ej:push-pull',
   'Half-kneeling antirotation hold':'ej:pallof','Standing antirotation hold':'ej:pallof',
-  'Turkish Get-Up':'ej:get-up',
+  'Half-kneeling Windmill':'ej:windmill',
   'Suitcase Carry':'ej:suitcase-carry','Farmer Carry':'ej:farmer-carry',
   'Spiderman pos. lat stretch':'ej:spiderman','Supine Floor Slide':'ej:floor-slide'
 };

@@ -1929,7 +1929,25 @@
       "sueno_profundo_min": 52,
       "sueno_ligero_min": 275,
       "sueno_rem_min": 63,
-      "sueno_puntuacion": 76
+      "sueno_puntuacion": 76,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 72,
+          "calorias": 308.0,
+          "fc_media": 92.0,
+          "fc_max": 152.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 72,
+        "calorias": 308.0,
+        "fc_media": 92.0,
+        "fc_max": 152.0
+      }
     }
   },
   "actualizado": "2026-07-16"

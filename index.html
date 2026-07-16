@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v126</title>
+<title>Entreno Boyle v127</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=126', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=127', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -676,17 +676,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
       <div style="font-size:11px;color:var(--text3)">Cambios solo para la sesion de hoy (Dia <span id="e-editor-dia">—</span>)</div>
     </div>
-    <!-- PLYOS OPCIONALES -->
-    <div class="card" id="e-plyo-card">
-      <div onclick="toggleSection('plyo')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="card-lbl" style="margin-bottom:0;color:var(--blue)">⚡ Pliométricos</div>
-          <span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);border-radius:10px;padding:1px 8px;font-weight:700">OPCIONAL</span>
-        </div>
-        <i class="ti ti-chevron-down" id="plyo-icon" style="color:var(--text3);transition:transform .2s"></i>
-      </div>
-      <div id="plyo-body" style="display:none;margin-top:.75rem"></div>
-    </div>
 
     <!-- FINISHERS -->
     <div class="card" id="e-finisher-card">
@@ -698,18 +687,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <i class="ti ti-chevron-down" id="finisher-icon" style="color:var(--text3);transition:transform .2s"></i>
       </div>
       <div id="finisher-body" style="display:none;margin-top:.75rem"></div>
-    </div>
-
-    <!-- TRINEO + CONDITIONING (After Lift) -->
-    <div class="card" id="e-sled-card">
-      <div onclick="toggleSection('sled')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="card-lbl" style="margin-bottom:0;color:var(--red-text,#dc2626)">🛷 Trineo + Conditioning</div>
-          <span style="font-size:10px;background:var(--bg3);color:var(--text2);border-radius:10px;padding:1px 8px;font-weight:700">OPCIONAL</span>
-        </div>
-        <i class="ti ti-chevron-down" id="sled-icon" style="color:var(--text3);transition:transform .2s"></i>
-      </div>
-      <div id="sled-body" style="display:none;margin-top:.75rem"></div>
     </div>
 
     <!-- ENFRIAMIENTO EXPANDIBLE -->
@@ -5493,7 +5470,7 @@ function getEjImgs(ej){
 // CALENTAMIENTO / ENFRIAMIENTO EXPANDIBLES
 // ══════════════════════════════════════
 function toggleSection(id){
-  var bodyMap={warmup:'warmup-body',enf:'e-enf',plyo:'plyo-body',finisher:'finisher-body',sled:'sled-body'};
+  var bodyMap={warmup:'warmup-body',enf:'e-enf',finisher:'finisher-body'};
   var body=document.getElementById(bodyMap[id]||id);
   var icon=document.getElementById(id+'-icon');
   if(!body) return;
@@ -5503,9 +5480,7 @@ function toggleSection(id){
   if(!open){
     if(id==='warmup') renderWarmupBody();
     else if(id==='enf') renderEnfBody();
-    else if(id==='plyo') renderPlyoBody();
     else if(id==='finisher') renderFinisherBody();
-    else if(id==='sled') renderSledBody();
   }
 }
 
@@ -5722,6 +5697,7 @@ function renderWarmupBody(){
     h+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</div>';
     if(desc) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+desc+'</div>';
     if(t) h+='<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+t+'</span>';
+    h+='<div style="margin-top:3px">'+rdRefsBtnHtml(n)+'</div>';
     h+='</div>';
     h+='<button onclick="removeWarmupItem(\''+checkKey+'\',\''+key+'\')" title="Quitar" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1;flex-shrink:0"><i class="ti ti-x"></i></button>';
     h+='</div></div>';
@@ -6540,7 +6516,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v126';
+const APP_VERSION='v127';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8175,7 +8151,79 @@ const EJ_TAG={
   'Half-kneeling antirotation hold':'ej:pallof','Standing antirotation hold':'ej:pallof',
   'Half-kneeling Windmill':'ej:windmill',
   'Suitcase Carry':'ej:suitcase-carry','Farmer Carry':'ej:farmer-carry',
-  'Spiderman pos. lat stretch':'ej:spiderman','Supine Floor Slide':'ej:floor-slide'
+  'Spiderman pos. lat stretch':'ej:spiderman','Supine Floor Slide':'ej:floor-slide',
+
+  // --- Calentamiento nuevo (tablas 11.10-11.13) — añadido v127 ---
+  'Foam roll gluteo y rotadores de cadera':'ej:fr-gluteo',
+  'Foam roll isquiotibiales':'ej:fr-isquios',
+  'Foam roll gemelos':'ej:fr-gemelos',
+  'Foam roll dorsal':'ej:fr-dorsal','Foam roll dorsal (zona lumbar/alta)':'ej:fr-dorsal',
+  'Foam roll hombro posterior':'ej:fr-hombro',
+  'Foam roll aductores y cuadriceps':'ej:fr-aductores',
+  'Respiracion supina rodillas flexionadas':'ej:resp-supina',
+  'Rotacion 90/90 de cadera':'ej:90-90','Rotacion 90/90 de cadera (interna y externa)':'ej:90-90',
+  'Estiramiento box hip flexor':'ej:box-hip-flexor',
+  'Adductor rock':'ej:adductor-rock',
+  'Spiderman alternado':'ej:spiderman',
+  'Rotacion toracica a cuatro patas':'ej:t-spine','Rotacion toracica a cuatro patas (quadruped T-spine)':'ej:t-spine',
+  'Leg lower':'ej:leg-lower',
+  'Supine floor slide':'ej:floor-slide',
+  'Cook hip lift':'ej:cook-hip-lift',
+  'Mini-band rotacion externa/interna':'ej:miniband-rot',
+  'Mini-band squat':'ej:miniband-squat',
+  'Mini-band walk lateral':'ej:miniband-walk',
+  'Bear crawl':'ej:bear-crawl',
+  'Inchworm':'ej:inchworm',
+  'Knee hug':'ej:knee-hug',
+  'Leg cradle':'ej:leg-cradle',
+  'Backward lunge walk + estiramiento isquios':'ej:backward-lunge-walk',
+  'Reverse lunge to hamstring stretch':'ej:reverse-lunge-hs',
+  'Single-leg straight-leg deadlift sin peso':'ej:sl-rdl','Single-leg stiff-leg deadlift sin peso':'ej:sl-rdl',
+  'Half-kneeling ankle mobility':'ej:ankle-mob',
+  'Body-weight squat':'ej:bw-squat',
+  'Split squat':'ej:split-squat','Split squat con isometrico 5 seg':'ej:split-squat',
+  'Lateral squat':'ej:lateral-squat',
+  'Rotational squat':'ej:rotational-squat',
+  'Forward lunge':'ej:forward-lunge',
+  'Lateral lunge':'ej:lateral-lunge',
+  'Rotational lunge':'ej:rotational-lunge',
+  'Straight-leg walk':'ej:straight-leg-walk',
+  'Straight-leg skip':'ej:straight-leg-skip',
+  'High-knee run':'ej:high-knee-run',
+  'Butt kick':'ej:butt-kick','Butt kick con rodillas':'ej:butt-kick',
+  'High-knee march':'ej:high-knee-march',
+  'Linear skip':'ej:linear-skip',
+  'Lateral march':'ej:lateral-march',
+  'Lateral skip':'ej:lateral-skip',
+  'Cross-behind skip':'ej:cross-behind-skip',
+  'Cross-in-front skip':'ej:cross-in-front-skip',
+  'Shuffle':'ej:shuffle',
+  'Carioca':'ej:carioca',
+  'Lateral crawl':'ej:lateral-crawl',
+  'Speed — Half-kneeling sprint':'ej:speed-halfkneeling',
+  'Speed — 2-point start':'ej:speed-2point',
+  'Speed — Plate sprint':'ej:speed-plate',
+  'Speed — Sprinter start':'ej:speed-sprinter',
+  'Ladder — Shuffle wide + stick':'ej:ladder-shuffle-wide',
+  'Ladder — Shuffle quick + stick':'ej:ladder-shuffle-quick',
+  'Ladder — Cross-in-front':'ej:ladder-cross-front',
+  'Ladder — Cross-behind':'ej:ladder-cross-behind',
+  'Ladder — In-in-out-out':'ej:ladder-in-out','Ladder — Lateral in-in-out-out':'ej:ladder-in-out',
+  'Ladder — Scissors':'ej:ladder-scissors','Ladder — Scissors reach-behind':'ej:ladder-scissors',
+  'Ladder — Crossover stick':'ej:ladder-crossover','Ladder — Crossover stick to sprint':'ej:ladder-crossover','Ladder — Crossover to sprint':'ej:ladder-crossover','Ladder — Crossover sprint and return':'ej:ladder-crossover','Ladder — Crossover':'ej:ladder-crossover',
+  'Ladder — 2-in-2-out + stick':'ej:ladder-2in2out',
+  'Ladder — 1-2-3 cross':'ej:ladder-123cross',
+  'Ladder — Hip switch':'ej:ladder-hipswitch',
+  'Linear plyos — Box Jump':'ej:plyo-boxjump',
+  'Linear plyos — Hurdle Jump and Stick':'ej:plyo-hurdlejump',
+  'Linear plyos — Hurdle Jump With Bounce':'ej:plyo-hurdlebounce',
+  'Lateral plyos — Lateral Bound and Stick':'ej:plyo-latbound',
+  'Lateral plyos — Single-leg Lateral Hurdle Hop and Stick':'ej:plyo-lathurdlehop',
+  'Lateral plyos — Lateral Hurdle Hop With Bounce':'ej:plyo-lathurdlebounce',
+  'Medicine ball — Standing chest pass':'ej:mb-chestpass','Medicine ball — Sprinter start chest pass':'ej:mb-chestpass',
+  'Medicine ball — Standing overhead slam':'ej:mb-overheadslam',
+  'Medicine ball — Standing overhead throw':'ej:mb-overheadthrow',
+  'Medicine ball — Standing side toss':'ej:mb-sidetoss','Medicine ball — Stepping side toss':'ej:mb-sidetoss','Medicine ball — Shuffle side toss':'ej:mb-sidetoss'
 };
 
 function rdGetToken(){ return localStorage.getItem('rd_token')||''; }

@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v127</title>
+<title>Entreno Boyle v128</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=127', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=128', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -969,7 +969,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Pega tu <b>Test token</b> de Raindrop (app.raindrop.io &rarr; Settings &rarr; Integrations &rarr; crea una app &rarr; copia el Test token). Se guarda solo en este dispositivo.</div>
       <input id="cfg-rd-token" type="password" placeholder="Test token" autocomplete="off" style="width:100%;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin:.5rem 0">
       <button class="bkbtn" style="background:var(--blue);color:#fff;border:none;margin-bottom:.4rem" onclick="rdGuardarToken()"><i class="ti ti-plug-connected"></i> Guardar y probar</button>
-      <button class="bkbtn" onclick="rdSync(true)"><i class="ti ti-refresh"></i> Actualizar biblioteca ahora</button>
+      <button class="bkbtn" onclick="rdSync(true,this)"><i class="ti ti-refresh"></i> Actualizar biblioteca ahora</button>
       <div id="cfg-rd-status" style="font-size:12px;color:var(--text2);margin-top:.5rem"></div>
     </div>
 
@@ -6516,7 +6516,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v127';
+const APP_VERSION='v128';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8243,8 +8243,10 @@ function rdSlimItem(it){
   return {link:it.link,title:it.title,tags:it.tags||[],cover:it.cover||'',col:colId};
 }
 
-async function rdSync(showMsg){
+async function rdSync(showMsg,btnEl){
   if(!rdGetToken()){ if(showMsg) alert('Pega primero tu Test token de Raindrop en Config.'); return; }
+  var origHtml=null;
+  if(btnEl){ origHtml=btnEl.innerHTML; btnEl.disabled=true; btnEl.style.opacity='.6'; btnEl.innerHTML='⏳ Sincronizando…'; }
   rdSetStatus('Sincronizando…');
   try{
     var cols=[];
@@ -8261,9 +8263,14 @@ async function rdSync(showMsg){
     localStorage.setItem('rd_cache',JSON.stringify(cache));
     rdSetStatus('Biblioteca actualizada: '+items.length+' enlaces · '+new Date().toLocaleTimeString('es-ES'));
     var sb=document.getElementById('s-biblio');
-    if(sb&&sb.classList.contains('active')) renderBiblioteca();
-    if(showMsg&&typeof toast==='function') toast('Biblioteca actualizada');
-  }catch(e){ rdSetStatus('Error al sincronizar: '+(e.message||e)); }
+    if(sb&&sb.classList.contains('active')) renderBiblioteca(); // esto reemplaza el botón con uno nuevo, ya sin "cargando"
+    else if(btnEl){ btnEl.disabled=false; btnEl.style.opacity=''; btnEl.innerHTML=origHtml; }
+    if(showMsg) alert('Biblioteca actualizada: '+items.length+' enlaces.');
+  }catch(e){
+    rdSetStatus('Error al sincronizar: '+(e.message||e));
+    if(btnEl){ btnEl.disabled=false; btnEl.style.opacity=''; btnEl.innerHTML=origHtml; }
+    if(showMsg) alert('Error al sincronizar Raindrop: '+(e.message||e));
+  }
 }
 
 function rdGuardarToken(){
@@ -8382,10 +8389,10 @@ function renderBiblioteca(){
   }
   var cache=rdGetCache();
   if(!cache){
-    el.innerHTML='<div class="card"><div class="info-box ib">Aún no hay datos descargados.</div><button class="bkbtn" style="margin-top:.5rem" onclick="rdSync(true)">↻ Descargar biblioteca</button></div>';
+    el.innerHTML='<div class="card"><div class="info-box ib">Aún no hay datos descargados.</div><button class="bkbtn" style="margin-top:.5rem" onclick="rdSync(true,this)">↻ Descargar biblioteca</button></div>';
     return;
   }
-  var head='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem"><span style="font-size:12px;color:var(--text3)">'+ (cache.items?cache.items.length:0) +' enlaces · '+new Date(cache.ts).toLocaleDateString('es-ES')+'</span><button class="bkbtn" style="width:auto;padding:4px 12px;font-size:12px" onclick="rdSync(true)">&#8635; Actualizar</button></div>';
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem"><span style="font-size:12px;color:var(--text3)">'+ (cache.items?cache.items.length:0) +' enlaces · '+new Date(cache.ts).toLocaleDateString('es-ES')+'</span><button class="bkbtn" style="width:auto;padding:4px 12px;font-size:12px" onclick="rdSync(true,this)">&#8635; Actualizar</button></div>';
 
   // Barra de tags
   var tags=rdAllTags(cache);

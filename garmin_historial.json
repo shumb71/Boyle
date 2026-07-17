@@ -1951,13 +1951,39 @@
     },
     "2026-07-17": {
       "fecha": "2026-07-17",
-      "pasos": 1405,
-      "calorias_dia": 1127.0,
-      "calorias_activas": 78.0,
-      "distancia_km": 1.16,
-      "minutos_activos": 0,
+      "pasos": 2337,
+      "calorias_dia": 1434.0,
+      "calorias_activas": 264.0,
+      "distancia_km": 2.21,
+      "minutos_activos": 26,
       "fc_reposo": 52,
-      "estres_medio": 48
+      "estres_medio": 48,
+      "actividades": [
+        {
+          "nombre": "Ojén Natación en aguas abiertas",
+          "tipo": "open_water_swimming",
+          "duracion_min": 8,
+          "calorias": 47.0,
+          "fc_media": 95.0,
+          "fc_max": 114.0
+        },
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 38,
+          "calorias": 195.0,
+          "fc_media": 98.0,
+          "fc_max": 151.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 38,
+        "calorias": 195.0,
+        "fc_media": 98.0,
+        "fc_max": 151.0
+      }
     }
   },
   "actualizado": "2026-07-17"

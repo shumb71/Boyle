@@ -1951,13 +1951,13 @@
     },
     "2026-07-17": {
       "fecha": "2026-07-17",
-      "pasos": 3769,
-      "calorias_dia": 1713.0,
-      "calorias_activas": 314.0,
-      "distancia_km": 3.39,
+      "pasos": 7054,
+      "calorias_dia": 2450.0,
+      "calorias_activas": 351.0,
+      "distancia_km": 6.1,
       "minutos_activos": 26,
       "fc_reposo": 52,
-      "estres_medio": 46,
+      "estres_medio": 29,
       "actividades": [
         {
           "nombre": "Ojén Natación en aguas abiertas",
@@ -1984,7 +1984,17 @@
         "fc_media": 98.0,
         "fc_max": 151.0
       }
+    },
+    "2026-07-18": {
+      "fecha": "2026-07-18",
+      "pasos": null,
+      "calorias_dia": null,
+      "calorias_activas": null,
+      "distancia_km": 0.0,
+      "minutos_activos": null,
+      "fc_reposo": null,
+      "estres_medio": null
     }
   },
-  "actualizado": "2026-07-17"
+  "actualizado": "2026-07-18"
 }

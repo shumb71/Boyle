@@ -2017,13 +2017,18 @@
     },
     "2026-07-20": {
       "fecha": "2026-07-20",
-      "pasos": 1280,
-      "calorias_dia": 395.0,
-      "calorias_activas": 19.0,
-      "distancia_km": 1.07,
+      "pasos": 2705,
+      "calorias_dia": 1219.0,
+      "calorias_activas": 71.0,
+      "distancia_km": 2.24,
       "minutos_activos": 0,
-      "fc_reposo": 51,
-      "estres_medio": 28
+      "fc_reposo": 45,
+      "estres_medio": 19,
+      "sueno_total_min": 293,
+      "sueno_profundo_min": 110,
+      "sueno_ligero_min": 176,
+      "sueno_rem_min": 7,
+      "sueno_puntuacion": 55
     }
   },
   "actualizado": "2026-07-20"

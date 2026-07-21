@@ -2050,18 +2050,28 @@
     },
     "2026-07-21": {
       "fecha": "2026-07-21",
-      "pasos": 3404,
-      "calorias_dia": 1773.0,
-      "calorias_activas": 49.0,
-      "distancia_km": 2.8,
+      "pasos": 12930,
+      "calorias_dia": 2190.0,
+      "calorias_activas": 180.0,
+      "distancia_km": 10.04,
       "minutos_activos": 0,
       "fc_reposo": 45,
-      "estres_medio": 18,
+      "estres_medio": 21,
       "sueno_total_min": 272,
       "sueno_profundo_min": 55,
       "sueno_ligero_min": 204,
       "sueno_rem_min": 13,
-      "sueno_puntuacion": 54
+      "sueno_puntuacion": 54,
+      "actividades": [
+        {
+          "nombre": "Marbella Senderismo",
+          "tipo": "hiking",
+          "duracion_min": 85,
+          "calorias": 239.0,
+          "fc_media": 79.0,
+          "fc_max": 105.0
+        }
+      ]
     }
   },
   "actualizado": "2026-07-21"

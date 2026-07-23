@@ -2096,7 +2096,25 @@
       "distancia_km": 0.1,
       "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": -1
+      "estres_medio": -1,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 65,
+          "calorias": 388.0,
+          "fc_media": 109.0,
+          "fc_max": 151.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 65,
+        "calorias": 388.0,
+        "fc_media": 109.0,
+        "fc_max": 151.0
+      }
     }
   },
   "actualizado": "2026-07-23"

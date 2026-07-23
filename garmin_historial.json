@@ -2075,10 +2075,10 @@
     },
     "2026-07-22": {
       "fecha": "2026-07-22",
-      "pasos": 116,
-      "calorias_dia": 822.0,
-      "calorias_activas": 0.0,
-      "distancia_km": 0.1,
+      "pasos": 342,
+      "calorias_dia": 2102.0,
+      "calorias_activas": 3.0,
+      "distancia_km": 0.29,
       "minutos_activos": 0,
       "fc_reposo": 46,
       "estres_medio": 16,
@@ -2087,7 +2087,17 @@
       "sueno_ligero_min": 367,
       "sueno_rem_min": 62,
       "sueno_puntuacion": 69
+    },
+    "2026-07-23": {
+      "fecha": "2026-07-23",
+      "pasos": null,
+      "calorias_dia": 164.0,
+      "calorias_activas": 0.0,
+      "distancia_km": 0.0,
+      "minutos_activos": 0,
+      "fc_reposo": null,
+      "estres_medio": -1
     }
   },
-  "actualizado": "2026-07-22"
+  "actualizado": "2026-07-23"
 }

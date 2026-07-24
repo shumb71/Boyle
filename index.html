@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v128</title>
+<title>Entreno Boyle v129</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -2603,6 +2603,19 @@ function legacyDayPrefix(dia){
 function oldProgramaDayPrefix(dia){
   return getProgramaPrefix()+'d'+dia+'_';
 }
+// Parseo central de una clave de ST.sets — soporta los 3 formatos históricos.
+// Devuelve {dia, ej, esFinisher} o null si la clave no coincide con ningún formato conocido.
+function parseSetKey(key){
+  var m=key.match(/^p\d{8}_s\d+_d(\d+)_(.+)$/);      // actual (v117+): con semana
+  if(!m) m=key.match(/^p\d{8}_d(\d+)_(.+)$/);         // intermedio v101-v116: sin semana
+  if(!m) m=key.match(/^d(\d+)_(.+)$/);                // legacy: anterior a v101
+  if(!m) return null;
+  var dia=parseInt(m[1]);
+  var resto=m[2];
+  var esFinisher=resto.indexOf('fin_')===0;
+  var ej=esFinisher?resto.replace(/^fin_/,'').replace(/_/g,' '):resto;
+  return {dia:dia, ej:ej, esFinisher:esFinisher};
+}
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
@@ -2798,8 +2811,8 @@ function getHistorialEjInline(ejNombre,limit){
     var ses=hist[fecha]; if(!ses||!ses.ejerciciosRealizados) return;
     ses.ejerciciosRealizados.forEach(function(e){
       if(result.length>=lim) return;
-      var ejClean=(e.ej||'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
-      var ejBaseClean=(e.ejBase||ejClean).replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
+      var ejClean=(e.ej||'').replace(/^p\d+_s\d+_d\d+_/,'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
+      var ejBaseClean=(e.ejBase||ejClean).replace(/^p\d+_s\d+_d\d+_/,'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
       if(ejClean!==ejNombre&&ejBaseClean!==ejNombre) return;
       var sv=(e.sets||[]).filter(function(s){return s&&(s.p>0||s.r>0||s.t>0);});
       if(sv.length) result.push({fecha:fecha,sets:sv});
@@ -3664,10 +3677,10 @@ function getMejorPesoEjDia(ej, diaKey){
   var mejor=null;
   var fechaSesiones=ST.fechaSesiones||{};
   Object.keys(ST.sets||{}).forEach(function(k){
-    var match=k.match(/^d(\d+)_(.+)$/);
-    if(!match) return;
-    var numDia=parseInt(match[1]);
-    var ejKey=match[2];
+    var parsed=parseSetKey(k);
+    if(!parsed||parsed.esFinisher) return;
+    var numDia=parsed.dia;
+    var ejKey=parsed.ej;
     if(ejKey!==ej) return;
     // Verificar que ese día estaba asignado a diaKey
     var dBDelDia=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:CICLO[(numDia-1)%12].b;
@@ -3992,10 +4005,13 @@ function autoRegistrarFecha(){
     if(ejsSustituidos.length) variacion=true;
     var ejsRealizados=[];
     Object.keys(ST.sets||{}).forEach(function(k){
-      if(!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia))) return;
-      var esFinisher=k.indexOf(diaDayPrefix(ST.dia)+'fin_')===0||k.indexOf(legacyDayPrefix(ST.dia)+'fin_')===0;
-      var ejBase=k.replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
-      var ej=esFinisher?'🔥 '+ejBase.replace('fin_','').replace(/_/g,' '):ejBase;
+      var pfxNew=diaDayPrefix(ST.dia), pfxLeg=legacyDayPrefix(ST.dia);
+      var usedPfx=k.startsWith(pfxNew)?pfxNew:(k.startsWith(pfxLeg)?pfxLeg:null);
+      if(!usedPfx) return;
+      var resto=k.slice(usedPfx.length);
+      var esFinisher=resto.indexOf('fin_')===0;
+      var ejBase=esFinisher?resto.replace(/^fin_/,''):resto;
+      var ej=esFinisher?'🔥 '+ejBase.replace(/_/g,' '):ejBase;
       var sets=(ST.sets[k]||[]).filter(Boolean);
       if(sets.length){
         var _varAct=!esFinisher&&ST.variantes&&ST.variantes[ejBase];
@@ -4037,9 +4053,10 @@ function recuperarEntrenosPasados(){
   function detalleDePos(pos){
     var out=[];
     Object.keys(ST.sets||{}).forEach(function(k){
-      if(k.indexOf('d'+pos+'_')!==0) return;
-      var ej=k.replace(/^d\d+_/,'');
+      var parsed=parseSetKey(k);
+      if(!parsed||parsed.dia!==pos) return;
       var sets=(ST.sets[k]||[]).filter(Boolean);
+      var ej=parsed.esFinisher?'🔥 '+parsed.ej:parsed.ej;
       if(sets.length) out.push({ej:ej,sets:sets});
     });
     return out;
@@ -4604,10 +4621,10 @@ function buildEntrenoExcel(){
   var checks=ST.checksManual||{};
 
   Object.keys(sets).sort().forEach(function(k){
-    var match=k.match(/^d(\d+)_(.+)$/);
-    if(!match) return;
-    var numDia=parseInt(match[1]);
-    var ej=match[2];
+    var parsed=parseSetKey(k);
+    if(!parsed||parsed.esFinisher) return;
+    var numDia=parsed.dia;
+    var ej=parsed.ej;
     var cicloItem=CICLO&&CICLO[(numDia-1)%12];
     var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(cicloItem?cicloItem.b:'');
     var fecha=safeVal(fechaSes[numDia]);
@@ -4627,10 +4644,10 @@ function buildEntrenoExcel(){
   // Checks manuales sin sets
   Object.keys(checks).forEach(function(k){
     if(sets[k]) return; // ya procesado
-    var match=k.match(/^d(\d+)_(.+)$/);
-    if(!match) return;
-    var numDia=parseInt(match[1]);
-    var ej=match[2];
+    var parsed=parseSetKey(k);
+    if(!parsed||parsed.esFinisher) return;
+    var numDia=parsed.dia;
+    var ej=parsed.ej;
     var cicloItem=CICLO&&CICLO[(numDia-1)%12];
     var dB=ST.diaBoyle&&ST.diaBoyle[numDia]?ST.diaBoyle[numDia]:(cicloItem?cicloItem.b:'');
     var fecha=safeVal(fechaSes[numDia]);
@@ -4867,7 +4884,8 @@ function renderHistProg(){
       }).join('');
     } else if(ejsKeys.length){
       ejsHtml=ejsKeys.map(function(k){
-        var ej=k.replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
+        var parsed=parseSetKey(k);
+        var ej=parsed?(parsed.esFinisher?'🔥 '+parsed.ej:parsed.ej):k;
         var sets=(ST.sets[k]||[]).filter(Boolean);
         if(!sets.length) return '';
         var setsStr=sets.map(function(s,i){
@@ -5239,9 +5257,12 @@ function finalizarSesion(){
   if(ejsSustituidos.length) variacion=true;
   var ejsRealizados=[];
   Object.keys(ST.sets||{}).forEach(function(k){
-    if(!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia))) return;
-    var esFinisher=k.indexOf('d'+ST.dia+'_fin_')===0;
-    var ej=esFinisher?'🔥 '+k.replace(/^d\d+_fin_/,'').replace(/_/g,' '):k.replace(/^d\d+_/,'');
+    var pfxNew=diaDayPrefix(ST.dia), pfxLeg=legacyDayPrefix(ST.dia);
+    var usedPfx=k.startsWith(pfxNew)?pfxNew:(k.startsWith(pfxLeg)?pfxLeg:null);
+    if(!usedPfx) return;
+    var resto=k.slice(usedPfx.length);
+    var esFinisher=resto.indexOf('fin_')===0;
+    var ej=esFinisher?'🔥 '+resto.replace(/^fin_/,'').replace(/_/g,' '):resto;
     var sets=(ST.sets[k]||[]).filter(Boolean);
     if(sets.length) ejsRealizados.push({ej:ej,sets:sets,finisher:esFinisher});
   });
@@ -6516,7 +6537,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v128';
+const APP_VERSION='v129';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -6569,7 +6590,10 @@ function exportar(){
 
   // Función para parsear clave con o sin prefijo de programa
   function parseKey(key){
-    // Formato nuevo: p20260612_d5_Ejercicio
+    // Formato actual (v117+): p20260612_s5_d11_Ejercicio (incluye semana)
+    var mSem=key.match(/^p(\d{8})_s(\d+)_d(\d+)_(.+)$/);
+    if(mSem) return {programa:mSem[1].replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'), sem:parseInt(mSem[2]), dia:parseInt(mSem[3]), ej:mSem[4]};
+    // Formato intermedio v101-v116: p20260612_d5_Ejercicio (sin semana)
     var mNew=key.match(/^p(\d{8})_d(\d+)_(.+)$/);
     if(mNew) return {programa:mNew[1].replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3'), dia:parseInt(mNew[2]), ej:mNew[3]};
     // Formato legacy: d5_Ejercicio
@@ -6961,8 +6985,8 @@ function calGetEntrenosDia(fecha){
   // Agrupar por día de programa
   const dias={};
   sesKeys.forEach(k=>{
-    const m=k.match(/^d(\d+)_/);
-    if(m){const d=m[1];if(!dias[d])dias[d]=[];dias[d].push(k);}
+    const parsed=parseSetKey(k);
+    if(parsed){const d=String(parsed.dia);if(!dias[d])dias[d]=[];dias[d].push(k);}
   });
   // Para el calendario, buscamos si existe fecha_sesion en ST.fechaSesiones
   const fechaSesiones=ST.fechaSesiones||{};
@@ -6971,7 +6995,8 @@ function calGetEntrenosDia(fecha){
   if(!diaNum) diaNum=Object.keys(fechaSesiones).find(d=>fechaSesiones[d]===fecha);
   if(diaNum&&dias[diaNum]){
     dias[diaNum].forEach(k=>{
-      const ej=k.replace(/^d\d+_/,'');
+      const parsed=parseSetKey(k);
+      const ej=parsed?(parsed.esFinisher?'🔥 '+parsed.ej:parsed.ej):k;
       const sets=(ST.sets[k]||[]).filter(Boolean);
       if(sets.length) entrenos.push({ej,sets});
     });
@@ -7036,7 +7061,7 @@ function calSelDia(fecha){
   var diaNum=fechaSesiones[fecha]!=null?String(fechaSesiones[fecha]):null;
   if(!diaNum) diaNum=Object.keys(fechaSesiones).find(dd=>fechaSesiones[dd]===fecha);
   if(diaNum){
-    const sesKeys=Object.keys(ST.sets||{}).filter(k=>k.startsWith(getProgramaPrefix()+'d'+diaNum+'_')||k.startsWith('d'+diaNum+'_'));
+    const sesKeys=Object.keys(ST.sets||{}).filter(k=>{var p=parseSetKey(k);return p&&String(p.dia)===String(diaNum);});
     if(sesKeys.length){
       const sesKeysEj=sesKeys.filter(k=>!k.includes('_fin_'));
       const sesKeysFin=sesKeys.filter(k=>k.includes('_fin_'));
@@ -7052,9 +7077,8 @@ function calSelDia(fecha){
         +'</div>';
 
       function renderEjRow(k, isFinisher){
-        var ej=isFinisher
-          ? k.replace(/^p\d+_d\d+_fin_/,'').replace(/^d\d+_fin_/,'').replace(/_/g,' ')
-          : k.replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
+        var parsed=parseSetKey(k);
+        var ej=parsed?(isFinisher?'🔥 '+parsed.ej:parsed.ej):k;
         var sets=(ST.sets[k]||[]).filter(Boolean);
         if(!sets.length) return '';
         var maxRpe=sets.reduce(function(a,s){return Math.max(a,s.rpe||0);},0);
@@ -7132,13 +7156,13 @@ function calSelDia(fecha){
       ejsHtml+='</div>';
     } else if(diaNum){
       // Fallback: usar sets de ST.sets si historial no tiene ejercicios
-      var sesKeys2=Object.keys(ST.sets||{}).filter(function(k){return k.startsWith(getProgramaPrefix()+'d'+diaNum+'_')||k.startsWith('d'+diaNum+'_');});
+      var sesKeys2=Object.keys(ST.sets||{}).filter(function(k){var p=parseSetKey(k);return p&&String(p.dia)===String(diaNum);});
       if(sesKeys2.length){
         var sesKeys2Ej=sesKeys2.filter(function(k){return !k.includes('_fin_');});
         var sesKeys2Fin=sesKeys2.filter(function(k){return k.includes('_fin_');});
         ejsHtml='<div style="margin-top:6px">';
         sesKeys2Ej.forEach(function(k){
-          var ej=k.replace(/^d\d+_/,'');
+          var ej=(parseSetKey(k)||{}).ej||k;
           var sets=(ST.sets[k]||[]).filter(Boolean);
           if(!sets.length) return;
           var setsStr=sets.map(function(s,i){
@@ -7150,7 +7174,7 @@ function calSelDia(fecha){
         if(sesKeys2Fin.length){
           ejsHtml+='<div style="font-size:10px;font-weight:800;color:var(--orange-text);text-transform:uppercase;letter-spacing:.06em;margin:.35rem 0 .15rem">🔥 Finishers</div>';
           sesKeys2Fin.forEach(function(k){
-            var ej=k.replace(/^d\d+_fin_/,'').replace(/_/g,' ');
+            var ej=(parseSetKey(k)||{}).ej||k;
             var sets=(ST.sets[k]||[]).filter(Boolean);
             if(!sets.length) return;
             var setsStr=sets.map(function(s,i){

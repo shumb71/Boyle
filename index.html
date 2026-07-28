@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=128', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=130', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -787,6 +787,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
   </div>
 
+  <!-- PROGRAMA COMPLETO (12 semanas, override por dia) -->
+  <div class="screen" id="s-programa-completo">
+    <div class="ph"><h1>Programa completo</h1><span style="font-size:13px;color:var(--text2)">12 semanas</span></div>
+    <div class="card">
+      <div class="card-lbl" style="margin-bottom:.4rem">Proyeccion desde hoy</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:.75rem">Fechas estimadas segun tu ciclo de turnos. Toca un dia para ver o editar sus ejercicios — el cambio se guarda solo para esa fecha concreta.</div>
+      <div id="pc-list"></div>
+    </div>
+  </div>
+
   <!-- NUTRICION -->
   <!-- ENTRENAMIENTO BOYLE -->
   <div class="screen" id="s-boyle">
@@ -1024,6 +1034,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="dnav-item" id="dnav-ciclo" onclick="navTo('ciclo','Programa')">
         <i class="ti ti-calendar dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa</span>
       </button>
+      <button class="dnav-item" id="dnav-programa-completo" onclick="navTo('programa-completo','Programa completo')">
+        <i class="ti ti-calendar-time dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa completo</span>
+      </button>
       <button class="dnav-item" id="dnav-boyle" onclick="navTo('boyle','Entrenamiento Boyle')">
         <i class="ti ti-books dnav-icon" aria-hidden="true"></i><span class="dnav-label">Entrenamiento Boyle</span>
       </button>
@@ -1171,10 +1184,10 @@ const SES_NOM={
 
 // ESTRUCTURA DEL PROGRAMA (para la pantalla Programa/consulta)
 const BOYLE_FASES=[
-  {id:'F1', n:'Fase 1 — Acumulacion',  desc:'2-3x10 al 60-68%. Tempo 3/1/1. Aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
-  {id:'F2', n:'Fase 2 — Peaking',      desc:'2-3 series al 60-74% (sem.4 descarga). Cargas altas, CNS.',   sems:'Sem 4-6',  color:'var(--orange)'},
-  {id:'F3', n:'Fase 3 — Fuerza',       desc:'2-4 series al 65-78% (sem.8 descarga). Complejos fuerza+potencia.', sems:'Sem 7-9',  color:'var(--green)'},
-  {id:'F4', n:'Fase 4 — Peaking 2',    desc:'2-4 series al 65-82% (sem.12 descarga). Igual que F3, mas intensidad.',      sems:'Sem 10-12',color:'var(--red-text)'},
+  {id:'F1', n:'Fase 1 — Acumulacion',        desc:'3x8. Tempo 3/1/1. Volumen alto — construir base y aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
+  {id:'F2', n:'Fase 2 — Intensificacion',    desc:'3x5 (olimpicos/press/traccion a 3 reps escalando). Menos volumen, mas carga.', sems:'Sem 4-6',  color:'var(--orange)'},
+  {id:'F3', n:'Fase 3 — Fuerza + Complejos', desc:'3-5x5 con complejos fuerza+potencia (deadlift+salto, press+medball).', sems:'Sem 7-9',  color:'var(--green)'},
+  {id:'F4', n:'Fase 4 — Fuerza + Complejos', desc:'Igual que fase 3. Pliometria se mantiene en nivel F3 por precaucion con la rodilla.', sems:'Sem 10-12',color:'var(--red-text)'},
 ];
 
 // PROGRAMA DE 4 DIAS BOYLE — fiel al Excel boyle24.xlsx (la biblia)
@@ -2438,7 +2451,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2463,6 +2476,7 @@ function getConfigFields(){
     restTimes:ST.restTimes||{},nutTipo:ST.nutTipo||'auto',nut:ST.nut||{},
     sesionCustom:ST.sesionCustom||{},diaBoyle:ST.diaBoyle||{},
     eval:ST.eval||[],planDia:ST.planDia||{},notaDia:ST.notaDia||{},
+    programaCustom:ST.programaCustom||{},
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
@@ -2499,7 +2513,7 @@ function aplicarConfigRemoto(data){
   var campos=['dia','sem','cicloAnclaje','programaInicio','sliders','ejs','ejsCustom',
     'ejsImgs','variantes','variantesCustom','diaBoyle','sesionCustom','restTimes',
     'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','eval',
-    'googleLoginHint','sheetsId','variantesEliminadas'];
+    'googleLoginHint','sheetsId','variantesEliminadas','programaCustom'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2619,7 +2633,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -2694,6 +2708,11 @@ function sesionCustomKey(dia,ses){
   return dia+'_'+(ses||'');
 }
 function getEjs(ses){
+  // Override desde Programa completo (vista 12 semanas) para la fecha de hoy: maxima prioridad
+  if(esHoyActual() && ST.programaCustom){
+    var pcHoy=ST.programaCustom[hoyLocal()];
+    if(pcHoy&&pcHoy.ejercicios&&pcHoy.ejercicios[ses]) return pcHoy.ejercicios[ses];
+  }
   // Si hay custom para este dia de ciclo Y este día D1-D4 específico, usarlo primero
   const customKey=sesionCustomKey(ST.dia,ses);
   const hoy=ST.sesionCustom&&ST.sesionCustom[customKey];
@@ -2727,6 +2746,11 @@ function esHoyActual(){
   return !!c && c===ST.dia;
 }
 function getDiaBoyle(){
+  // Override desde Programa completo (vista 12 semanas): maxima prioridad
+  if(esHoyActual() && ST.programaCustom){
+    var pc=ST.programaCustom[hoyLocal()];
+    if(pc&&pc.diaBoyle) return pc.diaBoyle==='Descanso'?null:pc.diaBoyle;
+  }
   // Planning manual de HOY: tu elección manda siempre
   if(esHoyActual() && ST.planDia){
     var p=ST.planDia[hoyLocal()];
@@ -2885,6 +2909,7 @@ function closeDrawer(){
 function navTo(id,title){
   if(id==='ciclo') setTimeout(renderPrograma,50);
   if(id==='ejercicios') setTimeout(renderEjercicios,50);
+  if(id==='programa-completo') setTimeout(renderProgramaCompleto,50);
   closeDrawer();
   setTimeout(()=>goTo(id,null),200);
   document.getElementById('topbar-title').textContent=title;
@@ -3347,7 +3372,7 @@ function renderBoyleFaseTabs(){
   var el=document.getElementById('boyle-fase-tabs');
   if(!el) return;
   var fases=['F1','F2','F3','F4'];
-  var faseNoms={F1:'F1 — Acum.',F2:'F2 — Peaking',F3:'F3 — Fuerza',F4:'F4 — Peaking 2'};
+  var faseNoms={F1:'F1 — Acum.',F2:'F2 — Intensif.',F3:'F3 — Fuerza',F4:'F4 — Fuerza 2'};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
@@ -3383,12 +3408,12 @@ function renderBoyleContenido(){
   // Historial de veces que se realizó este día
   var historialDia=getHistorialDiaBoyle(diaKey, fase);
   // Info de fase
-  var faseNoms={F1:'Acumulación',F2:'Peaking',F3:'Fuerza + Complejos',F4:'Peaking 2'};
+  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza + Complejos 2'};
   var faseDesc={
     F1:'2-3 series × 10 reps al 60-68%. Tempo 3/1/1. Construir base de volumen.',
-    F2:'2-3 series × 3-5 reps al 60-74% (sem.4 descarga). Cargas altas, CNS.',
+    F2:'2-3 series × 3-5 reps al 60-74% (sem.4 descarga). Menos volumen, mas carga.',
     F3:'2-4 series × 5-6 reps con complejos (ejercicio + potencia), 65-78%. Máxima transferencia.',
-    F4:'Igual que F3 con mayor intensidad (65-82%). Peak del programa.',
+    F4:'Igual que F3 (65-82%). Pliometría se mantiene en nivel F3 por precaución con la rodilla.',
   };
   var semanas=[1,2,3];
   var html='';
@@ -4220,11 +4245,14 @@ function renderCicloBoyle(){
     var nomB=dB?(SES_NOM[dB]||dB):'Descanso / Movilidad';
     var bc=hoy?'dh':c.d<ST.dia?'dp':'df';
     var eColor={Alta:'var(--blue-text)',Media:'var(--orange)',Baja:'var(--text3)'}[c.e]||'var(--text3)';
-    return '<div class="crow" style="cursor:pointer" onclick="abrirCambiarDiaEnCiclo('+c.d+')">' +
+    var rowStyle=hoy
+      ?'cursor:pointer;background:var(--blue-bg);border-radius:var(--rs);padding-left:.5rem;padding-right:.5rem;margin:0 -.5rem;border-bottom:.5px solid transparent'
+      :'cursor:pointer';
+    return '<div class="crow" style="'+rowStyle+'" onclick="abrirCambiarDiaEnCiclo('+c.d+')">' +
       '<div class="dbub '+bc+'">'+c.d+'</div>' +
       '<div class="cinfo" style="flex:1">' +
-      '<div class="cturno">'+tnom(c.t)+(hoy?' <strong style="color:var(--blue)">— HOY</strong>':'')+'</div>' +
-      '<div class="cses" style="color:'+(dB?'var(--text)':'var(--text3)')+'">'+nomB+'</div>' +
+      '<div class="cturno" style="'+(hoy?'color:var(--blue);font-weight:700':'')+'">'+tnom(c.t)+(hoy?' <strong style="color:var(--blue)">— HOY / ACTIVO</strong>':'')+'</div>' +
+      '<div class="cses" style="color:'+(hoy?'var(--blue-text)':(dB?'var(--text)':'var(--text3)'))+';font-weight:'+(hoy?'700':'400')+'">'+nomB+'</div>' +
       '<div style="font-size:10px;color:var(--text3);margin-top:1px">'+c.h+'</div></div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">' +
       '<span style="font-size:10px;font-weight:700;color:'+eColor+'">'+c.e+'</span>' +
@@ -4246,6 +4274,118 @@ function renderCicloBoyle(){
   if(dialbl) dialbl.textContent='Dia '+ST.dia;
   try{renderHistProg();}catch(e){}
 }
+
+// ══════════════════════════════════════
+// PROGRAMA COMPLETO — vista 12 semanas + override por fecha (ST.programaCustom)
+// ══════════════════════════════════════
+// Proyecta hacia adelante desde hoy usando el patron por defecto de CICLO,
+// hasta completar la semana 12. Es una ESTIMACION: los dias reales pueden
+// variar si cambias asignaciones de dia sobre la marcha (eso sigue igual).
+function proyectarProgramaCompleto(){
+  var out=[];
+  var fechaCursor=new Date(hoyLocal()+'T00:00:00');
+  var posCiclo=ST.dia||1;
+  var semana=ST.sem||1;
+  var guard=0;
+  while(semana<=12 && guard<400){
+    var cicloItem=CICLO[(posCiclo-1)%12];
+    var dB=cicloItem.b;
+    if(dB){
+      var fase=getFaseActual(semana);
+      out.push({fecha:fmtFechaLocal(fechaCursor),semana:semana,fase:fase,diaBoyle:dB});
+      if(dB==='D4') semana++;
+    }
+    fechaCursor.setDate(fechaCursor.getDate()+1);
+    posCiclo=(posCiclo%12)+1;
+    guard++;
+  }
+  return out;
+}
+function renderProgramaCompleto(){
+  var el=document.getElementById('pc-list');
+  if(!el) return;
+  var proyeccion=proyectarProgramaCompleto();
+  var porSemana={};
+  proyeccion.forEach(function(p){(porSemana[p.semana]=porSemana[p.semana]||[]).push(p);});
+  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza + Complejos 2'};
+  var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
+  var html='';
+  for(var s=ST.sem||1;s<=12;s++){
+    var dias=porSemana[s]||[];
+    var fase=getFaseActual(s);
+    html+='<div style="margin-bottom:1.1rem">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">'
+      +'<span style="background:'+faseColors[fase]+';color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">S'+s+'</span>'
+      +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+faseNoms[fase]+'</span></div>';
+    if(!dias.length){
+      html+='<div style="font-size:12px;color:var(--text3);padding:.4rem 0">Sin proyección disponible.</div>';
+    }else{
+      dias.forEach(function(d){
+        var pc=ST.programaCustom&&ST.programaCustom[d.fecha];
+        var dBFinal=(pc&&pc.diaBoyle)?pc.diaBoyle:d.diaBoyle;
+        var ejsFinal=(pc&&pc.ejercicios&&pc.ejercicios[dBFinal])?pc.ejercicios[dBFinal]:((EJS_FASES[d.fase]&&EJS_FASES[d.fase][dBFinal])||[]);
+        var fechaObj=new Date(d.fecha+'T00:00:00');
+        var fechaFmt=fechaObj.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        var editado=!!pc;
+        html+='<div onclick="abrirEditorProgramaCompleto(\''+d.fecha+'\')" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:'+(editado?'var(--orange-bg)':'var(--bg2)')+';display:flex;justify-content:space-between;align-items:center">'
+          +'<div><div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':dBFinal)+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
+          +'<div style="font-size:11px;color:var(--text3)">'+(dBFinal==='Descanso'?'—':ejsFinal.length+' ejercicios')+'</div></div>'
+          +'<i class="ti ti-chevron-right" style="color:var(--text3)"></i></div>';
+      });
+    }
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+var _pcFechaActual=null;
+function abrirEditorProgramaCompleto(fecha){
+  _pcFechaActual=fecha;
+  var proyeccion=proyectarProgramaCompleto();
+  var slot=proyeccion.filter(function(p){return p.fecha===fecha;})[0];
+  var pc=ST.programaCustom&&ST.programaCustom[fecha];
+  var dBFinal=(pc&&pc.diaBoyle)?pc.diaBoyle:(slot?slot.diaBoyle:'D1');
+  var fase=slot?slot.fase:getFaseActual(ST.sem);
+  document.getElementById('pc-ed-fecha').textContent=fecha;
+  document.getElementById('pc-ed-diaboyle').value=dBFinal;
+  document.getElementById('pc-ed-override-badge').style.display=pc?'inline-block':'none';
+  var ejsFinal=(pc&&pc.ejercicios&&pc.ejercicios[dBFinal])?pc.ejercicios[dBFinal]:((EJS_FASES[fase]&&EJS_FASES[fase][dBFinal])||[]);
+  document.getElementById('pc-ed-ejercicios').value=ejsFinal.join('\n');
+  document.getElementById('mo-pc-editar').classList.add('open');
+}
+function pcEdCambiarDia(){
+  // Al cambiar el dia Boyle en el desplegable, recargar la lista de ejercicios por defecto de ese dia
+  var fecha=_pcFechaActual;
+  if(!fecha) return;
+  var proyeccion=proyectarProgramaCompleto();
+  var slot=proyeccion.filter(function(p){return p.fecha===fecha;})[0];
+  var fase=slot?slot.fase:getFaseActual(ST.sem);
+  var dB=document.getElementById('pc-ed-diaboyle').value;
+  var pc=ST.programaCustom&&ST.programaCustom[fecha];
+  var ejsFinal=(pc&&pc.ejercicios&&pc.ejercicios[dB])?pc.ejercicios[dB]:((EJS_FASES[fase]&&EJS_FASES[fase][dB])||[]);
+  document.getElementById('pc-ed-ejercicios').value=ejsFinal.join('\n');
+}
+function pcEdGuardar(){
+  var fecha=_pcFechaActual;
+  if(!fecha) return;
+  var dB=document.getElementById('pc-ed-diaboyle').value;
+  var lineas=document.getElementById('pc-ed-ejercicios').value.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  if(!ST.programaCustom) ST.programaCustom={};
+  var entrada={diaBoyle:dB};
+  if(dB!=='Descanso'){ entrada.ejercicios={}; entrada.ejercicios[dB]=lineas; }
+  ST.programaCustom[fecha]=entrada;
+  save();
+  document.getElementById('mo-pc-editar').classList.remove('open');
+  renderProgramaCompleto();
+}
+function pcEdRestaurar(){
+  var fecha=_pcFechaActual;
+  if(!fecha) return;
+  if(ST.programaCustom) delete ST.programaCustom[fecha];
+  save();
+  document.getElementById('mo-pc-editar').classList.remove('open');
+  renderProgramaCompleto();
+}
+// ══════════════════════════════════════
 
 function abrirCambiarDia(){abrirCambiarDiaEnCiclo(ST.dia);}
 
@@ -4292,7 +4432,7 @@ function cdSemRender(){
   if(lbl) lbl.textContent=_cdSemTemp;
   if(faseLbl){
     var fase=getFaseActual(_cdSemTemp);
-    var faseNoms={F1:'F1 — Acumulación',F2:'F2 — Peaking',F3:'F3 — Fuerza',F4:'F4 — Peaking 2'};
+    var faseNoms={F1:'F1 — Acumulación',F2:'F2 — Intensificación',F3:'F3 — Fuerza',F4:'F4 — Fuerza 2'};
     var faseColors={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
     faseLbl.textContent=faseNoms[fase]||fase;
     faseLbl.style.color=faseColors[fase]||'var(--text2)';
@@ -5446,9 +5586,9 @@ function renderFaseBanner(){
   // Nombres y datos EXACTOS del Excel boyle24.xlsx
   var faseNoms={
     F1:'F1 — Acumulación · 2-3×10 · 60-68%',
-    F2:'F2 — Peaking · 2-3×3-5 · 60-74%',
+    F2:'F2 — Intensificación · 2-3×3-5 · 60-74%',
     F3:'F3 — Fuerza · 2-4×5-6 · 65-78%',
-    F4:'F4 — Peaking 2 · 2-4×5-6 · 65-82%'
+    F4:'F4 — Fuerza 2 · 2-4×5-6 · 65-82%'
   };
   var faseReps={F1:'2-3×10',F2:'2-3×3-5',F3:'2-4×5-6',F4:'2-4×5-6'};
   var fasePct={F1:'60-68%',F2:'60-74%',F3:'65-78%',F4:'65-82%'};
@@ -6537,7 +6677,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v129';
+const APP_VERSION='v130';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7998,6 +8138,31 @@ checkBackupReminder();
       <button onclick="document.getElementById('mo-resumen-sesion').classList.remove('open')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px">✕</button>
     </div>
     <div id="mo-resumen-body"></div>
+  </div>
+</div>
+
+<div class="mo" id="mo-pc-editar" onclick="closeMo(event,'mo-pc-editar')">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt">Editar dia — <span id="pc-ed-fecha" style="color:var(--blue)"></span></div>
+    <div id="pc-ed-override-badge" style="display:none;font-size:11px;background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:3px 10px;margin-bottom:.6rem;display:inline-block">Editado — distinto del programa por defecto</div>
+    <div style="margin-bottom:.75rem">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Dia Boyle</div>
+      <select id="pc-ed-diaboyle" onchange="pcEdCambiarDia()" style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px">
+        <option value="D1">Dia 1</option>
+        <option value="D2">Dia 2</option>
+        <option value="D3">Dia 3</option>
+        <option value="D4">Dia 4</option>
+        <option value="Descanso">Descanso</option>
+      </select>
+    </div>
+    <div style="margin-bottom:.5rem">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Ejercicios (uno por linea, en orden)</div>
+      <textarea id="pc-ed-ejercicios" rows="8" style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit"></textarea>
+    </div>
+    <button style="width:100%;padding:11px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:.5rem" onclick="pcEdGuardar()">Guardar cambios de este dia</button>
+    <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-bottom:.5rem" onclick="pcEdRestaurar()">Restaurar por defecto</button>
+    <button style="width:100%;padding:11px;border:none;background:transparent;color:var(--text3);border-radius:var(--rs);font-size:14px;cursor:pointer" onclick="document.getElementById('mo-pc-editar').classList.remove('open')">Cancelar</button>
   </div>
 </div>
 

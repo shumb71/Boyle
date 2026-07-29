@@ -2224,13 +2224,13 @@
     },
     "2026-07-29": {
       "fecha": "2026-07-29",
-      "pasos": null,
-      "calorias_dia": 857.0,
-      "calorias_activas": 0.0,
-      "distancia_km": 0.0,
+      "pasos": 2638,
+      "calorias_dia": 1362.0,
+      "calorias_activas": 26.0,
+      "distancia_km": 2.17,
       "minutos_activos": 0,
-      "fc_reposo": null,
-      "estres_medio": -1
+      "fc_reposo": 50,
+      "estres_medio": 30
     }
   },
   "actualizado": "2026-07-29"

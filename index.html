@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=134', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=135', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -639,11 +639,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
       <span id="e-reps-target-lbl" style="font-size:11px;font-weight:700;color:var(--blue-text);background:rgba(91,143,255,.15);border-radius:20px;padding:2px 8px">3×8</span>
     </div>
-    <!-- FINALIZAR (en el sitio del cronómetro) -->
+    <!-- FINALIZAR (con cronometro manual) -->
     <div class="card" id="e-finalizar-card" style="border:.5px solid rgba(99,153,34,.3);margin-bottom:.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+        <div>
+          <div id="timer-inicio" style="font-size:11px;color:var(--text3);margin-bottom:2px"></div>
+          <div id="timer-display" style="font-size:22px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">00:00:00</div>
+        </div>
+        <button id="timer-start-btn" onclick="startTimer()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">▶ Iniciar</button>
+        <button id="timer-end-btn" onclick="endTimer()" style="display:none;border:none;background:var(--red-text,#dc2626);color:#fff;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">⏹ Detener</button>
+      </div>
+      <div id="timer-resumen" style="display:none;font-size:12px;color:var(--green-text);background:var(--green-bg);border-radius:var(--rs);padding:6px 8px;margin-bottom:.6rem;text-align:center">Duración de la última sesión: <strong id="timer-total-lbl"></strong></div>
       <button onclick="finalizarSesion()" id="btn-finalizar-sesion" style="width:100%;padding:13px;border:none;background:var(--green);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">✓ Finalizar y registrar sesión</button>
       <div id="e-finalizar-status" style="font-size:12px;color:var(--text2);margin-top:.6rem;text-align:center"></div>
-      <span id="timer-display" style="display:none"></span><span id="timer-inicio" style="display:none"></span><span id="timer-start-btn" style="display:none"></span><span id="timer-end-btn" style="display:none"></span><span id="timer-resumen" style="display:none"></span><span id="timer-total-lbl" style="display:none"></span>
     </div>
     <div class="strow">
       <div class="stbox"><div class="stval" id="e-vol">0</div><div class="stlbl">kg volumen</div></div>
@@ -896,7 +904,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
     <div class="card" id="cal-vacio" style="text-align:center;padding:2rem 1rem">
       <div style="font-size:32px;margin-bottom:.5rem">📅</div>
-      <div style="color:var(--text2);font-size:14px">Importa JSONs de Garmin para ver tus datos en el calendario</div>
+      <div style="color:var(--text2);font-size:14px">Aún no hay datos este mes — importa JSONs de Garmin o registra un entreno para verlos en el calendario</div>
     </div>
     <!-- LEYENDA Y CUMPLIMIENTO -->
   </div>
@@ -6744,7 +6752,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v134';
+const APP_VERSION='v135';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7472,7 +7480,7 @@ renders.cal=function(){
   renderCalStats(calYear,calMonth);
   renderCumplimiento(calYear,calMonth);
   const hist=ST.garminHist||{};
-  const tieneHist=Object.keys(hist).length>0;
+  const tieneHist=Object.keys(hist).length>0 || (ST.historialFechas && Object.keys(ST.historialFechas).length>0);
   // Título mes
   const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('cal-titulo').textContent=meses[calMonth]+' '+calYear;
@@ -7935,7 +7943,15 @@ function endTimer(){
 }
 
 function restoreTimer(){
+  // Estado por defecto: boton Iniciar visible, resto oculto (evita residuos visuales al cambiar de dia)
+  document.getElementById('timer-start-btn').style.display='block';
+  document.getElementById('timer-start-btn').textContent='▶ Iniciar';
+  document.getElementById('timer-end-btn').style.display='none';
+  document.getElementById('timer-resumen').style.display='none';
+  document.getElementById('timer-inicio').textContent='';
+  document.getElementById('timer-display').textContent='00:00:00';
   if(ST.timerActivo&&ST.timerInicio){
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
     document.getElementById('timer-start-btn').style.display='none';
     document.getElementById('timer-end-btn').style.display='block';
     document.getElementById('timer-inicio').textContent='Inicio: '+new Date(ST.timerInicio).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});

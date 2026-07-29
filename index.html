@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=133', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=134', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -4328,15 +4328,49 @@ function renderProgramaCompleto(){
   var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza + Complejos 2'};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var slotsOrden=['D1','D2','D3','D4'];
+  function filaHecha(real,slotKey){
+    var ejsArr=real.ejercicios||[];
+    var nomsEjs=ejsArr.map(function(e){return e.ej;}).filter(Boolean);
+    var fechaObj=new Date(real.fecha+'T00:00:00');
+    var fechaFmt=fechaObj.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+    return '<div onclick="mostrarResumenSesion(ST.historialFechas[\''+real.fecha+'\'])" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:var(--bg3);opacity:.9">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text2)">'+fechaFmt+' — '+slotKey+'</div>'
+      +'<i class="ti ti-check" style="color:var(--green)"></i></div>'
+      +'<div style="font-size:11px;color:var(--text3);line-height:1.45">'+(nomsEjs.length?nomsEjs.join(', '):'—')+'</div></div>';
+  }
+  function filaNoRegistrada(slotKey,fase){
+    var progEjs=(EJS_FASES[fase]&&EJS_FASES[fase][slotKey])||[];
+    return '<div style="padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);border:1px dashed var(--border2)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text3)">'+slotKey+' — no registrado / descanso</div>'
+      +'<i class="ti ti-minus" style="color:var(--text3)"></i></div>'
+      +'<div style="font-size:11px;color:var(--text3);line-height:1.45">Programado: '+(progEjs.length?progEjs.join(', '):'—')+'</div></div>';
+  }
+  function filaPendiente(d){
+    var pc=ST.programaCustom&&ST.programaCustom[d.fecha];
+    var dBFinal=(pc&&pc.diaBoyle)?pc.diaBoyle:d.diaBoyle;
+    var ejsFinal=(pc&&pc.ejercicios&&pc.ejercicios[dBFinal])?pc.ejercicios[dBFinal]:((EJS_FASES[d.fase]&&EJS_FASES[d.fase][dBFinal])||[]);
+    var fechaObj=new Date(d.fecha+'T00:00:00');
+    var fechaFmt=fechaObj.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+    var editado=!!pc;
+    return '<div onclick="abrirEditorProgramaCompleto(\''+d.fecha+'\')" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:'+(editado?'var(--orange-bg)':'var(--bg2)')+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':dBFinal)+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
+      +'<i class="ti ti-chevron-right" style="color:var(--text3)"></i></div>'
+      +'<div style="font-size:11px;color:var(--text3);line-height:1.45">'+(dBFinal==='Descanso'?'—':(ejsFinal.length?ejsFinal.join(', '):'—'))+'</div></div>';
+  }
   var html='';
   for(var s=1;s<=12;s++){
     var esPasada=s<(ST.sem||1);
+    var esActual=s===(ST.sem||1);
     var fase=getFaseActual(s);
     html+='<div style="margin-bottom:1.1rem">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">'
       +'<span style="background:'+faseColors[fase]+';color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">S'+s+'</span>'
       +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+faseNoms[fase]+'</span>'
       +(esPasada?'<span style="font-size:10px;font-weight:700;color:var(--text3);background:var(--bg3);border-radius:20px;padding:2px 8px">COMPLETADA</span>':'')
+      +(esActual?'<span style="font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-bg);border-radius:20px;padding:2px 8px">EN CURSO</span>':'')
       +'</div>';
     if(esPasada){
       // Semana pasada: siempre mostramos los 4 slots D1-D4. Si no hay registro real
@@ -4345,43 +4379,25 @@ function renderProgramaCompleto(){
       (historialSemana[s]||[]).forEach(function(d){if(d.diaBoyle)realPorDia[d.diaBoyle]=d;});
       slotsOrden.forEach(function(slotKey){
         var real=realPorDia[slotKey];
-        if(real){
-          var ejsArr=real.ejercicios||[];
-          var nomsEjs=ejsArr.map(function(e){return e.ej;}).filter(Boolean);
-          var fechaObj=new Date(real.fecha+'T00:00:00');
-          var fechaFmt=fechaObj.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-          html+='<div onclick="mostrarResumenSesion(ST.historialFechas[\''+real.fecha+'\'])" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:var(--bg3);opacity:.9">'
-            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-            +'<div style="font-size:13px;font-weight:600;color:var(--text2)">'+fechaFmt+' — '+slotKey+'</div>'
-            +'<i class="ti ti-check" style="color:var(--green)"></i></div>'
-            +'<div style="font-size:11px;color:var(--text3);line-height:1.45">'+(nomsEjs.length?nomsEjs.join(', '):'—')+'</div></div>';
-        }else{
-          var progEjs=(EJS_FASES[fase]&&EJS_FASES[fase][slotKey])||[];
-          html+='<div style="padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);border:1px dashed var(--border2)">'
-            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-            +'<div style="font-size:13px;font-weight:600;color:var(--text3)">'+slotKey+' — no registrado / descanso</div>'
-            +'<i class="ti ti-minus" style="color:var(--text3)"></i></div>'
-            +'<div style="font-size:11px;color:var(--text3);line-height:1.45">Programado: '+(progEjs.length?progEjs.join(', '):'—')+'</div></div>';
-        }
+        html+= real ? filaHecha(real,slotKey) : filaNoRegistrada(slotKey,fase);
+      });
+    }else if(esActual){
+      // Semana en curso: lo ya realizado sale del historial real; lo que aun falta, de la proyeccion.
+      var realPorDiaAct={};
+      (historialSemana[s]||[]).forEach(function(d){if(d.diaBoyle)realPorDiaAct[d.diaBoyle]=d;});
+      var pendPorDia={};
+      (porSemana[s]||[]).forEach(function(d){pendPorDia[d.diaBoyle]=d;});
+      slotsOrden.forEach(function(slotKey){
+        if(realPorDiaAct[slotKey]) html+=filaHecha(realPorDiaAct[slotKey],slotKey);
+        else if(pendPorDia[slotKey]) html+=filaPendiente(pendPorDia[slotKey]);
+        else html+=filaNoRegistrada(slotKey,fase);
       });
     }else{
       var dias=porSemana[s]||[];
       if(!dias.length){
         html+='<div style="font-size:12px;color:var(--text3);padding:.4rem 0">Sin proyección disponible.</div>';
       }else{
-        dias.forEach(function(d){
-          var pc=ST.programaCustom&&ST.programaCustom[d.fecha];
-          var dBFinal=(pc&&pc.diaBoyle)?pc.diaBoyle:d.diaBoyle;
-          var ejsFinal=(pc&&pc.ejercicios&&pc.ejercicios[dBFinal])?pc.ejercicios[dBFinal]:((EJS_FASES[d.fase]&&EJS_FASES[d.fase][dBFinal])||[]);
-          var fechaObj=new Date(d.fecha+'T00:00:00');
-          var fechaFmt=fechaObj.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
-          var editado=!!pc;
-          html+='<div onclick="abrirEditorProgramaCompleto(\''+d.fecha+'\')" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:'+(editado?'var(--orange-bg)':'var(--bg2)')+'">'
-            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-            +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':dBFinal)+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
-            +'<i class="ti ti-chevron-right" style="color:var(--text3)"></i></div>'
-            +'<div style="font-size:11px;color:var(--text3);line-height:1.45">'+(dBFinal==='Descanso'?'—':(ejsFinal.length?ejsFinal.join(', '):'—'))+'</div></div>';
-        });
+        dias.forEach(function(d){html+=filaPendiente(d);});
       }
     }
     html+='</div>';
@@ -6728,7 +6744,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v133';
+const APP_VERSION='v134';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

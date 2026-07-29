@@ -546,7 +546,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=130', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=131', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -4301,24 +4301,55 @@ function proyectarProgramaCompleto(){
   }
   return out;
 }
+function getHistorialPorSemana(){
+  var out={};
+  if(!ST.historialFechas) return out;
+  Object.keys(ST.historialFechas).forEach(function(fecha){
+    var ses=ST.historialFechas[fecha];
+    if(!ses||!ses.completado||!ses.semana) return;
+    (out[ses.semana]=out[ses.semana]||[]).push({
+      fecha:fecha,
+      semana:ses.semana,
+      fase:ses.fase,
+      diaBoyle:ses.diaBoyleReal||ses.diaBoyleProg,
+      ejercicios:ses.ejerciciosRealizados||{}
+    });
+  });
+  Object.keys(out).forEach(function(s){out[s].sort(function(a,b){return a.fecha<b.fecha?-1:1;});});
+  return out;
+}
 function renderProgramaCompleto(){
   var el=document.getElementById('pc-list');
   if(!el) return;
   var proyeccion=proyectarProgramaCompleto();
   var porSemana={};
   proyeccion.forEach(function(p){(porSemana[p.semana]=porSemana[p.semana]||[]).push(p);});
+  var historialSemana=getHistorialPorSemana();
   var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza + Complejos 2'};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var html='';
-  for(var s=ST.sem||1;s<=12;s++){
-    var dias=porSemana[s]||[];
+  for(var s=1;s<=12;s++){
+    var esPasada=s<(ST.sem||1);
+    var dias=esPasada?(historialSemana[s]||[]):(porSemana[s]||[]);
     var fase=getFaseActual(s);
     html+='<div style="margin-bottom:1.1rem">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">'
       +'<span style="background:'+faseColors[fase]+';color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">S'+s+'</span>'
-      +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+faseNoms[fase]+'</span></div>';
+      +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+faseNoms[fase]+'</span>'
+      +(esPasada?'<span style="font-size:10px;font-weight:700;color:var(--text3);background:var(--bg3);border-radius:20px;padding:2px 8px">COMPLETADA</span>':'')
+      +'</div>';
     if(!dias.length){
-      html+='<div style="font-size:12px;color:var(--text3);padding:.4rem 0">Sin proyección disponible.</div>';
+      html+='<div style="font-size:12px;color:var(--text3);padding:.4rem 0">'+(esPasada?'No hay sesiones registradas esta semana.':'Sin proyección disponible.')+'</div>';
+    }else if(esPasada){
+      dias.forEach(function(d){
+        var ejsArr=(d.ejercicios&&d.ejercicios[d.diaBoyle])||[];
+        var fechaObj=new Date(d.fecha+'T00:00:00');
+        var fechaFmt=fechaObj.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+        html+='<div style="padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:var(--bg3);opacity:.75;display:flex;justify-content:space-between;align-items:center">'
+          +'<div><div style="font-size:13px;font-weight:600;color:var(--text2)">'+fechaFmt+' — '+(d.diaBoyle||'—')+'</div>'
+          +'<div style="font-size:11px;color:var(--text3)">'+(ejsArr.length?ejsArr.length+' ejercicios realizados':'—')+'</div></div>'
+          +'<i class="ti ti-check" style="color:var(--green)"></i></div>';
+      });
     }else{
       dias.forEach(function(d){
         var pc=ST.programaCustom&&ST.programaCustom[d.fecha];
@@ -6677,7 +6708,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v130';
+const APP_VERSION='v131';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

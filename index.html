@@ -553,7 +553,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=136', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=137', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -6329,22 +6329,28 @@ function abrirFichaEj(ejId){
   var noImgEl = document.getElementById('mo-ficha-no-img');
   if(img){imgEl.src=img;imgEl.style.display='block';noImgEl.style.display='none';}
   else{imgEl.style.display='none';noImgEl.style.display='block';}
-  // Histórico
+  // Histórico — se saca de ST.historialFechas (tiene la fecha REAL de cada sesión),
+  // no de las claves de ST.sets (que solo tienen día-de-ciclo 1-12, se repite cada 12 días
+  // y ademas el parseo antiguo aqui no entendia el formato de clave actual p..._s..._d..._).
   var hist = [];
-  Object.keys(ST.sets||{}).forEach(function(k){
-    if(k.includes('_'+ej.key)){
-      var dia = parseInt(k.replace('d','').split('_')[0]);
-      (ST.sets[k]||[]).forEach(function(s){
-        if(s) hist.push({dia:dia,p:s.p,r:s.r,rpe:s.rpe});
+  Object.keys(ST.historialFechas||{}).forEach(function(fecha){
+    var ses = ST.historialFechas[fecha];
+    if(!ses || !ses.completado || !ses.ejerciciosRealizados) return;
+    ses.ejerciciosRealizados.forEach(function(e){
+      var coincide = e.ejBase===ej.n || e.ejBase===nombre || e.ej===ej.n || e.ej===nombre;
+      if(!coincide) return;
+      (e.sets||[]).forEach(function(s){
+        if(s) hist.push({fecha:fecha, p:s.p, r:s.r, rpe:s.rpe});
       });
-    }
+    });
   });
-  hist.sort(function(a,b){return a.dia-b.dia;});
+  hist.sort(function(a,b){return a.fecha<b.fecha?-1:1;});
   var histEl = document.getElementById('mo-ficha-hist');
   if(hist.length){
     histEl.innerHTML = hist.slice(-20).reverse().map(function(h){
+      var fechaFmt = new Date(h.fecha+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'2-digit'});
       return '<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:.5px solid var(--border);font-size:12px">'
-        +'<span style="color:var(--text3)">Dia '+h.dia+'</span>'
+        +'<span style="color:var(--text3)">'+fechaFmt+'</span>'
         +'<span style="font-weight:700;color:var(--text)">'+h.p+'kg × '+h.r+' reps</span>'
         +'<span style="color:var(--text3)">RPE '+h.rpe+'</span>'
         +'</div>';
@@ -6364,18 +6370,19 @@ function renderFichaChart(hist){
   if(_fichaChart){_fichaChart.destroy();_fichaChart=null;}
   if(!hist.length){canvas.style.display='none';return;}
   canvas.style.display='block';
-  // Máximo por día
-  var byDia = {};
+  // Máximo por fecha real
+  var byFecha = {};
   hist.forEach(function(h){
-    if(!byDia[h.dia]||h.p>byDia[h.dia]) byDia[h.dia]=h.p;
+    if(!byFecha[h.fecha]||h.p>byFecha[h.fecha]) byFecha[h.fecha]=h.p;
   });
-  var dias = Object.keys(byDia).sort(function(a,b){return a-b;});
-  var vals = dias.map(function(d){return byDia[d];});
+  var fechas = Object.keys(byFecha).sort();
+  var vals = fechas.map(function(f){return byFecha[f];});
+  var labels = fechas.map(function(f){return new Date(f+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});});
   if(typeof Chart !== 'undefined'){
     _fichaChart = new Chart(canvas, {
       type:'line',
       data:{
-        labels:dias.map(function(d){return 'D'+d;}),
+        labels:labels,
         datasets:[{
           label:'Peso máx (kg)',
           data:vals,
@@ -6853,7 +6860,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v136';
+const APP_VERSION='v137';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

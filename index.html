@@ -553,7 +553,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=140', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=141', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -634,6 +634,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- ENTRENO -->
   <div class="screen" id="s-entreno">
     <div class="ph"><h1>Entreno</h1><span id="e-sem" style="font-size:13px;color:var(--text2)">Semana 1</span><div id="fb-dot-entreno" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
+    <a href="https://www.edicionestutoraudiovisual.com/videos/entrenamiento-funcional/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--blue-text);background:var(--blue-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.6rem;text-decoration:none;font-weight:600">
+      🎥 Vídeos de técnica del libro (Ediciones Tutor) <i class="ti ti-external-link" style="margin-left:auto"></i>
+    </a>
     <div id="e-dia-picker"></div>
     <div style="text-align:right;margin:-.35rem 0 .6rem 0">
       <button onclick="abrirEliminarEntrenoHoy()" style="border:none;background:transparent;color:var(--red-text,#dc2626);font-size:11px;cursor:pointer;padding:2px 4px">🗑 Eliminar entreno de hoy</button>
@@ -841,19 +844,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 
   <!-- NUTRICION -->
   <!-- ENTRENAMIENTO BOYLE -->
-  <div class="screen" id="s-boyle">
-    <div class="ph"><h1>Entrenamiento Boyle</h1><div id="fb-dot-boyle" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
-    <a href="https://www.edicionestutoraudiovisual.com/videos/entrenamiento-funcional/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--blue-text);background:var(--blue-bg);border-radius:var(--rs);padding:.6rem .75rem;margin:0 .75rem .75rem;text-decoration:none;font-weight:600">
-      🎥 Vídeos de técnica del libro (Ediciones Tutor) <i class="ti ti-external-link" style="margin-left:auto"></i>
-    </a>
-    <!-- Selector de fase -->
-    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 .75rem .5rem" id="boyle-fase-tabs"></div>
-    <!-- Selector de día dentro de la fase -->
-    <div style="display:flex;gap:6px;padding:0 .75rem .75rem" id="boyle-dia-tabs"></div>
-    <!-- Contenido -->
-    <div id="boyle-content"></div>
-  </div>
-
   <div class="screen" id="s-nut">
     <div class="ph"><h1>Nutricion</h1><span id="n-ttag" class="tag tb">—</span><div id="fb-dot-nut" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <div class="card" style="margin-bottom:.75rem">
@@ -1081,9 +1071,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </button>
       <button class="dnav-item" id="dnav-programa-completo" onclick="navTo('programa-completo','Programa completo')">
         <i class="ti ti-calendar-time dnav-icon" aria-hidden="true"></i><span class="dnav-label">Programa completo</span>
-      </button>
-      <button class="dnav-item" id="dnav-boyle" onclick="navTo('boyle','Entrenamiento Boyle')">
-        <i class="ti ti-books dnav-icon" aria-hidden="true"></i><span class="dnav-label">Entrenamiento Boyle</span>
       </button>
       <button class="dnav-item" id="dnav-notas" onclick="navTo('notas','Notas')">
         <i class="ti ti-notes dnav-icon" aria-hidden="true"></i><span class="dnav-label">Notas</span>
@@ -6214,7 +6201,7 @@ function renderEnfBody(){
 // ══════════════════════════════════════
 // BASE DE DATOS DE EJERCICIOS
 // ══════════════════════════════════════
-const EJ_CATS = ['Todos','Explosivo','Hip Dom','Rodilla Unilat','Traccion','Press','Core','Movilidad'];
+const EJ_CATS = ['Todos','Explosivo','Hip Dom','Rodilla Unilat','Traccion','Press','Core','Movilidad','Calentamiento','Hombro','Pliometrico'];
 
 const EJ_BASE = [
   // EXPLOSIVOS
@@ -6290,6 +6277,75 @@ const EJ_BASE = [
   {id:"windmill",n:"Half-kneeling Windmill",cat:"Core",key:"Half-kneeling Windmill"},
   {id:"suitcase",n:"Suitcase Carry",cat:"Traccion",key:"Suitcase Carry"},
   {id:"farmer",n:"Farmer Carry",cat:"Traccion",key:"Farmer Carry"},
+  // --- Catálogo de referencia (libro, cap. 5/7/8/9/10) — no ligados a EJS_FASES/REPS_FASE del programa ---
+  {id:"glute_roll",n:"Rodar sobre el glúteo mayor (Glute Roll)",cat:"Calentamiento",key:"Glute Roll"},
+  {id:"lowback_roll",n:"Rodar sobre la región lumbar (Lower Back Roll)",cat:"Calentamiento",key:"Lower Back Roll"},
+  {id:"upback_roll",n:"Rodar sobre la zona alta de la espalda (Upper Back Roll)",cat:"Calentamiento",key:"Upper Back Roll"},
+  {id:"itband_roll",n:"Rodar sobre el tensor de la fascia lata y el glúteo medio (IT Band / Glute Med Roll)",cat:"Calentamiento",key:"IT Band / Glute Med Roll"},
+  {id:"add_roll",n:"Rodar sobre los aductores (Adductor Roll)",cat:"Calentamiento",key:"Adductor Roll"},
+  {id:"post_shoulder_roll",n:"Rodar sobre la parte posterior del hombro (Posterior Shoulder Roll)",cat:"Calentamiento",key:"Posterior Shoulder Roll"},
+  {id:"pec_roll",n:"Rodar sobre los pectorales (Pec Roll)",cat:"Calentamiento",key:"Pec Roll"},
+  {id:"hipflex_stretch",n:"Estiramiento de los flexores de la cadera con caja (Box Hip Flexor Stretch)",cat:"Calentamiento",key:"Box Hip Flexor Stretch"},
+  {id:"thoracic_ex1",n:"Ejercicio 1 para la columna torácica (Thoracic Spine Exercise 1)",cat:"Calentamiento",key:"Thoracic Spine Exercise 1"},
+  {id:"thoracic_ex2",n:"Ejercicio 2 para la columna torácica (Thoracic Spine Exercise 2)",cat:"Calentamiento",key:"Thoracic Spine Exercise 2"},
+  {id:"ankle_mob_ex1",n:"Ejercicio 1 para la movilidad del tobillo (Ankle Mobility Exercise 1)",cat:"Calentamiento",key:"Ankle Mobility Exercise 1"},
+  {id:"ankle_mob_ex2",n:"Ejercicio 2 para la movilidad del tobillo (Ankle Mobility Exercise 2)",cat:"Calentamiento",key:"Ankle Mobility Exercise 2"},
+  {id:"hip_mob_ex2",n:"Ejercicio 2 para la movilidad de la cadera (Hip Mobility Exercise 2)",cat:"Calentamiento",key:"Hip Mobility Exercise 2"},
+  {id:"floor_slide2",n:"Deslizamiento por el suelo (Floor Slide)",cat:"Calentamiento",key:"Floor Slide"},
+  {id:"walk_ham_stretch",n:"Andar dando zancadas hacia atrás con estiramiento de isquiotibiales (Walking Hamstring Stretch)",cat:"Calentamiento",key:"Walking Hamstring Stretch"},
+  {id:"walk_sl_dl",n:"Paso muerto andando con piernas rectas (Walking Straight-leg Deadlift)",cat:"Calentamiento",key:"Walking Straight-leg Deadlift"},
+  {id:"straight_skip",n:"Salto (skip) con piernas rectas (Straight-leg Skip)",cat:"Calentamiento",key:"Straight-leg Skip"},
+  {id:"lateral_skip",n:"Salto (skip) laterales (Lateral Skip)",cat:"Calentamiento",key:"Lateral Skip"},
+  {id:"crossover_skip",n:"Salto (skip) cruzado por encima (Crossover Skip)",cat:"Calentamiento",key:"Crossover Skip"},
+  {id:"carioca",n:"Carioca (Carioca)",cat:"Calentamiento",key:"Carioca"},
+  {id:"lateral_crawl",n:"Cuadrupedia lateral (Lateral Crawl)",cat:"Calentamiento",key:"Lateral Crawl"},
+  {id:"open_shuffle",n:"Shuffle abierto y clavar (Open Shuffle and Stick)",cat:"Calentamiento",key:"Open Shuffle and Stick"},
+  {id:"quick_shuffle",n:"Shuffle rápido y clavar (Quick Shuffle and Stick)",cat:"Calentamiento",key:"Quick Shuffle and Stick"},
+  {id:"crossover2",n:"Cruce por delante (Crossover)",cat:"Calentamiento",key:"Crossover"},
+  {id:"in_in_out_out",n:"Dentro-dentro-fuera-fuera (In-In-Out-Out)",cat:"Calentamiento",key:"In-In-Out-Out"},
+  {id:"scissors",n:"Tijeras (Scissors)",cat:"Calentamiento",key:"Scissors"},
+  {id:"hip_turn",n:"Giro de cadera (Hip Turn)",cat:"Calentamiento",key:"Hip Turn"},
+  {id:"kb_swings2",n:"Kettlebell swings (Kettlebell Swings)",cat:"Hip Dom",key:"Kettlebell Swings"},
+  {id:"split2",n:"Split (Split)",cat:"Hip Dom",key:"Split"},
+  {id:"slide_lunge2",n:"Zancada sobre tabla de deslizamiento (Slide Board Lunge)",cat:"Hip Dom",key:"Slide Board Lunge"},
+  {id:"sl_sldl_reach",n:"Peso muerto con una sola pierna y pierna recta estirando el brazo cruzado por delante del cuerpo (Single-leg Straight-leg Deadlift with Reach Across)",cat:"Hip Dom",key:"Single-leg Straight-leg Deadlift with Reach Across"},
+  {id:"sl_sldl_cable",n:"Peso muerto con una sola pierna y pierna recta con un cable con peso externo (Single-leg Straight-leg Deadlift with Cable)",cat:"Hip Dom",key:"Single-leg Straight-leg Deadlift with Cable"},
+  {id:"sb_leg_curl",n:"Curl de piernas con balón de estabilidad (Stability Ball Leg Curl)",cat:"Hip Dom",key:"Stability Ball Leg Curl"},
+  {id:"sb_rollout2",n:"Rollout con balón de estabilidad (Stability Ball Rollout)",cat:"Core",key:"Stability Ball Rollout"},
+  {id:"plank_saw",n:"Sierra en plancha (Plank Saw)",cat:"Core",key:"Plank Saw"},
+  {id:"ab_wheel2",n:"Rollout con rueda de abdominales (Ab Wheel Rollout)",cat:"Core",key:"Ab Wheel Rollout"},
+  {id:"hk_inline_chop",n:"Leñador estable semiarrodillado en línea (Half-kneeling In-line Stable Chop/Lift)",cat:"Core",key:"Half-kneeling In-line Stable Chop/Lift"},
+  {id:"split_chop",n:"Leñador en posición de zancada (Split-stance Chop)",cat:"Core",key:"Split-stance Chop"},
+  {id:"standing_chop",n:"Leñador en bipedestación (Standing Chop)",cat:"Core",key:"Standing Chop"},
+  {id:"standing_lift",n:"Levantamiento en bipedestación (Standing Lift)",cat:"Core",key:"Standing Lift"},
+  {id:"standing_trans_chop",n:"Leñador transversal en bipedestación (Standing Transverse Chop)",cat:"Core",key:"Standing Transverse Chop"},
+  {id:"lift_stepup",n:"Levantamiento con step-up (Lift with Step-up)",cat:"Core",key:"Lift with Step-up"},
+  {id:"tgu",n:"Levantamiento turco (Turkish Get-up)",cat:"Core",key:"Turkish Get-up"},
+  {id:"mb_side_throw",n:"Lanzamiento lateral de balón medicinal (Med Ball Side Throw)",cat:"Core",key:"Med Ball Side Throw"},
+  {id:"hk_rot_mb_side",n:"Lanzamiento lateral de balón medicinal con giro y semiarrodillado (Half-kneeling Rotational Med Ball Side Throw)",cat:"Core",key:"Half-kneeling Rotational Med Ball Side Throw"},
+  {id:"rot_mb_front",n:"Lanzamiento frontal de balón medicinal con giro (Rotational Med Ball Front Throw)",cat:"Core",key:"Rotational Med Ball Front Throw"},
+  {id:"sl_rot_mb_front",n:"Lanzamiento frontal de balón medicinal con giro a una sola pierna (Single-leg Rotational Med Ball Front Throw)",cat:"Core",key:"Single-leg Rotational Med Ball Front Throw"},
+  {id:"st_ohead_mb",n:"Lanzamiento de balón medicinal por encima de la cabeza en bipedestación (Standing Overhead Med Ball Throw)",cat:"Core",key:"Standing Overhead Med Ball Throw"},
+  {id:"kneel_mb_front",n:"Lanzamiento frontal de balón medicinal arrodillado (Kneeling Med Ball Front Throw)",cat:"Core",key:"Kneeling Med Ball Front Throw"},
+  {id:"empty_can",n:"Gero-vacs (Empty Can)",cat:"Hombro",key:"Empty Can"},
+  {id:"two_leg_row",n:"Remo rotatorio con un solo brazo y las dos piernas (Two-leg Single-arm Rotational Row)",cat:"Hombro",key:"Two-leg Single-arm Rotational Row"},
+  {id:"high_low_cord",n:"Alto-bajo con sports flex (High-Low with Sport Cord)",cat:"Hombro",key:"High-Low with Sport Cord"},
+  {id:"t_cord",n:"T con sports flex (T with Sport Cord)",cat:"Hombro",key:"T with Sport Cord"},
+  {id:"ext_rot",n:"Rotación externa en bipedestación (Standing External Rotation)",cat:"Hombro",key:"Standing External Rotation"},
+  {id:"total_gym_jump",n:"Total Gym Jump Trainer (Total Gym Jump Trainer)",cat:"Pliometrico",key:"Total Gym Jump Trainer"},
+  {id:"box_jump2",n:"Salto a cajón (Box Jump)",cat:"Pliometrico",key:"Box Jump"},
+  {id:"sl_box_hop",n:"Hop a cajón con una sola pierna (Single-leg Box Hop)",cat:"Pliometrico",key:"Single-leg Box Hop"},
+  {id:"lat_bound_stick",n:"Bound lateral y clavar (Lateral Bound and Stick)",cat:"Pliometrico",key:"Lateral Bound and Stick"},
+  {id:"hurdle_jump_stick",n:"Jump de vallas y clavar (Hurdle Jump and Stick)",cat:"Pliometrico",key:"Hurdle Jump and Stick"},
+  {id:"sl_hurdle_hop_stick",n:"Hop de vallas con una sola pierna y clavar (Single-leg Hurdle Hop and Stick)",cat:"Pliometrico",key:"Single-leg Hurdle Hop and Stick"},
+  {id:"sl_lat_hurdle_hop",n:"Hop de vallas lateral y clavar con una sola pierna (Single-leg Lateral Hurdle Hop and Stick)",cat:"Pliometrico",key:"Single-leg Lateral Hurdle Hop and Stick"},
+  {id:"bound45_stick",n:"Bound de 45 grados y clavar (45° Bound and Stick)",cat:"Pliometrico",key:"45° Bound and Stick"},
+  {id:"lat_bound45",n:"Bound lateral de 45 grados (45° Lateral Bound)",cat:"Pliometrico",key:"45° Lateral Bound"},
+  {id:"power_skip",n:"Skip de potencia (Power Skip)",cat:"Pliometrico",key:"Power Skip"},
+  {id:"hang_clean2",n:"Cargada colgante (Hang Clean)",cat:"Explosivo",key:"Hang Clean"},
+  {id:"close_snatch",n:"Arrancada con agarre cerrado (Close-grip Snatch)",cat:"Explosivo",key:"Close-grip Snatch"},
+  {id:"sa_db_snatch",n:"Arrancada con mancuerna con un solo brazo (Single-arm DB Snatch)",cat:"Explosivo",key:"Single-arm DB Snatch"},
+  {id:"sl_clean_snatch",n:"Cargadas y arrancadas con una sola pierna (Single-leg Clean and Snatch)",cat:"Explosivo",key:"Single-leg Clean and Snatch"},
 ];
 
 // Estado seleccionado en ficha
@@ -6921,7 +6977,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v140';
+const APP_VERSION='v141';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8019,7 +8075,7 @@ function actualizarDotSync(estado){
   var lbl=document.getElementById('sync-dot-lbl');
   if(dot) dot.style.background=e.color;
   if(lbl) lbl.textContent=e.txt;
-  ['entreno','ciclo','boyle','nut','eval','cal','garmin','config','ejs','hist'].forEach(function(id){
+  ['entreno','ciclo','nut','eval','cal','garmin','config','ejs','hist'].forEach(function(id){
     var d=document.getElementById('fb-dot-'+id);
     if(d) d.style.background=e.color;
   });

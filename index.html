@@ -553,7 +553,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=139', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=140', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -843,6 +843,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- ENTRENAMIENTO BOYLE -->
   <div class="screen" id="s-boyle">
     <div class="ph"><h1>Entrenamiento Boyle</h1><div id="fb-dot-boyle" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
+    <a href="https://www.edicionestutoraudiovisual.com/videos/entrenamiento-funcional/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--blue-text);background:var(--blue-bg);border-radius:var(--rs);padding:.6rem .75rem;margin:0 .75rem .75rem;text-decoration:none;font-weight:600">
+      🎥 Vídeos de técnica del libro (Ediciones Tutor) <i class="ti ti-external-link" style="margin-left:auto"></i>
+    </a>
     <!-- Selector de fase -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 .75rem .5rem" id="boyle-fase-tabs"></div>
     <!-- Selector de día dentro de la fase -->
@@ -6918,7 +6921,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v139';
+const APP_VERSION='v140';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8495,7 +8498,10 @@ checkBackupReminder();
     </div>
     <!-- Info tecnica -->
     <div class="card-lbl">Técnica</div>
-    <div id="mo-ficha-tecnica" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:.75rem;background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem"></div>
+    <div id="mo-ficha-tecnica" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:.5rem;background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem"></div>
+    <a href="https://www.edicionestutoraudiovisual.com/videos/entrenamiento-funcional/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--blue-text);background:var(--blue-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.75rem;text-decoration:none;font-weight:600">
+      🎥 Ver vídeo de técnica (Ediciones Tutor) <i class="ti ti-external-link" style="margin-left:auto"></i>
+    </a>
     <!-- Categoría -->
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem">
       <span style="font-size:12px;color:var(--text3)">Categoría:</span>

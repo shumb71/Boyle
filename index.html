@@ -553,7 +553,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=138', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=139', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -817,14 +817,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="ph"><h1>Notas</h1></div>
     <div id="notas-aviso-tamano" style="display:none;margin-bottom:.75rem;padding:.6rem .75rem;border-radius:var(--rs);background:var(--orange-bg);color:var(--orange-text);font-size:12px"></div>
     <div class="card" style="margin-bottom:.75rem">
-      <div class="card-lbl" style="margin-bottom:.5rem">Añadir nota</div>
+      <div class="card-lbl" id="notas-form-titulo" style="margin-bottom:.5rem">Añadir nota</div>
+      <div style="display:flex;gap:6px;margin-bottom:.4rem">
+        <button type="button" onclick="notasWrap('**')" title="Negrita" style="width:36px;height:32px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--rs);font-weight:700;cursor:pointer;font-size:14px">N</button>
+        <button type="button" onclick="notasWrap('__')" title="Subrayado" style="width:36px;height:32px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--rs);font-weight:700;text-decoration:underline;cursor:pointer;font-size:14px">S</button>
+        <span style="font-size:11px;color:var(--text3);align-self:center;margin-left:4px">Selecciona texto y toca N o S</span>
+      </div>
       <textarea id="notas-nueva-texto" rows="3" placeholder="Escribe aqui..." style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:.5rem"></textarea>
       <div style="display:flex;gap:6px;margin-bottom:.6rem" id="notas-nueva-tags">
         <button type="button" onclick="notasSetTagNueva('General')" data-tag="General" class="notas-tagbtn" style="flex:1;padding:7px;border:none;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">General</button>
         <button type="button" onclick="notasSetTagNueva('Entreno')" data-tag="Entreno" class="notas-tagbtn" style="flex:1;padding:7px;border:none;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">Entreno</button>
         <button type="button" onclick="notasSetTagNueva('Libro')" data-tag="Libro" class="notas-tagbtn" style="flex:1;padding:7px;border:none;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">Libro</button>
       </div>
-      <button onclick="agregarNota()" style="width:100%;padding:11px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">+ Añadir nota</button>
+      <button onclick="agregarNota()" id="notas-btn-guardar" style="width:100%;padding:11px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">+ Añadir nota</button>
+      <button onclick="cancelarEdicionNota()" id="notas-btn-cancelar" style="display:none;width:100%;padding:9px;border:none;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;margin-top:.4rem">Cancelar edición</button>
     </div>
     <div style="position:relative;margin-bottom:.75rem">
       <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px"></i>
@@ -4499,6 +4505,7 @@ function pcEdRestaurar(){
 // NOTAS — anotaciones generales (no atadas a un dia), con etiqueta y buscador
 // ══════════════════════════════════════
 var _notaTagNueva='General';
+var _notaEditandoId=null;
 var NOTAS_TAG_COLOR={General:{bg:'var(--bg3)',fg:'var(--text2)'},Entreno:{bg:'var(--blue-bg)',fg:'var(--blue-text)'},Libro:{bg:'var(--green-bg)',fg:'var(--green-text)'}};
 function notasSetTagNueva(tag){
   _notaTagNueva=tag;
@@ -4509,20 +4516,67 @@ function notasSetTagNueva(tag){
     b.style.color=activo?c.fg:'var(--text3)';
   });
 }
+// Envuelve el texto seleccionado del textarea con el marcador (** negrita, __ subrayado).
+// Si no hay seleccion, inserta el marcador vacio en el cursor para que el usuario escriba dentro.
+function notasWrap(marker){
+  var el=document.getElementById('notas-nueva-texto');
+  var start=el.selectionStart, end=el.selectionEnd;
+  var val=el.value;
+  var selected=val.slice(start,end);
+  var nuevo=val.slice(0,start)+marker+selected+marker+val.slice(end);
+  el.value=nuevo;
+  el.focus();
+  var pos=selected?end+marker.length*2:start+marker.length;
+  el.setSelectionRange(pos,pos);
+}
+// Convierte **texto** en negrita y __texto__ en subrayado para mostrar. Se aplica DESPUES
+// de escapar '<' asi que es seguro (los marcadores no contienen caracteres HTML).
+function notasFormatoTexto(texto){
+  var esc=texto.replace(/</g,'&lt;');
+  esc=esc.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  esc=esc.replace(/__(.+?)__/g,'<u>$1</u>');
+  return esc;
+}
 function agregarNota(){
   var el=document.getElementById('notas-nueva-texto');
   var texto=(el.value||'').trim();
   if(!texto) return;
   if(!ST.notasGenerales) ST.notasGenerales=[];
-  ST.notasGenerales.unshift({id:'n'+Date.now(),fecha:new Date().toISOString(),texto:texto,tag:_notaTagNueva});
+  if(_notaEditandoId){
+    var n=ST.notasGenerales.find(function(x){return x.id===_notaEditandoId;});
+    if(n){ n.texto=texto; n.tag=_notaTagNueva; }
+    cancelarEdicionNota();
+  }else{
+    ST.notasGenerales.unshift({id:'n'+Date.now(),fecha:new Date().toISOString(),texto:texto,tag:_notaTagNueva});
+  }
   el.value='';
   save();
   renderNotas();
+}
+function editarNota(id){
+  var n=(ST.notasGenerales||[]).find(function(x){return x.id===id;});
+  if(!n) return;
+  _notaEditandoId=id;
+  document.getElementById('notas-nueva-texto').value=n.texto;
+  notasSetTagNueva(n.tag||'General');
+  document.getElementById('notas-form-titulo').textContent='Editar nota';
+  document.getElementById('notas-btn-guardar').textContent='Guardar cambios';
+  document.getElementById('notas-btn-cancelar').style.display='block';
+  document.getElementById('notas-nueva-texto').scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('notas-nueva-texto').focus();
+}
+function cancelarEdicionNota(){
+  _notaEditandoId=null;
+  document.getElementById('notas-nueva-texto').value='';
+  document.getElementById('notas-form-titulo').textContent='Añadir nota';
+  document.getElementById('notas-btn-guardar').textContent='+ Añadir nota';
+  document.getElementById('notas-btn-cancelar').style.display='none';
 }
 function eliminarNota(id){
   if(!ST.notasGenerales) return;
   if(!confirm('¿Borrar esta nota?')) return;
   ST.notasGenerales=ST.notasGenerales.filter(function(n){return n.id!==id;});
+  if(_notaEditandoId===id) cancelarEdicionNota();
   save();
   renderNotas();
 }
@@ -4559,8 +4613,10 @@ function renderNotas(){
       +'<div style="display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:10px;font-weight:700;background:'+c.bg+';color:'+c.fg+';border-radius:20px;padding:2px 8px">'+n.tag+'</span>'
       +'<span style="font-size:11px;color:var(--text3)">'+fechaFmt+'</span></div>'
-      +'<button onclick="eliminarNota(\''+n.id+'\')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px">🗑</button></div>'
-      +'<div style="font-size:14px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+n.texto.replace(/</g,'&lt;')+'</div></div>';
+      +'<div style="display:flex;gap:4px">'
+      +'<button onclick="editarNota(\''+n.id+'\')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px">✏️</button>'
+      +'<button onclick="eliminarNota(\''+n.id+'\')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px">🗑</button></div></div>'
+      +'<div style="font-size:14px;color:var(--text);white-space:pre-wrap;line-height:1.5">'+notasFormatoTexto(n.texto)+'</div></div>';
   }).join('');
 }
 // ══════════════════════════════════════
@@ -6862,7 +6918,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v138';
+const APP_VERSION='v139';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

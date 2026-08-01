@@ -526,6 +526,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .graf-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
 .graf-bar{background:var(--blue);border-radius:3px 3px 0 0;width:100%;transition:height .3s;min-height:3px}
 .graf-lbl{font-size:9px;color:var(--text3);margin-top:3px;text-align:center}
+@keyframes timerPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.3)}}
 </style>
 <script>
 // ============================================================
@@ -553,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=141', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=144', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -650,14 +651,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <span id="e-reps-target-lbl" style="font-size:11px;font-weight:700;color:var(--blue-text);background:rgba(91,143,255,.15);border-radius:20px;padding:2px 8px">3×8</span>
     </div>
     <!-- FINALIZAR (con cronometro manual) -->
-    <div class="card" id="e-finalizar-card" style="border:.5px solid rgba(99,153,34,.3);margin-bottom:.75rem">
+    <div class="card" id="e-finalizar-card" style="border:.5px solid rgba(99,153,34,.3);margin-bottom:.75rem;transition:background .3s,border-color .3s">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
         <div>
           <div id="timer-inicio" style="font-size:11px;color:var(--text3);margin-bottom:2px"></div>
-          <div id="timer-display" style="font-size:22px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">00:00:00</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="timer-dot" style="display:none;width:9px;height:9px;border-radius:50%;background:var(--red-text,#dc2626);animation:timerPulse 1.2s ease-in-out infinite"></span>
+            <div id="timer-display" style="font-size:22px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">00:00:00</div>
+          </div>
         </div>
-        <button id="timer-start-btn" onclick="startTimer()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">▶ Iniciar</button>
-        <button id="timer-end-btn" onclick="endTimer()" style="display:none;border:none;background:var(--red-text,#dc2626);color:#fff;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">⏹ Detener</button>
+        <div style="display:flex;gap:6px">
+          <button id="timer-start-btn" onclick="startTimer()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">▶ Iniciar</button>
+          <button id="timer-stop-btn" onclick="detenerTimer()" style="display:none;border:none;background:var(--red-text,#dc2626);color:#fff;border-radius:var(--rs);padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer">⏹ Detener</button>
+        </div>
       </div>
       <div id="timer-resumen" style="display:none;font-size:12px;color:var(--green-text);background:var(--green-bg);border-radius:var(--rs);padding:6px 8px;margin-bottom:.6rem;text-align:center">Duración de la última sesión: <strong id="timer-total-lbl"></strong></div>
       <button onclick="finalizarSesion()" id="btn-finalizar-sesion" style="width:100%;padding:13px;border:none;background:var(--green);color:#fff;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer">✓ Finalizar y registrar sesión</button>
@@ -1230,6 +1236,7 @@ const BOYLE_FASES=[
 // D2/D4: Multidireccional, warm-up multi-dir, lateral plyos, rotatory/overhead medball
 // Regla clave: SIEMPRE unilateral antes que bilateral dentro del mismo par
 const BOYLE_DIAS={
+  LIBRE:{n:'Entreno libre', tipo:'Libre', color:'var(--text3)', desc:'Sesion suelta, fuera de las fases del programa.'},
   D1:{
     n:'Dia 1', tipo:'Linear', color:'var(--blue)',
     desc:'Explosive/Olympic lift · Core antirotacion (CHOP) · Press horizontal · Press vertical. Dias 1 y 3 son lineales.',
@@ -4393,7 +4400,7 @@ function renderProgramaCompleto(){
     var editado=!!pc;
     return '<div onclick="abrirEditorProgramaCompleto(\''+d.fecha+'\')" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:'+(editado?'var(--orange-bg)':'var(--bg2)')+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':dBFinal)+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':(BOYLE_DIAS[dBFinal]?BOYLE_DIAS[dBFinal].n:dBFinal))+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
       +'<i class="ti ti-chevron-right" style="color:var(--text3)"></i></div>'
       +'<div style="font-size:11px;color:var(--text3);line-height:1.45">'+(dBFinal==='Descanso'?'—':(ejsFinal.length?ejsFinal.join(', '):'—'))+'</div></div>';
   }
@@ -5492,6 +5499,24 @@ function getRestTime(ej) {
   if (ST.restTimes && ST.restTimes[ejClean] !== undefined) return ST.restTimes[ejClean];
   if (ST.restTimes && ST.restTimes[ej] !== undefined) return ST.restTimes[ej];
   return REST_DEFAULTS[ejClean] || REST_DEFAULTS[ej] || 90;
+}
+
+// Toast generico reutilizable (crea el elemento si no existe, como ya hace startRestTimer)
+var _syncToastTimeout=null;
+function mostrarToastSync(msg, exito){
+  var toast=document.getElementById('sync-toast');
+  if(!toast){
+    toast=document.createElement('div');
+    toast.id='sync-toast';
+    toast.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);border-radius:20px;padding:9px 20px;font-size:13px;font-weight:700;z-index:999;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:85vw;text-align:center;transition:opacity .3s';
+    document.body.appendChild(toast);
+  }
+  toast.style.background=exito?'var(--green)':'var(--orange)';
+  toast.style.color='#fff';
+  toast.textContent=msg;
+  toast.style.opacity='1';
+  if(_syncToastTimeout) clearTimeout(_syncToastTimeout);
+  _syncToastTimeout=setTimeout(function(){toast.style.opacity='0';}, 3000);
 }
 
 function setRestTime(ej, val) {
@@ -6977,7 +7002,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v141';
+const APP_VERSION='v144';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7278,7 +7303,11 @@ async function appendSetToSheets(numDia, ej, variante, serie, peso, reps, rpe, n
   var varMostrar=variante&&variante!==ej?variante:'';
   // Orden compatible con filas antiguas: variante al final
   var values=[fecha,numDia,dB,fase,sem,semEnFase,ej,serie,peso,reps,rpe,nota||'',varMostrar];
-  sheetsAppend('Sets y Pesos', values).catch(function(){});
+  sheetsAppend('Sets y Pesos', values).then(function(ok){
+    if(!ok) mostrarToastSync('⚠️ No se pudo guardar en tu Sheet', false);
+  }).catch(function(){
+    mostrarToastSync('⚠️ No se pudo guardar en tu Sheet', false);
+  });
 }
 
 // Llamar al finalizar sesión
@@ -7303,7 +7332,11 @@ async function appendSesionToSheets(sesionData){
     (ST.sliders||{}).s||'',
     'Registrada'
   ];
-  sheetsAppend('Sesiones', values).catch(function(){});
+  sheetsAppend('Sesiones', values).then(function(ok){
+    mostrarToastSync(ok?'✅ Sesión guardada en tu Sheet':'⚠️ No se pudo guardar la sesión en tu Sheet', ok);
+  }).catch(function(){
+    mostrarToastSync('⚠️ No se pudo guardar la sesión en tu Sheet', false);
+  });
 }
 // ══════════════════════════════════════
 const GITHUB_TOKEN = 'TU_TOKEN_AQUI'; // Se sobreescribe con ST.githubToken si existe
@@ -8136,8 +8169,13 @@ function startTimer(){
   ST.timerActivo=true;
   save();
   document.getElementById('timer-start-btn').style.display='none';
-  document.getElementById('timer-end-btn').style.display='block';
+  document.getElementById('timer-pause-btn').style.display='block';
+  document.getElementById('timer-resume-btn').style.display='none';
+  document.getElementById('timer-reset-row').style.display='none';
   document.getElementById('timer-resumen').style.display='none';
+  document.getElementById('timer-dot').style.display='inline-block';
+  var card=document.getElementById('e-finalizar-card');
+  if(card){card.style.background='var(--orange-bg)';card.style.borderColor='rgba(200,120,0,.4)';}
   var ini=new Date(ahora).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('timer-inicio').textContent='Inicio: '+ini;
   timerInterval=setInterval(function(){
@@ -8145,40 +8183,40 @@ function startTimer(){
   },1000);
 }
 
-function endTimer(){
-  if(!ST.timerInicio) return;
-  var elapsed=Date.now()-ST.timerInicio;
-  var tiempoStr=fmtTime(elapsed);
-  // Confirmación antes de guardar
-  if(!confirm('¿Guardar sesión de hoy?\n\nDuración: '+tiempoStr+'\n\nSe guardarán todos los datos del entreno.')) return;
-  clearInterval(timerInterval);timerInterval=null;
-  var fin=Date.now();
-  elapsed=fin-ST.timerInicio;
+// Detiene el cronometro sin confirmacion ni relacion con finalizar sesion. Al volver a
+// pulsar Iniciar, empieza de cero (no continua desde donde se dejo).
+function detenerTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  var elapsed=ST.timerInicio?Date.now()-ST.timerInicio:0;
   ST.timerActivo=false;
-  if(!ST.sesiones)ST.sesiones={};
-  ST.sesiones['d'+ST.dia]={duracion_str:fmtTime(elapsed),duracion_min:Math.round(elapsed/60000),fecha:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'})};
   ST.timerInicio=null;
   save();
-  document.getElementById('timer-display').textContent=fmtTime(elapsed);
-  document.getElementById('timer-end-btn').style.display='none';
   document.getElementById('timer-start-btn').style.display='block';
-  document.getElementById('timer-start-btn').textContent='Nueva sesion';
-  document.getElementById('timer-resumen').style.display='block';
-  document.getElementById('timer-total-lbl').textContent=fmtTime(elapsed);
+  document.getElementById('timer-start-btn').textContent='▶ Iniciar';
+  document.getElementById('timer-stop-btn').style.display='none';
+  document.getElementById('timer-dot').style.display='none';
+  document.getElementById('timer-display').textContent=fmtTime(elapsed);
+  var card=document.getElementById('e-finalizar-card');
+  if(card){card.style.background='';card.style.borderColor='rgba(99,153,34,.3)';}
 }
 
 function restoreTimer(){
   // Estado por defecto: boton Iniciar visible, resto oculto (evita residuos visuales al cambiar de dia)
   document.getElementById('timer-start-btn').style.display='block';
   document.getElementById('timer-start-btn').textContent='▶ Iniciar';
-  document.getElementById('timer-end-btn').style.display='none';
+  document.getElementById('timer-stop-btn').style.display='none';
   document.getElementById('timer-resumen').style.display='none';
+  document.getElementById('timer-dot').style.display='none';
   document.getElementById('timer-inicio').textContent='';
   document.getElementById('timer-display').textContent='00:00:00';
+  var card=document.getElementById('e-finalizar-card');
+  if(card){card.style.background='';card.style.borderColor='rgba(99,153,34,.3)';}
   if(ST.timerActivo&&ST.timerInicio){
     if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
     document.getElementById('timer-start-btn').style.display='none';
-    document.getElementById('timer-end-btn').style.display='block';
+    document.getElementById('timer-stop-btn').style.display='block';
+    document.getElementById('timer-dot').style.display='inline-block';
+    if(card){card.style.background='var(--orange-bg)';card.style.borderColor='rgba(200,120,0,.4)';}
     document.getElementById('timer-inicio').textContent='Inicio: '+new Date(ST.timerInicio).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     timerInterval=setInterval(function(){
       document.getElementById('timer-display').textContent=fmtTime(Date.now()-ST.timerInicio);
@@ -8461,6 +8499,7 @@ checkBackupReminder();
         <option value="D2">Dia 2</option>
         <option value="D3">Dia 3</option>
         <option value="D4">Dia 4</option>
+        <option value="LIBRE">Entreno libre</option>
         <option value="Descanso">Descanso</option>
       </select>
     </div>

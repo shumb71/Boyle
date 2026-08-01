@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=147', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=148', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -5061,6 +5061,20 @@ function buildEntrenoExcel(){
   var ws3=XLSX_lib.utils.aoa_to_sheet(h3);
   XLSX_lib.utils.book_append_sheet(wb,ws3,'Garmin');
 
+  // ── HOJA 4: NOTAS ─────────────────────────────────────────
+  var h4=[['Fecha','Hora','Etiqueta','Texto']];
+  (ST.notasGenerales||[]).slice().sort(function(a,b){return a.fecha<b.fecha?-1:1;}).forEach(function(n){
+    var d=new Date(n.fecha);
+    h4.push([
+      safeVal(d.toLocaleDateString('es-ES')),
+      safeVal(d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})),
+      safeVal(n.tag),
+      safeVal((n.texto||'').replace(/\*\*/g,'').replace(/__/g,'')),
+    ]);
+  });
+  var ws4=XLSX_lib.utils.aoa_to_sheet(h4);
+  XLSX_lib.utils.book_append_sheet(wb,ws4,'Notas');
+
   try {
     return XLSX_lib.write(wb,{bookType:'xlsx',type:'array'});
   } catch(e){
@@ -5502,7 +5516,7 @@ function getRestTime(ej) {
 
 // Toast generico reutilizable (crea el elemento si no existe, como ya hace startRestTimer)
 var _syncToastTimeout=null;
-function mostrarToastSync(msg, exito){
+function mostrarToastSheets(msg, exito){
   var toast=document.getElementById('sync-toast');
   if(!toast){
     toast=document.createElement('div');
@@ -7001,7 +7015,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v147';
+const APP_VERSION='v148';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7303,9 +7317,9 @@ async function appendSetToSheets(numDia, ej, variante, serie, peso, reps, rpe, n
   // Orden compatible con filas antiguas: variante al final
   var values=[fecha,numDia,dB,fase,sem,semEnFase,ej,serie,peso,reps,rpe,nota||'',varMostrar];
   sheetsAppend('Sets y Pesos', values).then(function(ok){
-    if(!ok) mostrarToastSync('⚠️ No se pudo guardar en tu Sheet', false);
+    if(!ok) mostrarToastSheets('⚠️ No se pudo guardar en tu Sheet', false);
   }).catch(function(){
-    mostrarToastSync('⚠️ No se pudo guardar en tu Sheet', false);
+    mostrarToastSheets('⚠️ No se pudo guardar en tu Sheet', false);
   });
 }
 
@@ -7332,9 +7346,9 @@ async function appendSesionToSheets(sesionData){
     'Registrada'
   ];
   sheetsAppend('Sesiones', values).then(function(ok){
-    mostrarToastSync(ok?'✅ Sesión guardada en tu Sheet':'⚠️ No se pudo guardar la sesión en tu Sheet', ok);
+    mostrarToastSheets(ok?'✅ Sesión guardada en tu Sheet':'⚠️ No se pudo guardar la sesión en tu Sheet', ok);
   }).catch(function(){
-    mostrarToastSync('⚠️ No se pudo guardar la sesión en tu Sheet', false);
+    mostrarToastSheets('⚠️ No se pudo guardar la sesión en tu Sheet', false);
   });
 }
 // ══════════════════════════════════════

@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=146', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=147', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1236,7 +1236,6 @@ const BOYLE_FASES=[
 // D2/D4: Multidireccional, warm-up multi-dir, lateral plyos, rotatory/overhead medball
 // Regla clave: SIEMPRE unilateral antes que bilateral dentro del mismo par
 const BOYLE_DIAS={
-  LIBRE:{n:'Entreno libre', tipo:'Libre', color:'var(--text3)', desc:'Sesion suelta, fuera de las fases del programa.'},
   D1:{
     n:'Dia 1', tipo:'Linear', color:'var(--blue)',
     desc:'Explosive/Olympic lift · Core antirotacion (CHOP) · Press horizontal · Press vertical. Dias 1 y 3 son lineales.',
@@ -2770,11 +2769,6 @@ function getEjs(ses){
 // [v101] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
-  if(dB==='LIBRE'){
-    var ejsLibres=getEjs('LIBRE')||[];
-    if(!ejsLibres.length) return null;
-    return [{lbl:'ENTRENO LIBRE',tipo:'par',descanso:90,ejs:ejsLibres,nota:'Sesion suelta, fuera de las fases del programa.'}];
-  }
   if(!dB||!GRUPOS_DIA[dB]) return null;
   var ejs=getEjs(dB)||[];
   if(!ejs.length) return null;
@@ -2827,11 +2821,10 @@ function renderDiaPicker(){
   var f=hoyLocal();
   var manual=!!(ST.planDia&&ST.planDia[f]);
   var actual=getDiaBoyle()||'Descanso';
-  var dias=['D1','D2','D3','D4','LIBRE','Descanso'];
-  var nomDia={D1:'D1',D2:'D2',D3:'D3',D4:'D4',LIBRE:'Libre',Descanso:'Descanso'};
+  var dias=['D1','D2','D3','D4','Descanso'];
   var btns=dias.map(function(d){
     var sel=actual===d;
-    return '<button onclick="fijarDiaHoy(\''+d+'\')" style="border:.5px solid '+(sel?'var(--blue)':'var(--border2)')+';background:'+(sel?'var(--blue-bg)':'var(--bg2)')+';color:'+(sel?'var(--blue-text)':'var(--text2)')+';border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer">'+nomDia[d]+'</button>';
+    return '<button onclick="fijarDiaHoy(\''+d+'\')" style="border:.5px solid '+(sel?'var(--blue)':'var(--border2)')+';background:'+(sel?'var(--blue-bg)':'var(--bg2)')+';color:'+(sel?'var(--blue-text)':'var(--text2)')+';border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer">'+d+'</button>';
   }).join('');
   var cab='<span style="font-size:12px;color:var(--text3)">Día de hoy · '+(manual?'<span style="color:var(--blue)">✋ fijado por ti</span>':'<span>recomendado</span>')+'</span>';
   var rec=manual?'<button onclick="fijarDiaHoy(null)" style="border:none;background:transparent;color:var(--blue);font-size:11px;cursor:pointer">usar recomendación</button>':'';
@@ -3169,7 +3162,7 @@ const renders={
     var _bloquesHoy=dB?getBloquesHoy(dB):null;
     var tienePares=_bloquesHoy&&_bloquesHoy.length>0;
     if(!dB||!tienePares){
-      el.innerHTML='<div class="empty">'+(dB==='LIBRE'?'Sesión libre — añade tu primer ejercicio con el botón "+ Ejercicio" de abajo':'Dia de descanso o movilidad')+'</div>';
+      el.innerHTML='<div class="empty">Dia de descanso o movilidad</div>';
       document.getElementById('e-vol').textContent='0';
       document.getElementById('e-ser').textContent='0/0';
       document.getElementById('e-hist').innerHTML='<div class="empty">Sin historial</div>';
@@ -3595,7 +3588,7 @@ function renderEditarSesion(){
   html += '<div style="margin-bottom:.75rem">'
     +'<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Día Boyle</div>'
     +'<select id="edit-dia-boyle" style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px">'
-    +['D1','D2','D3','D4','LIBRE','Descanso'].map(function(d){return '<option value="'+d+'"'+(ses.diaBoyleReal===d?' selected':'')+'>'+(d==='LIBRE'?'Entreno libre':d)+'</option>';}).join('')
+    +['D1','D2','D3','D4','Descanso'].map(function(d){return '<option value="'+d+'"'+(ses.diaBoyleReal===d?' selected':'')+'>'+d+'</option>';}).join('')
     +'</select></div>';
 
   html += '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Ejercicios y series</div>';
@@ -4406,7 +4399,7 @@ function renderProgramaCompleto(){
     var editado=!!pc;
     return '<div onclick="abrirEditorProgramaCompleto(\''+d.fecha+'\')" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);background:'+(editado?'var(--orange-bg)':'var(--bg2)')+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':(BOYLE_DIAS[dBFinal]?BOYLE_DIAS[dBFinal].n:dBFinal))+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text)">'+fechaFmt+' — '+(dBFinal==='Descanso'?'Descanso':dBFinal)+(editado?' <span style="color:var(--orange-text);font-size:10px;font-weight:700">EDITADO</span>':'')+'</div>'
       +'<i class="ti ti-chevron-right" style="color:var(--text3)"></i></div>'
       +'<div style="font-size:11px;color:var(--text3);line-height:1.45">'+(dBFinal==='Descanso'?'—':(ejsFinal.length?ejsFinal.join(', '):'—'))+'</div></div>';
   }
@@ -7008,7 +7001,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v146';
+const APP_VERSION='v147';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8505,7 +8498,6 @@ checkBackupReminder();
         <option value="D2">Dia 2</option>
         <option value="D3">Dia 3</option>
         <option value="D4">Dia 4</option>
-        <option value="LIBRE">Entreno libre</option>
         <option value="Descanso">Descanso</option>
       </select>
     </div>

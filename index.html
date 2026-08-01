@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=145', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=146', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -2827,10 +2827,11 @@ function renderDiaPicker(){
   var f=hoyLocal();
   var manual=!!(ST.planDia&&ST.planDia[f]);
   var actual=getDiaBoyle()||'Descanso';
-  var dias=['D1','D2','D3','D4','Descanso'];
+  var dias=['D1','D2','D3','D4','LIBRE','Descanso'];
+  var nomDia={D1:'D1',D2:'D2',D3:'D3',D4:'D4',LIBRE:'Libre',Descanso:'Descanso'};
   var btns=dias.map(function(d){
     var sel=actual===d;
-    return '<button onclick="fijarDiaHoy(\''+d+'\')" style="border:.5px solid '+(sel?'var(--blue)':'var(--border2)')+';background:'+(sel?'var(--blue-bg)':'var(--bg2)')+';color:'+(sel?'var(--blue-text)':'var(--text2)')+';border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer">'+d+'</button>';
+    return '<button onclick="fijarDiaHoy(\''+d+'\')" style="border:.5px solid '+(sel?'var(--blue)':'var(--border2)')+';background:'+(sel?'var(--blue-bg)':'var(--bg2)')+';color:'+(sel?'var(--blue-text)':'var(--text2)')+';border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer">'+nomDia[d]+'</button>';
   }).join('');
   var cab='<span style="font-size:12px;color:var(--text3)">Día de hoy · '+(manual?'<span style="color:var(--blue)">✋ fijado por ti</span>':'<span>recomendado</span>')+'</span>';
   var rec=manual?'<button onclick="fijarDiaHoy(null)" style="border:none;background:transparent;color:var(--blue);font-size:11px;cursor:pointer">usar recomendación</button>':'';
@@ -3168,7 +3169,7 @@ const renders={
     var _bloquesHoy=dB?getBloquesHoy(dB):null;
     var tienePares=_bloquesHoy&&_bloquesHoy.length>0;
     if(!dB||!tienePares){
-      el.innerHTML='<div class="empty">Dia de descanso o movilidad</div>';
+      el.innerHTML='<div class="empty">'+(dB==='LIBRE'?'Sesión libre — añade tu primer ejercicio con el botón "+ Ejercicio" de abajo':'Dia de descanso o movilidad')+'</div>';
       document.getElementById('e-vol').textContent='0';
       document.getElementById('e-ser').textContent='0/0';
       document.getElementById('e-hist').innerHTML='<div class="empty">Sin historial</div>';
@@ -3594,7 +3595,7 @@ function renderEditarSesion(){
   html += '<div style="margin-bottom:.75rem">'
     +'<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px">Día Boyle</div>'
     +'<select id="edit-dia-boyle" style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px">'
-    +['D1','D2','D3','D4','Descanso'].map(function(d){return '<option value="'+d+'"'+(ses.diaBoyleReal===d?' selected':'')+'>'+d+'</option>';}).join('')
+    +['D1','D2','D3','D4','LIBRE','Descanso'].map(function(d){return '<option value="'+d+'"'+(ses.diaBoyleReal===d?' selected':'')+'>'+(d==='LIBRE'?'Entreno libre':d)+'</option>';}).join('')
     +'</select></div>';
 
   html += '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Ejercicios y series</div>';
@@ -7007,7 +7008,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v145';
+const APP_VERSION='v146';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

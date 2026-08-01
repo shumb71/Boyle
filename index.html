@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=144', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=145', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -2770,6 +2770,11 @@ function getEjs(ses){
 // [v101] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
 // agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
+  if(dB==='LIBRE'){
+    var ejsLibres=getEjs('LIBRE')||[];
+    if(!ejsLibres.length) return null;
+    return [{lbl:'ENTRENO LIBRE',tipo:'par',descanso:90,ejs:ejsLibres,nota:'Sesion suelta, fuera de las fases del programa.'}];
+  }
   if(!dB||!GRUPOS_DIA[dB]) return null;
   var ejs=getEjs(dB)||[];
   if(!ejs.length) return null;
@@ -7002,7 +7007,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v144';
+const APP_VERSION='v145';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

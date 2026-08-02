@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=148', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=149', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -832,7 +832,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <button type="button" onclick="notasWrap('__')" title="Subrayado" style="width:36px;height:32px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);border-radius:var(--rs);font-weight:700;text-decoration:underline;cursor:pointer;font-size:14px">S</button>
         <span style="font-size:11px;color:var(--text3);align-self:center;margin-left:4px">Selecciona texto y toca N o S</span>
       </div>
-      <textarea id="notas-nueva-texto" rows="3" placeholder="Escribe aqui..." style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:.5rem"></textarea>
+      <textarea id="notas-nueva-texto" rows="8" placeholder="Escribe aqui..." style="width:100%;padding:8px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;font-family:inherit;margin-bottom:.5rem;min-height:160px"></textarea>
       <div style="display:flex;gap:6px;margin-bottom:.6rem" id="notas-nueva-tags">
         <button type="button" onclick="notasSetTagNueva('General')" data-tag="General" class="notas-tagbtn" style="flex:1;padding:7px;border:none;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">General</button>
         <button type="button" onclick="notasSetTagNueva('Entreno')" data-tag="Entreno" class="notas-tagbtn" style="flex:1;padding:7px;border:none;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer">Entreno</button>
@@ -7015,7 +7015,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v148';
+const APP_VERSION='v149';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

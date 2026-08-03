@@ -2279,13 +2279,13 @@
     },
     "2026-08-02": {
       "fecha": "2026-08-02",
-      "pasos": 3297,
-      "calorias_dia": 1208.0,
-      "calorias_activas": 35.0,
-      "distancia_km": 2.71,
+      "pasos": 7456,
+      "calorias_dia": 2260.0,
+      "calorias_activas": 161.0,
+      "distancia_km": 6.14,
       "minutos_activos": 0,
       "fc_reposo": 42,
-      "estres_medio": 13,
+      "estres_medio": 24,
       "sueno_total_min": 310,
       "sueno_profundo_min": 94,
       "sueno_ligero_min": 163,
@@ -2294,13 +2294,36 @@
     },
     "2026-08-03": {
       "fecha": "2026-08-03",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 5198,
+      "calorias_dia": 2193.0,
+      "calorias_activas": 351.0,
+      "distancia_km": 4.38,
+      "minutos_activos": 38,
+      "fc_reposo": 45,
+      "estres_medio": 20,
+      "sueno_total_min": 242,
+      "sueno_profundo_min": 93,
+      "sueno_ligero_min": 97,
+      "sueno_rem_min": 53,
+      "sueno_puntuacion": 60,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 79,
+          "calorias": 415.0,
+          "fc_media": 102.0,
+          "fc_max": 164.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 79,
+        "calorias": 415.0,
+        "fc_media": 102.0,
+        "fc_max": 164.0
+      }
     }
   },
   "actualizado": "2026-08-03"

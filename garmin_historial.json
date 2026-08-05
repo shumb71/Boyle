@@ -2294,13 +2294,13 @@
     },
     "2026-08-03": {
       "fecha": "2026-08-03",
-      "pasos": 5198,
-      "calorias_dia": 2193.0,
-      "calorias_activas": 351.0,
-      "distancia_km": 4.38,
+      "pasos": 8203,
+      "calorias_dia": 2511.0,
+      "calorias_activas": 412.0,
+      "distancia_km": 6.86,
       "minutos_activos": 38,
       "fc_reposo": 45,
-      "estres_medio": 20,
+      "estres_medio": 23,
       "sueno_total_min": 242,
       "sueno_profundo_min": 93,
       "sueno_ligero_min": 97,
@@ -2327,23 +2327,51 @@
     },
     "2026-08-04": {
       "fecha": "2026-08-04",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 1558,
+      "calorias_dia": 2120.0,
+      "calorias_activas": 21.0,
+      "distancia_km": 1.28,
+      "minutos_activos": 0,
+      "fc_reposo": 44,
+      "estres_medio": 20,
+      "sueno_total_min": 553,
+      "sueno_profundo_min": 99,
+      "sueno_ligero_min": 353,
+      "sueno_rem_min": 102,
+      "sueno_puntuacion": 84
     },
     "2026-08-05": {
       "fecha": "2026-08-05",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 1801,
+      "calorias_dia": 2046.0,
+      "calorias_activas": 324.0,
+      "distancia_km": 1.51,
+      "minutos_activos": 17,
+      "fc_reposo": 43,
+      "estres_medio": 13,
+      "sueno_total_min": 479,
+      "sueno_profundo_min": 96,
+      "sueno_ligero_min": 264,
+      "sueno_rem_min": 120,
+      "sueno_puntuacion": 93,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 63,
+          "calorias": 409.0,
+          "fc_media": 110.0,
+          "fc_max": 161.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 63,
+        "calorias": 409.0,
+        "fc_media": 110.0,
+        "fc_max": 161.0
+      }
     }
   },
   "actualizado": "2026-08-05"

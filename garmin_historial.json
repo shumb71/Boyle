@@ -2445,10 +2445,10 @@
     },
     "2026-08-11": {
       "fecha": "2026-08-11",
-      "pasos": null,
-      "calorias_dia": 1534.0,
+      "pasos": 19,
+      "calorias_dia": 1652.0,
       "calorias_activas": 0.0,
-      "distancia_km": 0.0,
+      "distancia_km": 0.02,
       "minutos_activos": 0,
       "fc_reposo": null,
       "estres_medio": -1

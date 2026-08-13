@@ -2455,13 +2455,13 @@
     },
     "2026-08-12": {
       "fecha": "2026-08-12",
-      "pasos": 3687,
-      "calorias_dia": 1717.0,
-      "calorias_activas": 50.0,
-      "distancia_km": 3.04,
-      "minutos_activos": 0,
+      "pasos": 9222,
+      "calorias_dia": 2285.0,
+      "calorias_activas": 186.0,
+      "distancia_km": 7.6,
+      "minutos_activos": 12,
       "fc_reposo": 47,
-      "estres_medio": 20,
+      "estres_medio": 27,
       "sueno_total_min": 404,
       "sueno_profundo_min": 69,
       "sueno_ligero_min": 256,
@@ -2470,13 +2470,13 @@
     },
     "2026-08-13": {
       "fecha": "2026-08-13",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
+      "pasos": 573,
+      "calorias_dia": 1184.0,
+      "calorias_activas": 17.0,
+      "distancia_km": 0.47,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": 48
     }
   },
   "actualizado": "2026-08-13"

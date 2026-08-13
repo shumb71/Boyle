@@ -2470,13 +2470,13 @@
     },
     "2026-08-13": {
       "fecha": "2026-08-13",
-      "pasos": 573,
-      "calorias_dia": 1184.0,
-      "calorias_activas": 17.0,
-      "distancia_km": 0.47,
+      "pasos": 1525,
+      "calorias_dia": 1541.0,
+      "calorias_activas": 52.0,
+      "distancia_km": 1.26,
       "minutos_activos": 0,
-      "fc_reposo": null,
-      "estres_medio": 48
+      "fc_reposo": 50,
+      "estres_medio": 42
     }
   },
   "actualizado": "2026-08-13"

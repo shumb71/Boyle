@@ -2467,7 +2467,17 @@
       "sueno_ligero_min": 256,
       "sueno_rem_min": 79,
       "sueno_puntuacion": 75
+    },
+    "2026-08-13": {
+      "fecha": "2026-08-13",
+      "pasos": null,
+      "calorias_dia": null,
+      "calorias_activas": null,
+      "distancia_km": 0.0,
+      "minutos_activos": null,
+      "fc_reposo": null,
+      "estres_medio": null
     }
   },
-  "actualizado": "2026-08-12"
+  "actualizado": "2026-08-13"
 }

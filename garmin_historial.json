@@ -2495,13 +2495,13 @@
     },
     "2026-08-15": {
       "fecha": "2026-08-15",
-      "pasos": null,
-      "calorias_dia": 99.0,
+      "pasos": 54,
+      "calorias_dia": 1848.0,
       "calorias_activas": 0.0,
-      "distancia_km": 0.0,
+      "distancia_km": 0.04,
       "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": -1
+      "estres_medio": 28
     }
   },
   "actualizado": "2026-08-15"

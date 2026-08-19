@@ -2531,12 +2531,12 @@
     "2026-08-18": {
       "fecha": "2026-08-18",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 814.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-08-19": {
       "fecha": "2026-08-19",

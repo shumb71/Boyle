@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=152', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=153', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -6075,11 +6075,38 @@ function abrirBuscadorAlimento(){
   document.getElementById('mo-buscar-alimento').classList.add('open');
   setTimeout(function(){ var i=document.getElementById('alim-buscar-input'); if(i) i.focus(); },150);
 }
+// USDA FoodData Central — fallback para alimentos frescos/genéricos que OFF cubre peor.
+// Clave gratuita de uso personal (api.data.gov/signup); expuesta en el código público del
+// mismo modo que la apiKey de Firebase o el CLIENT_ID de Drive — riesgo bajo, sin acceso a
+// datos sensibles, límite de cuota si se abusara (no coste económico).
+const USDA_API_KEY='StIyaAGvVFbq6ScACsVyBvCdFXbdSnIvQnJHLw3C';
+const USDA_NUTR_ID={kcal:1008,p:1003,c:1005,g:1004};
+async function buscarUSDA(q){
+  try{
+    var url='https://api.nal.usda.gov/fdc/v1/foods/search?api_key='+encodeURIComponent(USDA_API_KEY)
+      +'&query='+encodeURIComponent(q)+'&pageSize=10&dataType=Foundation,SR%20Legacy,Survey%20(FNDDS)';
+    var res=await fetch(url);
+    if(!res.ok) return [];
+    var data=await res.json();
+    return (data.foods||[]).map(function(f){
+      var nut={};
+      (f.foodNutrients||[]).forEach(function(n){
+        if(n.nutrientId===USDA_NUTR_ID.kcal) nut.kcal=n.value;
+        if(n.nutrientId===USDA_NUTR_ID.p) nut.p=n.value;
+        if(n.nutrientId===USDA_NUTR_ID.c) nut.c=n.value;
+        if(n.nutrientId===USDA_NUTR_ID.g) nut.g=n.value;
+      });
+      if(nut.kcal===undefined) return null;
+      return {nombre:f.description,kcal:nut.kcal||0,p:nut.p||0,c:nut.c||0,g:nut.g||0,origen:'USDA'};
+    }).filter(Boolean);
+  }catch(e){ console.error('buscarUSDA error',e); return []; }
+}
 async function buscarAlimentoOFF(){
   var q=(document.getElementById('alim-buscar-input').value||'').trim();
   var el=document.getElementById('alim-buscar-resultados');
   if(!q){ el.innerHTML=''; return; }
   el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Buscando...</div>';
+  var resultadosOFF=[];
   try{
     var url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,quantity';
     var res=await fetch(url);
@@ -6087,7 +6114,7 @@ async function buscarAlimentoOFF(){
     var productos=(data.products||[]).filter(function(pr){
       return pr.product_name && pr.nutriments && pr.nutriments['energy-kcal_100g']!==undefined;
     });
-    _offResultados=productos.map(function(pr){
+    resultadosOFF=productos.map(function(pr){
       return {
         nombre:pr.product_name+(pr.brands?' — '+pr.brands.split(',')[0]:''),
         kcal:pr.nutriments['energy-kcal_100g']||0,
@@ -6096,20 +6123,24 @@ async function buscarAlimentoOFF(){
         g:pr.nutriments['fat_100g']||0,
       };
     });
-    if(!_offResultados.length){
-      el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Sin resultados. Prueba en inglés o créalo manualmente abajo.</div>';
-      return;
-    }
-    el.innerHTML=_offResultados.map(function(r,i){
-      return '<div onclick="seleccionarResultadoOFF('+i+')" style="padding:.55rem 0;border-bottom:.5px solid var(--border);cursor:pointer">'
-        +'<div style="font-size:13px;font-weight:600">'+r.nombre+'</div>'
-        +'<div style="font-size:11px;color:var(--text3)">'+Math.round(r.kcal)+' kcal/100g · '+Math.round(r.p)+'g P · '+Math.round(r.c)+'g HC · '+Math.round(r.g)+'g G</div>'
-        +'</div>';
-    }).join('');
-  }catch(e){
-    el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--red-text);font-size:13px">Error de búsqueda. Comprueba tu conexión.</div>';
-    console.error('buscarAlimentoOFF error',e);
+  }catch(e){ console.error('buscarAlimentoOFF error',e); }
+  // Fallback automático: si OFF da poca cobertura, sumamos USDA (mejor para frescos/genéricos)
+  var resultadosUSDA=[];
+  if(resultadosOFF.length<5){
+    resultadosUSDA=await buscarUSDA(q);
   }
+  _offResultados=resultadosOFF.concat(resultadosUSDA);
+  if(!_offResultados.length){
+    el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Sin resultados. Prueba en inglés o créalo manualmente abajo.</div>';
+    return;
+  }
+  el.innerHTML=_offResultados.map(function(r,i){
+    var badge=r.origen==='USDA'?'<span style="font-size:9px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:8px;padding:1px 5px;margin-left:5px">USDA</span>':'';
+    return '<div onclick="seleccionarResultadoOFF('+i+')" style="padding:.55rem 0;border-bottom:.5px solid var(--border);cursor:pointer">'
+      +'<div style="font-size:13px;font-weight:600">'+r.nombre+badge+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+Math.round(r.kcal)+' kcal/100g · '+Math.round(r.p)+'g P · '+Math.round(r.c)+'g HC · '+Math.round(r.g)+'g G</div>'
+      +'</div>';
+  }).join('');
 }
 function seleccionarResultadoOFF(i){
   var r=_offResultados[i];
@@ -7327,7 +7358,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v152';
+const APP_VERSION='v153';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

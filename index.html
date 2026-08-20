@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=149', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=151', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1651,6 +1651,14 @@ function getRepsTarget(ej, fase, semEnFase, diaKey){
   }
   return fData.base||null;
 }
+
+// RPE objetivo por fase para el trabajo de fuerza principal — no está en el libro como "RPE"
+// literal (Boyle prescribe series×reps fijas, no autorregulación), pero es la traducción
+// razonable de su estructura de fases a la escala 1-10 que ya usamos en el registro de series:
+// F1 acumulación / F3 segunda acumulación → margen técnico. F2 intensificación → más cerca del límite.
+// F4 fuerza-resistencia → margen técnico otra vez, sin buscar el fallo.
+const RPE_FASE={F1:'6-7',F2:'7-8',F3:'6-7',F4:'6-7'};
+function getRpeObjetivo(fase){ return RPE_FASE[fase]||null; }
 
 const EJ_INFO={
   // --- Fichas añadidas v101 ---
@@ -3259,6 +3267,7 @@ const renders={
             +varBtn
             +'<button data-ej="'+ejSafe+'" onclick="quitarEjSesion2(this)" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:15px;line-height:1"><i class="ti ti-x"></i></button>'
             +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+numSer+'x'+rpsLabel+'</span>'
+            +(info.tipo!=='fijo'&&getRpeObjetivo(fase)?'<span style="font-size:10px;color:var(--blue-text);background:var(--blue-bg);border-radius:20px;padding:1px 7px;white-space:nowrap">RPE '+getRpeObjetivo(fase)+'</span>':'')
             +'<button data-ej="'+ejSafe+'" onclick="abrirHistEj2(this)" style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:17px;line-height:1"><i class="ti ti-chart-line"></i></button>'
             +'</div>'
             +(histInlineHtml)
@@ -5678,6 +5687,7 @@ function finalizarSesion(){
     var lockSemEnFase=existing2.semEnFase;
   }
   var lockTs=Date.now();
+  var elapsed=ST.timerInicio?Date.now()-ST.timerInicio:0;
   ST.historialFechas[hoy]={
     diaCiclo:ST.dia,
     fase:lockFase||fase,
@@ -5694,6 +5704,8 @@ function finalizarSesion(){
     manual:true,
     nota:(ST.notaDia&&ST.notaDia[hoy])||'',
     timestamp:lockTs,
+    duracion_min:elapsed>0?Math.round(elapsed/60000):null,
+    horaInicio:ST.timerInicio||null,
   };
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   ST.fechaSesiones[hoy]=ST.dia;
@@ -5703,8 +5715,6 @@ function finalizarSesion(){
   exportarExcelDrive(true);
   backupJSONDrive(); // backup automático JSON a Drive
   appendSesionToSheets(ST.historialFechas[hoy]);
-  var elapsed=ST.timerInicio?Date.now()-ST.timerInicio:0;
-  ST.historialFechas[hoy].duracion_min=elapsed>0?Math.round(elapsed/60000):null;
   mostrarResumenSesion(ST.historialFechas[hoy]);
   if(document.getElementById('s-cal').classList.contains('active')) renders.cal();
 }
@@ -6707,6 +6717,9 @@ const FINISHERS = {
     // Metabólico
     {n:'Push-up / Row Circuit',d:'3 rondas: 10 push-up + 10 DB Row por lado. Sin descanso entre ejercicios.',tipo:'metabolico'},
     {n:'KB Swing bilateral',d:'4×10. Finalizador de potencia de cadera. 60s descanso.',tipo:'metabolico'},
+    // Boxeo
+    {n:'Saco - combos técnicos',d:'3×2min combos jab-directo-gancho sin pausa entre golpes. 1min descanso.',tipo:'boxeo'},
+    {n:'Sombra + saco alterno',d:'4×90s alternando 45s sombra + 45s saco. Ritmo medio-alto.',tipo:'boxeo'},
   ],
   D2: [
     // Potencia / Velocidad
@@ -6717,6 +6730,9 @@ const FINISHERS = {
     // Metabólico
     {n:'KB Swing unilateral',d:'4×8 por lado. Transferencia de potencia unilateral. 45s descanso.',tipo:'metabolico'},
     {n:'Trineo arrastre con cuerda (remo)',d:'4×10 tirones. Patrón de remo horizontal. 60s descanso.',tipo:'metabolico'},
+    // Boxeo
+    {n:'Saco - combos + desplazamiento',d:'3×2min combos básicos con movimiento lateral suave, sin pivotar. 1min descanso.',tipo:'boxeo'},
+    {n:'Sombra técnica',d:'3×2min foco en guardia y desplazamiento, ritmo controlado. Bajo impacto rodilla.',tipo:'boxeo'},
   ],
   D3: [
     // Potencia / Velocidad
@@ -6727,6 +6743,9 @@ const FINISHERS = {
     {n:'Battle Ropes',d:'4×20s máxima intensidad. 40s descanso. Solo si disponible.',tipo:'metabolico'},
     {n:'Push-up / Row Circuit',d:'3 rondas: 10 push-up + 10 DB Row. Sin descanso entre ejercicios.',tipo:'metabolico'},
     {n:'Trineo arrastre con cuerda (remo)',d:'3×12 tirones. Patrón de tirón horizontal. 60s descanso.',tipo:'metabolico'},
+    // Boxeo
+    {n:'Saco - intervalos',d:'4×2min: 20s explosivo / 10s ritmo medio, repetido. Simula ronda de alta intensidad.',tipo:'boxeo'},
+    {n:'Combos + comba',d:'3 rondas: 1min saco + 1min comba. 1min descanso.',tipo:'boxeo'},
   ],
   D4: [
     // Potencia / Velocidad
@@ -6737,6 +6756,9 @@ const FINISHERS = {
     {n:'Suitcase Carry',d:'3×20m por lado. Complementa el antilateral del día.',tipo:'metabolico'},
     {n:'KB Swing bilateral',d:'4×10. Finalizador de potencia de cadera. 60s descanso.',tipo:'metabolico'},
     {n:'Trineo arrastre lateral',d:'3×15m por lado. Abductores y estabilizadores. Bajo impacto.',tipo:'metabolico'},
+    // Boxeo (suave — D4 ya es muy exigente)
+    {n:'Sombra suave',d:'2-3×2min ritmo bajo, foco en técnica y respiración. Recuperación activa.',tipo:'boxeo'},
+    {n:'Saco ligero',d:'2×2min ritmo controlado, sin buscar intensidad — el D4 ya es muy exigente.',tipo:'boxeo'},
   ],
 };
 
@@ -6897,6 +6919,7 @@ function renderFinisherBody(){
 
   var potencia=finishers.filter(function(f){return f.tipo==="potencia";});
   var metabolico=finishers.filter(function(f){return f.tipo==="metabolico";});
+  var boxeo=finishers.filter(function(f){return f.tipo==="boxeo";});
 
   function renderGrupo(lista,titulo,color){
     if(!lista.length) return "";
@@ -6909,7 +6932,7 @@ function renderFinisherBody(){
     +"</div>";
 
   var contenido = finishers.length
-    ? renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")+renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)")
+    ? renderGrupo(potencia,"Potencia / Velocidad","var(--blue)")+renderGrupo(metabolico,"Metabólico / Acondicionamiento","var(--orange)")+renderGrupo(boxeo,"Boxeo","var(--green)")
     : "<div style=\"color:var(--text3);font-size:13px;padding:.3rem 0\">No hay finishers para este día.</div>";
 
   body.innerHTML=rec+contenido+addBtn;
@@ -7015,7 +7038,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v149';
+const APP_VERSION='v151';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7688,12 +7711,14 @@ function calSelDia(fecha){
       +'<div style="flex:1;background:rgba(0,0,0,.08);border-radius:var(--rs);padding:.35rem;text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green-text)">'+Math.round(volHist)+'</div><div style="font-size:10px;color:var(--green-text);opacity:.8">kg tonelaje</div></div>'
       +'<div style="flex:1;background:rgba(0,0,0,.08);border-radius:var(--rs);padding:.35rem;text-align:center"><div style="font-size:15px;font-weight:700;color:var(--green-text)">'+serHist+'</div><div style="font-size:10px;color:var(--green-text);opacity:.8">series</div></div>'
       +'</div>':'';
+    var horaTag=histSes.horaInicio?'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">🕐 '+new Date(histSes.horaInicio).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'</span>':'';
+    var duracionTag=histSes.duracion_min?'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">⏱ '+histSes.duracion_min+' min</span>':'';
     htmlE='<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
       +'<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;justify-content:space-between">'
       +'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
       +'<span style="font-size:12px;font-weight:700;color:var(--green-text)">✅ Sesión registrada</span>'
       +'<span style="font-size:11px;color:var(--green-text);background:rgba(99,153,34,.15);border-radius:20px;padding:1px 8px">'+histSes.fase+' · Sem '+histSes.semana+(histSes.diaBoyleReal&&histSes.diaBoyleReal!=='Descanso'?' · '+histSes.diaBoyleReal:'')+'</span>'
-      +varTag+'</div>'
+      +horaTag+duracionTag+varTag+'</div>'
       +'<button onclick="abrirEditarSesion(\''+fechaSafe+'\')" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">✏ Editar</button>'
       +'</div>'
       +statsHistHtml+sustHtml+ejsHtml+'</div>';

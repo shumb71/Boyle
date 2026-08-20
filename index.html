@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=151', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=152', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -873,6 +873,82 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="bw"><div class="bl"><span>Grasas</span><span id="bg">0%</span></div><div class="bt"><div class="bf" id="bgb" style="width:0%;background:var(--text3)"></div></div></div>
     <div class="slbl">Comidas — <span id="n-tnom">—</span></div>
     <div class="card"><div id="n-list"></div></div>
+
+    <div class="slbl" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Extras — fuera del plan</span>
+      <span style="display:flex;gap:6px">
+        <button onclick="abrirMisAlimentos()" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer">Mis alimentos</button>
+        <button onclick="abrirBuscadorAlimento()" style="border:none;background:var(--blue);color:#fff;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer">＋ Añadir</button>
+      </span>
+    </div>
+    <div class="card"><div id="extras-list" style="font-size:13px;color:var(--text3)">Sin extras hoy.</div></div>
+  </div>
+
+  <!-- MODAL BUSCADOR ALIMENTO -->
+  <div class="mo" id="mo-buscar-alimento" onclick="closeMo(event,'mo-buscar-alimento')">
+    <div class="ms">
+      <div class="mh"></div>
+      <div class="mt">Añadir alimento</div>
+      <div style="position:relative;margin-bottom:.6rem">
+        <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px"></i>
+        <input id="alim-buscar-input" type="text" placeholder="Buscar alimento (ej. pechuga de pollo)..." style="width:100%;padding:10px 10px 10px 32px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px" onkeydown="if(event.key==='Enter')buscarAlimentoOFF()">
+      </div>
+      <button onclick="buscarAlimentoOFF()" style="width:100%;padding:9px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:.6rem">Buscar</button>
+      <div id="alim-buscar-resultados" style="max-height:50vh;overflow-y:auto"></div>
+      <div style="margin-top:.6rem;text-align:center">
+        <button onclick="closeMo(null,'mo-buscar-alimento');abrirCrearAlimento()" style="border:none;background:transparent;color:var(--blue);font-size:12px;cursor:pointer;text-decoration:underline">¿No lo encuentras? Créalo manualmente</button>
+      </div>
+      <div class="br2"><button class="bcan" onclick="document.getElementById('mo-buscar-alimento').classList.remove('open')">Cerrar</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE / EDICION ALIMENTO ANTES DE AÑADIR -->
+  <div class="mo" id="mo-detalle-alimento" onclick="closeMo(event,'mo-detalle-alimento')">
+    <div class="ms">
+      <div class="mh"></div>
+      <div class="mt" id="da-titulo">Detalle del alimento</div>
+      <div class="ig"><label>Nombre</label><input type="text" id="da-nombre"></div>
+      <div class="ig"><label>Cantidad (g)</label><input type="number" id="da-cantidad" min="1" step="1" inputmode="decimal" onchange="recalcDetalleAlimento()"></div>
+      <button onclick="toggleEditarDesglose()" id="da-toggle-desglose" style="border:none;background:transparent;color:var(--blue);font-size:12px;cursor:pointer;text-decoration:underline;margin-bottom:.4rem">✏️ Editar desglose (por 100g)</button>
+      <div id="da-desglose-fields" style="display:none">
+        <div class="ig"><label>Kcal / 100g</label><input type="number" id="da-kcal100" min="0" step="1" oninput="recalcDetalleAlimento()"></div>
+        <div class="ig"><label>Proteína / 100g</label><input type="number" id="da-p100" min="0" step="0.1" oninput="recalcDetalleAlimento()"></div>
+        <div class="ig"><label>Carbohidratos / 100g</label><input type="number" id="da-c100" min="0" step="0.1" oninput="recalcDetalleAlimento()"></div>
+        <div class="ig"><label>Grasas / 100g</label><input type="number" id="da-g100" min="0" step="0.1" oninput="recalcDetalleAlimento()"></div>
+      </div>
+      <div class="mgrid" style="margin:.5rem 0">
+        <div class="mbox"><div class="mval" style="color:var(--blue)" id="da-out-kcal">0</div><div class="mlbl">kcal</div></div>
+        <div class="mbox"><div class="mval" style="color:var(--green)" id="da-out-p">0g</div><div class="mlbl">proteina</div></div>
+        <div class="mbox"><div class="mval" style="color:var(--orange)" id="da-out-c">0g</div><div class="mlbl">carbos</div></div>
+        <div class="mbox"><div class="mval" style="color:var(--text2)" id="da-out-g">0g</div><div class="mlbl">grasas</div></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-bottom:.4rem"><input type="checkbox" id="da-guardar-mis-alimentos" checked> Guardar en "Mis alimentos" para reutilizar</label>
+      <div class="br2"><button class="bcan" onclick="document.getElementById('mo-detalle-alimento').classList.remove('open')">Cancelar</button><button class="bsav" onclick="confirmarAnadirAlimento()">Añadir</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR ALIMENTO MANUAL -->
+  <div class="mo" id="mo-crear-alimento" onclick="closeMo(event,'mo-crear-alimento')">
+    <div class="ms">
+      <div class="mh"></div>
+      <div class="mt">Crear alimento</div>
+      <div class="ig"><label>Nombre</label><input type="text" id="ca-nombre" placeholder="Ej. Tortilla de patatas casera"></div>
+      <div class="ig"><label>Kcal / 100g</label><input type="number" id="ca-kcal100" min="0" step="1"></div>
+      <div class="ig"><label>Proteína / 100g</label><input type="number" id="ca-p100" min="0" step="0.1"></div>
+      <div class="ig"><label>Carbohidratos / 100g</label><input type="number" id="ca-c100" min="0" step="0.1"></div>
+      <div class="ig"><label>Grasas / 100g</label><input type="number" id="ca-g100" min="0" step="0.1"></div>
+      <div class="br2"><button class="bcan" onclick="document.getElementById('mo-crear-alimento').classList.remove('open')">Cancelar</button><button class="bsav" onclick="guardarAlimentoManual()">Guardar y añadir</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL MIS ALIMENTOS -->
+  <div class="mo" id="mo-mis-alimentos" onclick="closeMo(event,'mo-mis-alimentos')">
+    <div class="ms">
+      <div class="mh"></div>
+      <div class="mt">Mis alimentos</div>
+      <div id="mis-alimentos-lista" style="max-height:55vh;overflow-y:auto"></div>
+      <div class="br2"><button class="bcan" onclick="document.getElementById('mo-mis-alimentos').classList.remove('open')">Cerrar</button></div>
+    </div>
   </div>
 
   <!-- EVALUACION -->
@@ -2500,7 +2576,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[]};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2527,6 +2603,7 @@ function getConfigFields(){
     eval:ST.eval||[],planDia:ST.planDia||{},notaDia:ST.notaDia||{},
     programaCustom:ST.programaCustom||{},
     notasGenerales:ST.notasGenerales||[],
+    alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
@@ -2563,7 +2640,8 @@ function aplicarConfigRemoto(data){
   var campos=['dia','sem','cicloAnclaje','programaInicio','sliders','ejs','ejsCustom',
     'ejsImgs','variantes','variantesCustom','diaBoyle','sesionCustom','restTimes',
     'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','eval',
-    'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales'];
+    'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
+    'alimentosCustom','nutricionExtra'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2683,7 +2761,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3346,12 +3424,15 @@ const renders={
     const kO=esE?2300:2000,hO=esE?270:195;
     let k=0,p=0,h=0,g=0;
     cms.forEach((cm,i)=>{if(done[i]){k+=cm.k;p+=cm.p;h+=cm.hc;g+=cm.g;}});
-    document.getElementById('n-k').textContent=k;
+    var fechaHoyNut=hoyLocal();
+    var extrasHoy=(ST.nutricionExtra&&ST.nutricionExtra[fechaHoyNut])||[];
+    extrasHoy.forEach(function(ex){k+=ex.kcal||0;p+=ex.p||0;h+=ex.c||0;g+=ex.g||0;});
+    document.getElementById('n-k').textContent=Math.round(k);
     document.getElementById('n-kobj').textContent='/ '+kO;
-    document.getElementById('n-p').textContent=p+'g';
-    document.getElementById('n-h').textContent=h+'g';
+    document.getElementById('n-p').textContent=Math.round(p)+'g';
+    document.getElementById('n-h').textContent=Math.round(h)+'g';
     document.getElementById('n-hobj').textContent='/ '+hO+'g';
-    document.getElementById('n-g').textContent=g+'g';
+    document.getElementById('n-g').textContent=Math.round(g)+'g';
     const pp=Math.min(100,Math.round(p/170*100));
     const hp=Math.min(100,Math.round(h/hO*100));
     const gp=Math.min(100,Math.round(g/57*100));
@@ -3366,6 +3447,7 @@ const renders={
         <div class="cmi"><div class="cmh">${cm.h}</div><div class="cmn">${cm.n}</div><div class="cmd">${cm.d}</div><div class="cmm">${cm.k} kcal · ${cm.p}g P · ${cm.hc}g HC · ${cm.g}g G</div></div>
         <div class="chk${done[i]?' done':''}">${done[i]?'<i class="ti ti-check" style="font-size:14px;color:var(--green-text)" aria-hidden="true"></i>':''}</div>
       </div>`).join('');
+    renderExtrasDia();
   },
   eval(){
     document.getElementById('eval-fecha-lbl').textContent=new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
@@ -5885,6 +5967,213 @@ function renderFaseBanner(){
   }
 }
 
+// ══════════════════════════════════════
+// NUTRICION — EXTRAS (fuera del plan fijo)
+// Buscador Open Food Facts + alimentos personalizados + registro diario libre
+// ══════════════════════════════════════
+var _offResultados=[];
+var _editandoExtraId=null;
+
+function renderExtrasDia(){
+  var el=document.getElementById('extras-list');
+  if(!el) return;
+  var fecha=hoyLocal();
+  var extras=(ST.nutricionExtra&&ST.nutricionExtra[fecha])||[];
+  if(!extras.length){ el.innerHTML='<div style="font-size:13px;color:var(--text3)">Sin extras hoy.</div>'; return; }
+  el.innerHTML=extras.map(function(ex){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:.5px solid var(--border)">'
+      +'<div style="flex:1;cursor:pointer" onclick="abrirEditarExtra(\''+ex.id+'\')">'
+      +'<div style="font-size:13px;font-weight:600">'+ex.nombre+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+Math.round(ex.cantidad)+'g · '+Math.round(ex.kcal)+' kcal · '+Math.round(ex.p)+'g P · '+Math.round(ex.c)+'g HC · '+Math.round(ex.g)+'g G</div>'
+      +'</div>'
+      +'<button onclick="eliminarExtra(\''+ex.id+'\')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:4px"><i class="ti ti-trash"></i></button>'
+      +'</div>';
+  }).join('');
+}
+function eliminarExtra(id){
+  var fecha=hoyLocal();
+  if(!ST.nutricionExtra[fecha]) return;
+  ST.nutricionExtra[fecha]=ST.nutricionExtra[fecha].filter(function(e){return e.id!==id;});
+  save();
+  renders.nut();
+}
+function abrirEditarExtra(id){
+  var fecha=hoyLocal();
+  var ex=(ST.nutricionExtra[fecha]||[]).find(function(e){return e.id===id;});
+  if(!ex) return;
+  abrirDetalleAlimento(ex.nombre,{kcal:ex.kcal100,p:ex.p100,c:ex.c100,g:ex.g100},ex.cantidad);
+  _editandoExtraId=id;
+  document.getElementById('da-guardar-mis-alimentos').checked=false;
+  document.getElementById('da-titulo').textContent='Editar extra';
+}
+
+// --- Modal detalle/edicion (compartido por buscador, mis alimentos, crear manual y editar extra) ---
+function abrirDetalleAlimento(nombre,per100,cantidadSugerida){
+  _editandoExtraId=null;
+  document.getElementById('da-titulo').textContent='Detalle del alimento';
+  document.getElementById('da-nombre').value=nombre||'';
+  document.getElementById('da-cantidad').value=cantidadSugerida||100;
+  document.getElementById('da-kcal100').value=Math.round((per100&&per100.kcal)||0);
+  document.getElementById('da-p100').value=(per100&&per100.p)||0;
+  document.getElementById('da-c100').value=(per100&&per100.c)||0;
+  document.getElementById('da-g100').value=(per100&&per100.g)||0;
+  document.getElementById('da-desglose-fields').style.display='none';
+  document.getElementById('da-guardar-mis-alimentos').checked=true;
+  recalcDetalleAlimento();
+  document.getElementById('mo-detalle-alimento').classList.add('open');
+}
+function toggleEditarDesglose(){
+  var box=document.getElementById('da-desglose-fields');
+  box.style.display=(box.style.display==='none')?'block':'none';
+}
+function calcTotalesDetalle(){
+  var cant=parseFloat(document.getElementById('da-cantidad').value)||0;
+  var k100=parseFloat(document.getElementById('da-kcal100').value)||0;
+  var p100=parseFloat(document.getElementById('da-p100').value)||0;
+  var c100=parseFloat(document.getElementById('da-c100').value)||0;
+  var g100=parseFloat(document.getElementById('da-g100').value)||0;
+  var factor=cant/100;
+  return {cant:cant,k100:k100,p100:p100,c100:c100,g100:g100,kcal:k100*factor,p:p100*factor,c:c100*factor,g:g100*factor};
+}
+function recalcDetalleAlimento(){
+  var t=calcTotalesDetalle();
+  document.getElementById('da-out-kcal').textContent=Math.round(t.kcal);
+  document.getElementById('da-out-p').textContent=Math.round(t.p)+'g';
+  document.getElementById('da-out-c').textContent=Math.round(t.c)+'g';
+  document.getElementById('da-out-g').textContent=Math.round(t.g)+'g';
+}
+function confirmarAnadirAlimento(){
+  var t=calcTotalesDetalle();
+  var nombre=(document.getElementById('da-nombre').value||'Alimento').trim();
+  if(!t.cant||t.cant<=0){ alert('Indica una cantidad en gramos mayor que 0.'); return; }
+  var fecha=hoyLocal();
+  if(!ST.nutricionExtra[fecha]) ST.nutricionExtra[fecha]=[];
+  if(_editandoExtraId){
+    var arr=ST.nutricionExtra[fecha];
+    var idx=arr.findIndex(function(e){return e.id===_editandoExtraId;});
+    if(idx>=0){
+      arr[idx]=Object.assign({},arr[idx],{nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g});
+    }
+    _editandoExtraId=null;
+  } else {
+    ST.nutricionExtra[fecha].push({id:'ex'+Date.now(),nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g,ts:Date.now()});
+  }
+  if(document.getElementById('da-guardar-mis-alimentos').checked){
+    var id='al'+Date.now();
+    ST.alimentosCustom[id]={nombre:nombre,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100};
+  }
+  save();
+  document.getElementById('mo-detalle-alimento').classList.remove('open');
+  var mb=document.getElementById('mo-buscar-alimento'); if(mb) mb.classList.remove('open');
+  renders.nut();
+}
+
+// --- Buscador Open Food Facts ---
+function abrirBuscadorAlimento(){
+  document.getElementById('alim-buscar-input').value='';
+  document.getElementById('alim-buscar-resultados').innerHTML='';
+  document.getElementById('mo-buscar-alimento').classList.add('open');
+  setTimeout(function(){ var i=document.getElementById('alim-buscar-input'); if(i) i.focus(); },150);
+}
+async function buscarAlimentoOFF(){
+  var q=(document.getElementById('alim-buscar-input').value||'').trim();
+  var el=document.getElementById('alim-buscar-resultados');
+  if(!q){ el.innerHTML=''; return; }
+  el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Buscando...</div>';
+  try{
+    var url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,quantity';
+    var res=await fetch(url);
+    var data=await res.json();
+    var productos=(data.products||[]).filter(function(pr){
+      return pr.product_name && pr.nutriments && pr.nutriments['energy-kcal_100g']!==undefined;
+    });
+    _offResultados=productos.map(function(pr){
+      return {
+        nombre:pr.product_name+(pr.brands?' — '+pr.brands.split(',')[0]:''),
+        kcal:pr.nutriments['energy-kcal_100g']||0,
+        p:pr.nutriments['proteins_100g']||0,
+        c:pr.nutriments['carbohydrates_100g']||0,
+        g:pr.nutriments['fat_100g']||0,
+      };
+    });
+    if(!_offResultados.length){
+      el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Sin resultados. Prueba en inglés o créalo manualmente abajo.</div>';
+      return;
+    }
+    el.innerHTML=_offResultados.map(function(r,i){
+      return '<div onclick="seleccionarResultadoOFF('+i+')" style="padding:.55rem 0;border-bottom:.5px solid var(--border);cursor:pointer">'
+        +'<div style="font-size:13px;font-weight:600">'+r.nombre+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+Math.round(r.kcal)+' kcal/100g · '+Math.round(r.p)+'g P · '+Math.round(r.c)+'g HC · '+Math.round(r.g)+'g G</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--red-text);font-size:13px">Error de búsqueda. Comprueba tu conexión.</div>';
+    console.error('buscarAlimentoOFF error',e);
+  }
+}
+function seleccionarResultadoOFF(i){
+  var r=_offResultados[i];
+  if(!r) return;
+  document.getElementById('mo-buscar-alimento').classList.remove('open');
+  abrirDetalleAlimento(r.nombre,r,100);
+}
+
+// --- Crear alimento manual ---
+function abrirCrearAlimento(){
+  ['ca-nombre','ca-kcal100','ca-p100','ca-c100','ca-g100'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('mo-crear-alimento').classList.add('open');
+}
+function guardarAlimentoManual(){
+  var nombre=(document.getElementById('ca-nombre').value||'').trim();
+  if(!nombre){ alert('Ponle un nombre al alimento.'); return; }
+  var per100={
+    kcal:parseFloat(document.getElementById('ca-kcal100').value)||0,
+    p:parseFloat(document.getElementById('ca-p100').value)||0,
+    c:parseFloat(document.getElementById('ca-c100').value)||0,
+    g:parseFloat(document.getElementById('ca-g100').value)||0,
+  };
+  var id='al'+Date.now();
+  ST.alimentosCustom[id]={nombre:nombre,kcal100:per100.kcal,p100:per100.p,c100:per100.c,g100:per100.g};
+  save();
+  document.getElementById('mo-crear-alimento').classList.remove('open');
+  abrirDetalleAlimento(nombre,per100,100);
+  document.getElementById('da-guardar-mis-alimentos').checked=false; // ya guardado arriba, evita duplicarlo
+}
+
+// --- Mis alimentos ---
+function abrirMisAlimentos(){
+  renderMisAlimentosLista();
+  document.getElementById('mo-mis-alimentos').classList.add('open');
+}
+function renderMisAlimentosLista(){
+  var ids=Object.keys(ST.alimentosCustom||{});
+  var el=document.getElementById('mis-alimentos-lista');
+  if(!ids.length){ el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:.5rem 0">Todavía no has guardado ningún alimento.</div>'; return; }
+  el.innerHTML=ids.map(function(id){
+    var f=ST.alimentosCustom[id];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:.5px solid var(--border)">'
+      +'<div style="flex:1;cursor:pointer" onclick="usarAlimentoCustom(\''+id+'\')">'
+      +'<div style="font-size:13px;font-weight:600">'+f.nombre+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+Math.round(f.kcal100)+' kcal/100g · '+Math.round(f.p100)+'g P · '+Math.round(f.c100)+'g HC · '+Math.round(f.g100)+'g G</div>'
+      +'</div>'
+      +'<button onclick="eliminarAlimentoCustom(\''+id+'\')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:4px"><i class="ti ti-trash"></i></button>'
+      +'</div>';
+  }).join('');
+}
+function usarAlimentoCustom(id){
+  var f=ST.alimentosCustom[id];
+  if(!f) return;
+  document.getElementById('mo-mis-alimentos').classList.remove('open');
+  abrirDetalleAlimento(f.nombre,{kcal:f.kcal100,p:f.p100,c:f.c100,g:f.g100},100);
+  document.getElementById('da-guardar-mis-alimentos').checked=false;
+}
+function eliminarAlimentoCustom(id){
+  if(!confirm('¿Eliminar este alimento de "Mis alimentos"? No afecta a los extras ya registrados.')) return;
+  delete ST.alimentosCustom[id];
+  save();
+  renderMisAlimentosLista();
+}
+
 function setNutTipo(tipo){
   ST.nutTipo=tipo;
   save();
@@ -7038,7 +7327,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v151';
+const APP_VERSION='v152';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=153', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=156', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -889,14 +889,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="ms">
       <div class="mh"></div>
       <div class="mt">Añadir alimento</div>
-      <div style="position:relative;margin-bottom:.6rem">
+      <div style="position:relative;margin-bottom:.5rem">
         <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px"></i>
         <input id="alim-buscar-input" type="text" placeholder="Buscar alimento (ej. pechuga de pollo)..." style="width:100%;padding:10px 10px 10px 32px;border-radius:var(--rs);border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px" onkeydown="if(event.key==='Enter')buscarAlimentoOFF()">
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.6rem" id="db-busqueda-btns">
+        <button onclick="setDbBusqueda('todo')" id="dbb-todo" data-db="todo" style="border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff">Todo</button>
+        <button onclick="setDbBusqueda('genericos')" id="dbb-genericos" data-db="genericos" style="border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">Genéricos</button>
+        <button onclick="setDbBusqueda('off')" id="dbb-off" data-db="off" style="border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">Open Food Facts</button>
+        <button onclick="setDbBusqueda('usda')" id="dbb-usda" data-db="usda" style="border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg3);color:var(--text2)">USDA</button>
       </div>
       <button onclick="buscarAlimentoOFF()" style="width:100%;padding:9px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:.6rem">Buscar</button>
       <div id="alim-buscar-resultados" style="max-height:50vh;overflow-y:auto"></div>
       <div style="margin-top:.6rem;text-align:center">
-        <button onclick="closeMo(null,'mo-buscar-alimento');abrirCrearAlimento()" style="border:none;background:transparent;color:var(--blue);font-size:12px;cursor:pointer;text-decoration:underline">¿No lo encuentras? Créalo manualmente</button>
+        <button onclick="closeMo(null,'mo-buscar-alimento');abrirCrearAlimento(_destinoActual)" style="border:none;background:transparent;color:var(--blue);font-size:12px;cursor:pointer;text-decoration:underline">¿No lo encuentras? Créalo manualmente</button>
       </div>
       <div class="br2"><button class="bcan" onclick="document.getElementById('mo-buscar-alimento').classList.remove('open')">Cerrar</button></div>
     </div>
@@ -2576,7 +2582,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2603,7 +2609,7 @@ function getConfigFields(){
     eval:ST.eval||[],planDia:ST.planDia||{},notaDia:ST.notaDia||{},
     programaCustom:ST.programaCustom||{},
     notasGenerales:ST.notasGenerales||[],
-    alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},
+    alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},nutricionComidaAlimentos:ST.nutricionComidaAlimentos||{},
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
@@ -2641,7 +2647,7 @@ function aplicarConfigRemoto(data){
     'ejsImgs','variantes','variantesCustom','diaBoyle','sesionCustom','restTimes',
     'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','eval',
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
-    'alimentosCustom','nutricionExtra'];
+    'alimentosCustom','nutricionExtra','nutricionComidaAlimentos'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2761,7 +2767,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3422,9 +3428,17 @@ const renders={
     const done=ST.nut[key]||{};
     const esE=!['Descanso','Mov'].includes(c.s);
     const kO=esE?2300:2000,hO=esE?270:195;
-    let k=0,p=0,h=0,g=0;
-    cms.forEach((cm,i)=>{if(done[i]){k+=cm.k;p+=cm.p;h+=cm.hc;g+=cm.g;}});
     var fechaHoyNut=hoyLocal();
+    var comidaAlim=(ST.nutricionComidaAlimentos&&ST.nutricionComidaAlimentos[fechaHoyNut]&&ST.nutricionComidaAlimentos[fechaHoyNut][t])||{};
+    let k=0,p=0,h=0,g=0;
+    cms.forEach((cm,i)=>{
+      var items=comidaAlim[i]||[];
+      if(items.length){
+        items.forEach(function(it){k+=it.kcal||0;p+=it.p||0;h+=it.c||0;g+=it.g||0;});
+      } else if(done[i]){
+        k+=cm.k;p+=cm.p;h+=cm.hc;g+=cm.g;
+      }
+    });
     var extrasHoy=(ST.nutricionExtra&&ST.nutricionExtra[fechaHoyNut])||[];
     extrasHoy.forEach(function(ex){k+=ex.kcal||0;p+=ex.p||0;h+=ex.c||0;g+=ex.g||0;});
     document.getElementById('n-k').textContent=Math.round(k);
@@ -3442,11 +3456,39 @@ const renders={
     document.getElementById('bp').textContent=pp+'%';
     document.getElementById('bh').textContent=hp+'%';
     document.getElementById('bg').textContent=gp+'%';
-    document.getElementById('n-list').innerHTML=cms.map((cm,i)=>`
-      <div class="cmrow" onclick="togNut(${i},'${key}')">
-        <div class="cmi"><div class="cmh">${cm.h}</div><div class="cmn">${cm.n}</div><div class="cmd">${cm.d}</div><div class="cmm">${cm.k} kcal · ${cm.p}g P · ${cm.hc}g HC · ${cm.g}g G</div></div>
-        <div class="chk${done[i]?' done':''}">${done[i]?'<i class="ti ti-check" style="font-size:14px;color:var(--green-text)" aria-hidden="true"></i>':''}</div>
-      </div>`).join('');
+    document.getElementById('n-list').innerHTML=cms.map((cm,i)=>{
+      var items=comidaAlim[i]||[];
+      var tieneCustom=items.length>0;
+      var cabecera;
+      if(tieneCustom){
+        var ct={k:0,p:0,c:0,g:0};
+        items.forEach(function(it){ct.k+=it.kcal||0;ct.p+=it.p||0;ct.c+=it.c||0;ct.g+=it.g||0;});
+        cabecera='<div class="cmrow" style="cursor:default">'
+          +'<div class="cmi"><div class="cmh">'+cm.h+'</div><div class="cmn">'+cm.n+'</div>'
+          +'<div class="cmm" style="color:var(--blue-text)">Personalizado · '+Math.round(ct.k)+' kcal · '+Math.round(ct.p)+'g P · '+Math.round(ct.c)+'g HC · '+Math.round(ct.g)+'g G</div></div>'
+          +'<span style="font-size:10px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:20px;padding:3px 9px;white-space:nowrap">Personalizado</span>'
+          +'</div>';
+      } else {
+        cabecera='<div class="cmrow" onclick="togNut('+i+',\''+key+'\')">'
+          +'<div class="cmi"><div class="cmh">'+cm.h+'</div><div class="cmn">'+cm.n+'</div><div class="cmd">'+cm.d+'</div><div class="cmm">'+cm.k+' kcal · '+cm.p+'g P · '+cm.hc+'g HC · '+cm.g+'g G</div></div>'
+          +'<div class="chk'+(done[i]?' done':'')+'">'+(done[i]?'<i class="ti ti-check" style="font-size:14px;color:var(--green-text)" aria-hidden="true"></i>':'')+'</div>'
+          +'</div>';
+      }
+      var listaItems=items.map(function(it){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:.35rem 0 .35rem 1rem;border-top:.5px dashed var(--border)">'
+          +'<div style="flex:1;cursor:pointer" onclick="abrirEditarComidaAlimento(\''+t+'\','+i+',\''+it.id+'\')">'
+          +'<div style="font-size:12px;font-weight:600">'+it.nombre+'</div>'
+          +'<div style="font-size:10px;color:var(--text3)">'+Math.round(it.cantidad)+'g · '+Math.round(it.kcal)+' kcal · '+Math.round(it.p)+'g P · '+Math.round(it.c)+'g HC · '+Math.round(it.g)+'g G</div>'
+          +'</div>'
+          +'<button onclick="eliminarComidaAlimento(\''+t+'\','+i+',\''+it.id+'\')" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:3px"><i class="ti ti-trash" style="font-size:14px"></i></button>'
+          +'</div>';
+      }).join('');
+      var acciones='<div style="display:flex;gap:6px;padding:.3rem 0 .3rem 1rem">'
+        +'<button onclick="abrirBuscadorAlimento({tipo:\'comida\',t:\''+t+'\',idx:'+i+'})" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:3px 9px;font-size:10px;cursor:pointer">'+(tieneCustom?'＋ Añadir otro':'✏️ Sustituir con alimentos')+'</button>'
+        +(tieneCustom?'<button onclick="volverAlPlanComida(\''+t+'\','+i+')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:3px 9px;font-size:10px;cursor:pointer">↺ Volver al plan</button>':'')
+        +'</div>';
+      return cabecera+listaItems+acciones;
+    }).join('');
     renderExtrasDia();
   },
   eval(){
@@ -5973,6 +6015,8 @@ function renderFaseBanner(){
 // ══════════════════════════════════════
 var _offResultados=[];
 var _editandoExtraId=null;
+var _editandoComidaItemId=null;
+var _destinoActual={tipo:'extra'};
 
 function renderExtrasDia(){
   var el=document.getElementById('extras-list');
@@ -6001,15 +6045,44 @@ function abrirEditarExtra(id){
   var fecha=hoyLocal();
   var ex=(ST.nutricionExtra[fecha]||[]).find(function(e){return e.id===id;});
   if(!ex) return;
+  _destinoActual={tipo:'extra'};
   abrirDetalleAlimento(ex.nombre,{kcal:ex.kcal100,p:ex.p100,c:ex.c100,g:ex.g100},ex.cantidad);
   _editandoExtraId=id;
   document.getElementById('da-guardar-mis-alimentos').checked=false;
   document.getElementById('da-titulo').textContent='Editar extra';
 }
 
-// --- Modal detalle/edicion (compartido por buscador, mis alimentos, crear manual y editar extra) ---
+// --- Alimentos sueltos DENTRO de una comida del plan (sustituir/complementar) ---
+function abrirEditarComidaAlimento(t,idx,itemId){
+  var fecha=hoyLocal();
+  var arr=(ST.nutricionComidaAlimentos[fecha]&&ST.nutricionComidaAlimentos[fecha][t]&&ST.nutricionComidaAlimentos[fecha][t][idx])||[];
+  var it=arr.find(function(e){return e.id===itemId;});
+  if(!it) return;
+  _destinoActual={tipo:'comida',t:t,idx:idx};
+  abrirDetalleAlimento(it.nombre,{kcal:it.kcal100,p:it.p100,c:it.c100,g:it.g100},it.cantidad);
+  _editandoComidaItemId=itemId;
+  document.getElementById('da-guardar-mis-alimentos').checked=false;
+  document.getElementById('da-titulo').textContent='Editar alimento de la comida';
+}
+function eliminarComidaAlimento(t,idx,itemId){
+  var fecha=hoyLocal();
+  if(!ST.nutricionComidaAlimentos[fecha]||!ST.nutricionComidaAlimentos[fecha][t]||!ST.nutricionComidaAlimentos[fecha][t][idx]) return;
+  ST.nutricionComidaAlimentos[fecha][t][idx]=ST.nutricionComidaAlimentos[fecha][t][idx].filter(function(e){return e.id!==itemId;});
+  save();
+  renders.nut();
+}
+function volverAlPlanComida(t,idx){
+  if(!confirm('¿Quitar todos los alimentos personalizados y volver a esta comida tal como está en el plan?')) return;
+  var fecha=hoyLocal();
+  if(ST.nutricionComidaAlimentos[fecha]&&ST.nutricionComidaAlimentos[fecha][t]) delete ST.nutricionComidaAlimentos[fecha][t][idx];
+  save();
+  renders.nut();
+}
+
+// --- Modal detalle/edicion (compartido por buscador, mis alimentos, crear manual, editar extra y editar alimento de comida) ---
 function abrirDetalleAlimento(nombre,per100,cantidadSugerida){
   _editandoExtraId=null;
+  _editandoComidaItemId=null;
   document.getElementById('da-titulo').textContent='Detalle del alimento';
   document.getElementById('da-nombre').value=nombre||'';
   document.getElementById('da-cantidad').value=cantidadSugerida||100;
@@ -6047,16 +6120,33 @@ function confirmarAnadirAlimento(){
   var nombre=(document.getElementById('da-nombre').value||'Alimento').trim();
   if(!t.cant||t.cant<=0){ alert('Indica una cantidad en gramos mayor que 0.'); return; }
   var fecha=hoyLocal();
-  if(!ST.nutricionExtra[fecha]) ST.nutricionExtra[fecha]=[];
-  if(_editandoExtraId){
-    var arr=ST.nutricionExtra[fecha];
-    var idx=arr.findIndex(function(e){return e.id===_editandoExtraId;});
-    if(idx>=0){
-      arr[idx]=Object.assign({},arr[idx],{nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g});
+  var destino=_destinoActual||{tipo:'extra'};
+  if(destino.tipo==='comida'){
+    if(!ST.nutricionComidaAlimentos[fecha]) ST.nutricionComidaAlimentos[fecha]={};
+    if(!ST.nutricionComidaAlimentos[fecha][destino.t]) ST.nutricionComidaAlimentos[fecha][destino.t]={};
+    if(!ST.nutricionComidaAlimentos[fecha][destino.t][destino.idx]) ST.nutricionComidaAlimentos[fecha][destino.t][destino.idx]=[];
+    var arrC=ST.nutricionComidaAlimentos[fecha][destino.t][destino.idx];
+    if(_editandoComidaItemId){
+      var idxC=arrC.findIndex(function(e){return e.id===_editandoComidaItemId;});
+      if(idxC>=0){
+        arrC[idxC]=Object.assign({},arrC[idxC],{nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g});
+      }
+      _editandoComidaItemId=null;
+    } else {
+      arrC.push({id:'ci'+Date.now(),nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g,ts:Date.now()});
     }
-    _editandoExtraId=null;
   } else {
-    ST.nutricionExtra[fecha].push({id:'ex'+Date.now(),nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g,ts:Date.now()});
+    if(!ST.nutricionExtra[fecha]) ST.nutricionExtra[fecha]=[];
+    if(_editandoExtraId){
+      var arr=ST.nutricionExtra[fecha];
+      var idx=arr.findIndex(function(e){return e.id===_editandoExtraId;});
+      if(idx>=0){
+        arr[idx]=Object.assign({},arr[idx],{nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g});
+      }
+      _editandoExtraId=null;
+    } else {
+      ST.nutricionExtra[fecha].push({id:'ex'+Date.now(),nombre:nombre,cantidad:t.cant,kcal100:t.k100,p100:t.p100,c100:t.c100,g100:t.g100,kcal:t.kcal,p:t.p,c:t.c,g:t.g,ts:Date.now()});
+    }
   }
   if(document.getElementById('da-guardar-mis-alimentos').checked){
     var id='al'+Date.now();
@@ -6069,9 +6159,69 @@ function confirmarAnadirAlimento(){
 }
 
 // --- Buscador Open Food Facts ---
-function abrirBuscadorAlimento(){
+// Tabla local de alimentos genéricos — valores estándar por 100g, sin depender de ninguna
+// API. Cubren justo lo que peor resuelven OFF (productos envasados) y USDA (en inglés):
+// los alimentos frescos/básicos que más se registran a diario. Siempre aparecen primero.
+const ALIMENTOS_GENERICOS=[
+  {n:'Huevo entero (crudo)',kcal:155,p:13,c:1.1,g:11},
+  {n:'Clara de huevo',kcal:52,p:11,c:0.7,g:0.2},
+  {n:'Pechuga de pollo (cruda)',kcal:165,p:31,c:0,g:3.6},
+  {n:'Muslo de pollo sin piel (crudo)',kcal:172,p:20,c:0,g:10},
+  {n:'Ternera magra (cruda)',kcal:158,p:26,c:0,g:5.4},
+  {n:'Salmón (crudo)',kcal:208,p:20,c:0,g:13},
+  {n:'Atún fresco (crudo)',kcal:144,p:23,c:0,g:5},
+  {n:'Atún en lata al natural (escurrido)',kcal:116,p:26,c:0,g:1},
+  {n:'Merluza (cruda)',kcal:86,p:17,c:0,g:1.3},
+  {n:'Arroz blanco (crudo)',kcal:365,p:7,c:80,g:0.6},
+  {n:'Arroz integral (crudo)',kcal:370,p:7.9,c:77,g:2.9},
+  {n:'Patata (cruda)',kcal:77,p:2,c:17,g:0.1},
+  {n:'Boniato (crudo)',kcal:86,p:1.6,c:20,g:0.1},
+  {n:'Pasta (cruda)',kcal:371,p:13,c:75,g:1.5},
+  {n:'Pan blanco',kcal:265,p:9,c:49,g:3.2},
+  {n:'Pan integral',kcal:247,p:13,c:41,g:3.4},
+  {n:'Avena (copos crudos)',kcal:389,p:17,c:66,g:7},
+  {n:'Plátano',kcal:89,p:1.1,c:23,g:0.3},
+  {n:'Manzana',kcal:52,p:0.3,c:14,g:0.2},
+  {n:'Aceite de oliva',kcal:884,p:0,c:0,g:100},
+  {n:'Leche entera',kcal:61,p:3.2,c:4.8,g:3.3},
+  {n:'Leche desnatada',kcal:35,p:3.4,c:5,g:0.1},
+  {n:'Yogur natural',kcal:61,p:3.5,c:4.7,g:3.3},
+  {n:'Queso fresco tipo Burgos',kcal:98,p:11,c:3.5,g:4.3},
+  {n:'Garbanzos cocidos',kcal:164,p:8.9,c:27,g:2.6},
+  {n:'Lentejas cocidas',kcal:116,p:9,c:20,g:0.4},
+  {n:'Brócoli (crudo)',kcal:34,p:2.8,c:7,g:0.4},
+  {n:'Espinacas (crudas)',kcal:23,p:2.9,c:3.6,g:0.4},
+  {n:'Almendras',kcal:579,p:21,c:22,g:50},
+  {n:'Nueces',kcal:654,p:15,c:14,g:65},
+  {n:'Aguacate',kcal:160,p:2,c:9,g:15},
+  {n:'Mantequilla de cacahuete',kcal:588,p:25,c:20,g:50},
+];
+function _normTxt(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+function buscarGenericos(q){
+  var qn=_normTxt(q);
+  if(!qn) return [];
+  return ALIMENTOS_GENERICOS.filter(function(a){
+    var an=_normTxt(a.n);
+    return an.indexOf(qn)>=0 || qn.indexOf(an)>=0 || an.split(' ').some(function(w){return w===qn;});
+  }).map(function(a){
+    return {nombre:a.n,kcal:a.kcal,p:a.p,c:a.c,g:a.g,origen:'Generico'};
+  });
+}
+
+var _dbBusqueda='todo';
+function setDbBusqueda(db){
+  _dbBusqueda=db;
+  ['todo','genericos','off','usda'].forEach(function(k){
+    var btn=document.getElementById('dbb-'+k);
+    if(btn){btn.style.background=k===db?'var(--blue)':'var(--bg3)';btn.style.color=k===db?'#fff':'var(--text2)';}
+  });
+}
+
+function abrirBuscadorAlimento(destino){
+  _destinoActual=destino||{tipo:'extra'};
   document.getElementById('alim-buscar-input').value='';
   document.getElementById('alim-buscar-resultados').innerHTML='';
+  setDbBusqueda('todo');
   document.getElementById('mo-buscar-alimento').classList.add('open');
   setTimeout(function(){ var i=document.getElementById('alim-buscar-input'); if(i) i.focus(); },150);
 }
@@ -6101,12 +6251,7 @@ async function buscarUSDA(q){
     }).filter(Boolean);
   }catch(e){ console.error('buscarUSDA error',e); return []; }
 }
-async function buscarAlimentoOFF(){
-  var q=(document.getElementById('alim-buscar-input').value||'').trim();
-  var el=document.getElementById('alim-buscar-resultados');
-  if(!q){ el.innerHTML=''; return; }
-  el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Buscando...</div>';
-  var resultadosOFF=[];
+async function buscarOFF(q){
   try{
     var url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments,quantity';
     var res=await fetch(url);
@@ -6114,7 +6259,7 @@ async function buscarAlimentoOFF(){
     var productos=(data.products||[]).filter(function(pr){
       return pr.product_name && pr.nutriments && pr.nutriments['energy-kcal_100g']!==undefined;
     });
-    resultadosOFF=productos.map(function(pr){
+    return productos.map(function(pr){
       return {
         nombre:pr.product_name+(pr.brands?' — '+pr.brands.split(',')[0]:''),
         kcal:pr.nutriments['energy-kcal_100g']||0,
@@ -6123,19 +6268,38 @@ async function buscarAlimentoOFF(){
         g:pr.nutriments['fat_100g']||0,
       };
     });
-  }catch(e){ console.error('buscarAlimentoOFF error',e); }
-  // Fallback automático: si OFF da poca cobertura, sumamos USDA (mejor para frescos/genéricos)
-  var resultadosUSDA=[];
-  if(resultadosOFF.length<5){
-    resultadosUSDA=await buscarUSDA(q);
+  }catch(e){ console.error('buscarOFF error',e); return []; }
+}
+async function buscarAlimentoOFF(){
+  var q=(document.getElementById('alim-buscar-input').value||'').trim();
+  var el=document.getElementById('alim-buscar-resultados');
+  if(!q){ el.innerHTML=''; return; }
+  el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Buscando...</div>';
+  var sel=_dbBusqueda||'todo';
+  var resultados=[];
+  if(sel==='todo'||sel==='genericos'){
+    resultados=resultados.concat(buscarGenericos(q));
   }
-  _offResultados=resultadosOFF.concat(resultadosUSDA);
+  if(sel==='todo'||sel==='off'){
+    var resultadosOFF=await buscarOFF(q);
+    resultados=resultados.concat(resultadosOFF);
+    // Fallback automático solo en modo "Todo": si OFF da poca cobertura, sumamos USDA
+    if(sel==='todo'&&resultadosOFF.length<5){
+      resultados=resultados.concat(await buscarUSDA(q));
+    }
+  }
+  if(sel==='usda'){
+    resultados=resultados.concat(await buscarUSDA(q));
+  }
+  _offResultados=resultados;
   if(!_offResultados.length){
-    el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Sin resultados. Prueba en inglés o créalo manualmente abajo.</div>';
+    el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Sin resultados. Prueba en inglés, otra base de datos, o créalo manualmente abajo.</div>';
     return;
   }
   el.innerHTML=_offResultados.map(function(r,i){
-    var badge=r.origen==='USDA'?'<span style="font-size:9px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:8px;padding:1px 5px;margin-left:5px">USDA</span>':'';
+    var badge='';
+    if(r.origen==='USDA') badge='<span style="font-size:9px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:8px;padding:1px 5px;margin-left:5px">USDA</span>';
+    else if(r.origen==='Generico') badge='<span style="font-size:9px;font-weight:700;color:var(--green-text);background:var(--green-bg);border-radius:8px;padding:1px 5px;margin-left:5px">GENÉRICO</span>';
     return '<div onclick="seleccionarResultadoOFF('+i+')" style="padding:.55rem 0;border-bottom:.5px solid var(--border);cursor:pointer">'
       +'<div style="font-size:13px;font-weight:600">'+r.nombre+badge+'</div>'
       +'<div style="font-size:11px;color:var(--text3)">'+Math.round(r.kcal)+' kcal/100g · '+Math.round(r.p)+'g P · '+Math.round(r.c)+'g HC · '+Math.round(r.g)+'g G</div>'
@@ -6150,7 +6314,8 @@ function seleccionarResultadoOFF(i){
 }
 
 // --- Crear alimento manual ---
-function abrirCrearAlimento(){
+function abrirCrearAlimento(destino){
+  _destinoActual=destino||{tipo:'extra'};
   ['ca-nombre','ca-kcal100','ca-p100','ca-c100','ca-g100'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('mo-crear-alimento').classList.add('open');
 }
@@ -6167,12 +6332,15 @@ function guardarAlimentoManual(){
   ST.alimentosCustom[id]={nombre:nombre,kcal100:per100.kcal,p100:per100.p,c100:per100.c,g100:per100.g};
   save();
   document.getElementById('mo-crear-alimento').classList.remove('open');
+  var destinoGuardado=_destinoActual;
   abrirDetalleAlimento(nombre,per100,100);
+  _destinoActual=destinoGuardado;
   document.getElementById('da-guardar-mis-alimentos').checked=false; // ya guardado arriba, evita duplicarlo
 }
 
 // --- Mis alimentos ---
-function abrirMisAlimentos(){
+function abrirMisAlimentos(destino){
+  _destinoActual=destino||{tipo:'extra'};
   renderMisAlimentosLista();
   document.getElementById('mo-mis-alimentos').classList.add('open');
 }
@@ -6195,7 +6363,9 @@ function usarAlimentoCustom(id){
   var f=ST.alimentosCustom[id];
   if(!f) return;
   document.getElementById('mo-mis-alimentos').classList.remove('open');
+  var destinoGuardado=_destinoActual;
   abrirDetalleAlimento(f.nombre,{kcal:f.kcal100,p:f.p100,c:f.c100,g:f.g100},100);
+  _destinoActual=destinoGuardado;
   document.getElementById('da-guardar-mis-alimentos').checked=false;
 }
 function eliminarAlimentoCustom(id){
@@ -7358,7 +7528,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v153';
+const APP_VERSION='v156';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

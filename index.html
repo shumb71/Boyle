@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=156', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=157', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -882,6 +882,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </span>
     </div>
     <div class="card"><div id="extras-list" style="font-size:13px;color:var(--text3)">Sin extras hoy.</div></div>
+    <div style="text-align:center;margin-top:.5rem">
+      <button onclick="abrirHistorialNutricion()" style="border:none;background:transparent;color:var(--blue);font-size:12px;cursor:pointer;text-decoration:underline">📅 Ver otro día</button>
+    </div>
+  </div>
+
+  <!-- MODAL HISTORIAL DE NUTRICION (solo lectura: extras + comidas personalizadas por fecha) -->
+  <div class="mo" id="mo-historial-nutricion" onclick="closeMo(event,'mo-historial-nutricion')">
+    <div class="ms">
+      <div class="mh"></div>
+      <div class="mt">Historial de nutrición</div>
+      <div class="ig"><label>Fecha</label><input type="date" id="hn-fecha" style="width:100%;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:14px" onchange="buscarHistorialNutricion()"></div>
+      <div id="hn-resultados" style="max-height:55vh;overflow-y:auto"></div>
+      <div class="br2"><button class="bcan" onclick="document.getElementById('mo-historial-nutricion').classList.remove('open')">Cerrar</button></div>
+    </div>
   </div>
 
   <!-- MODAL BUSCADOR ALIMENTO -->
@@ -1010,6 +1024,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="cal-det-titulo" class="card-lbl" style="font-size:15px;font-weight:700;margin-bottom:.5rem"></div>
       <div id="cal-det-garmin"></div>
       <div id="cal-det-entreno"></div>
+      <div id="cal-det-nutricion"></div>
     </div>
     <!-- Estadísticas mensuales Garmin -->
     <div class="card" id="cal-stats-card" style="display:none">
@@ -6018,6 +6033,70 @@ var _editandoExtraId=null;
 var _editandoComidaItemId=null;
 var _destinoActual={tipo:'extra'};
 
+// Resumen de nutrición (extras + comidas personalizadas) para una fecha real cualquiera.
+// Reutilizado por el visor de historial y por el calendario. NOTA: no incluye el checklist
+// de plan fijo (ST.nut) porque ese no está indexado por fecha real, solo por posición de
+// ciclo — ver limitación conocida.
+function getResumenNutricionFecha(fecha){
+  var extras=(ST.nutricionExtra&&ST.nutricionExtra[fecha])||[];
+  var totK=0,totP=0,totC=0,totG=0;
+  extras.forEach(function(ex){totK+=ex.kcal||0;totP+=ex.p||0;totC+=ex.c||0;totG+=ex.g||0;});
+  var comidaAlim=(ST.nutricionComidaAlimentos&&ST.nutricionComidaAlimentos[fecha])||{};
+  var comidas=[];
+  Object.keys(comidaAlim).forEach(function(t){
+    Object.keys(comidaAlim[t]).forEach(function(idx){
+      var items=comidaAlim[t][idx]||[];
+      if(items.length){
+        items.forEach(function(it){totK+=it.kcal||0;totP+=it.p||0;totC+=it.c||0;totG+=it.g||0;});
+        comidas.push({t:t,idx:idx,items:items});
+      }
+    });
+  });
+  return {kcal:totK,p:totP,c:totC,g:totG,extras:extras,comidas:comidas,tieneDatos:(extras.length>0||comidas.length>0)};
+}
+
+// --- Visor de historial (solo lectura) ---
+function abrirHistorialNutricion(){
+  var fi=document.getElementById('hn-fecha');
+  fi.value=calDiaSeleccionado||hoyLocal();
+  buscarHistorialNutricion();
+  document.getElementById('mo-historial-nutricion').classList.add('open');
+}
+function buscarHistorialNutricion(){
+  var fecha=document.getElementById('hn-fecha').value;
+  var el=document.getElementById('hn-resultados');
+  if(!fecha){ el.innerHTML=''; return; }
+  el.innerHTML=renderResumenNutricionHTML(getResumenNutricionFecha(fecha));
+}
+function renderResumenNutricionHTML(r){
+  if(!r.tieneDatos){
+    return '<div style="text-align:center;padding:1rem;color:var(--text3);font-size:13px">Sin extras ni comidas personalizadas registradas ese día.<br><span style="font-size:11px">(el checklist del plan fijo no guarda histórico por fecha)</span></div>';
+  }
+  var html='<div class="mgrid" style="margin:.5rem 0">'
+    +'<div class="mbox"><div class="mval" style="color:var(--blue)">'+Math.round(r.kcal)+'</div><div class="mlbl">kcal</div></div>'
+    +'<div class="mbox"><div class="mval" style="color:var(--green)">'+Math.round(r.p)+'g</div><div class="mlbl">proteina</div></div>'
+    +'<div class="mbox"><div class="mval" style="color:var(--orange)">'+Math.round(r.c)+'g</div><div class="mlbl">carbos</div></div>'
+    +'<div class="mbox"><div class="mval" style="color:var(--text2)">'+Math.round(r.g)+'g</div><div class="mlbl">grasas</div></div>'
+    +'</div>';
+  if(r.comidas.length){
+    html+='<div class="slbl">Comidas personalizadas</div>';
+    r.comidas.forEach(function(c){
+      var ct={k:0};
+      c.items.forEach(function(it){ct.k+=it.kcal||0;});
+      html+='<div class="card" style="margin-bottom:.4rem">'
+        +'<div style="font-size:12px;font-weight:700;margin-bottom:.2rem">'+tnom(c.t)+' · '+Math.round(ct.k)+' kcal</div>'
+        +c.items.map(function(it){return '<div style="font-size:12px;padding:.15rem 0;color:var(--text2)">'+it.nombre+' — '+Math.round(it.cantidad)+'g ('+Math.round(it.kcal)+' kcal)</div>';}).join('')
+        +'</div>';
+    });
+  }
+  if(r.extras.length){
+    html+='<div class="slbl">Extras</div><div class="card">'
+      +r.extras.map(function(ex){return '<div style="font-size:12px;padding:.3rem 0;border-bottom:.5px solid var(--border)">'+ex.nombre+' — '+Math.round(ex.cantidad)+'g ('+Math.round(ex.kcal)+' kcal)</div>';}).join('')
+      +'</div>';
+  }
+  return html;
+}
+
 function renderExtrasDia(){
   var el=document.getElementById('extras-list');
   if(!el) return;
@@ -7528,7 +7607,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v156';
+const APP_VERSION='v157';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8216,12 +8295,19 @@ function calSelDia(fecha){
   // Limpiar antes de rellenar para forzar re-render
   const garminEl = document.getElementById('cal-det-garmin');
   const entrenoEl = document.getElementById('cal-det-entreno');
+  const nutricionEl = document.getElementById('cal-det-nutricion');
   garminEl.innerHTML = '';
   entrenoEl.innerHTML = '';
   // Forzar reflow
   garminEl.offsetHeight;
   garminEl.innerHTML = htmlG;
   entrenoEl.innerHTML = htmlE;
+  var resumenNutDia=getResumenNutricionFecha(fecha);
+  if(nutricionEl){
+    nutricionEl.innerHTML=resumenNutDia.tieneDatos
+      ? '<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin:.75rem 0 .3rem">🍽 NUTRICIÓN</div>'+renderResumenNutricionHTML(resumenNutDia)
+      : '';
+  }
   det.style.display='block';
   vacio.style.display='none';
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -8310,6 +8396,11 @@ renders.cal=function(){
       var badgeColor=histSes.confirmado?'var(--green)':histSes.variacion?'var(--orange)':'var(--blue)';
       var badgeBg=histSes.confirmado?'var(--green-bg)':histSes.variacion?'var(--orange-bg)':'var(--blue-bg)';
       dots+=`<div style="font-size:8px;font-weight:700;color:${badgeColor};background:${badgeBg};border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">${badge}</div>`;
+    }
+    // Total kcal registrado ese día (extras + comidas personalizadas) → badge naranja
+    var nutDia=getResumenNutricionFecha(fecha);
+    if(nutDia.tieneDatos){
+      dots+=`<div style="font-size:8px;font-weight:700;color:var(--orange-text);background:var(--orange-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🍽${Math.round(nutDia.kcal)}</div>`;
     }
     // Color fondo
     let bg=esHoy?'var(--bg3)':'var(--bg2)';

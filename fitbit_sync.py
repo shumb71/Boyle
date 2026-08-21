@@ -4,25 +4,26 @@ fitbit_sync.py — Sincroniza datos de Fitbit Air (via Google Health API v4) y g
 fitbit_historial.json en el mismo formato que garmin_historial.json, para que la app
 Entreno PRO lo descargue directamente desde GitHub Pages (fetchFitbitAuto en index.html).
 
-IMPORTANTE — API MUY NUEVA (lanzada 2026), léelo antes de correrlo la primera vez:
-La Google Health API v4 es reciente y su documentación pública no incluye ejemplos completos
-de respuesta JSON para cada tipo de dato. Este script está escrito con los nombres de tipo de
-dato y forma de endpoint documentados hasta ahora (developers.google.com/health), pero es MUY
-POSIBLE que algún nombre de tipo o campo de respuesta no coincida exactamente la primera vez
-que lo ejecutes. Por eso:
-  - Cada tipo de dato se pide por separado, con manejo de errores individual (si uno falla,
-    los demás se siguen sincronizando).
-  - Se imprime en el log de GitHub Actions la respuesta cruda de cada tipo que falle o tenga
-    forma inesperada, para poder ajustar el parseo rápidamente.
-  - Revisa el log del primer Run antes de asumir que está funcionando al 100%.
+v2 — corregido tras el primer intento fallido (salió "dias": {} vacío). Los dos bugs reales
+del v1 eran:
+  1. Usaba GET a ".../dataTypes/{tipo}:dailyRollUp" — ese método es POST, no GET, y con un
+     esquema de cuerpo (CivilTimeInterval) que la documentación no detalla del todo bien
+     todavía. Por eso todas las peticiones fallaban silenciosamente (404/405).
+  2. Los tipos "FC reposo / HRV / SpO2" son de tipo "Daily" en la API — ya vienen
+     pre-agregados por día y NO soportan dailyRollUp, solo list/reconcile. Estaba pidiendo
+     un método que esos tipos no ofrecen.
 
-Variables de entorno requeridas (configúralas como Secrets del repo en GitHub):
-  FITBIT_CLIENT_ID       - Client ID de OAuth (Google Cloud Console)
-  FITBIT_CLIENT_SECRET   - Client Secret de OAuth
-  FITBIT_REFRESH_TOKEN   - Refresh token obtenido vía OAuth Playground (ver guía)
+v2 usa el método `list` (GET, bien documentado con ejemplos reales) para todo, filtrando por
+rango de fechas cuando aplica, y sumando/parseando los data points en Python.
 
-Salida: fitbit_historial.json en la raíz del repo (mismo sitio que garmin_historial.json),
-publicado vía GitHub Pages en https://shumb71.github.io/Boyle/fitbit_historial.json
+AVISO — API MUY NUEVA (2026): la forma exacta de los campos dentro de cada data point (p.ej.
+si "distance" viene en metros con clave "distance" o "meters") no está 100% confirmada en la
+documentación pública a fecha de escritura. Por eso cada parser prueba varias claves plausibles
+y, si no reconoce ninguna, IMPRIME el JSON crudo en el log en vez de fallar en silencio — así
+la próxima iteración es cuestión de añadir la clave correcta, no de adivinar a ciegas otra vez.
+
+Variables de entorno requeridas (Secrets del repo en GitHub):
+  FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN
 """
 
 import json
@@ -35,30 +36,27 @@ import requests
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 API_BASE = "https://health.googleapis.com/v4"
 OUTPUT_FILE = "fitbit_historial.json"
+DIAS_ATRAS = 8  # cuántos días hacia atrás se re-sincronizan en cada ejecución
 
-# Cuántos días hacia atrás se sincronizan en cada ejecución. Los días ya sincronizados se
-# sobreescriben (igual que Garmin), útil porque Fitbit puede tardar en consolidar datos del
-# día en curso (ej. sueño de la noche anterior se cierra por la mañana).
-DIAS_ATRAS = 7
+# Tipos "Interval" (un valor por franja horaria a lo largo del día — hay que sumarlos por día)
+# endpoint_id, lista de claves plausibles del valor, campo local
+TIPOS_INTERVAL = [
+    ("steps", ["steps", "count", "value"], "pasos"),
+    ("distance", ["distance", "meters", "value"], "_distancia_m"),  # se convierte a km después
+    ("active-minutes", ["minutes", "activeMinutes", "value"], "minutos_activos"),
+    ("total-calories", ["kcal", "calories", "value"], "calorias_dia"),
+]
 
-# Mapeo: nombre del tipo de dato en la Google Health API -> campo local que usa Entreno PRO.
-# Los nombres de tipo son los documentados en developers.google.com/health a fecha de escritura
-# de este script (agosto 2026). Si alguno falla con 404, revisa el índice de tipos de datos en
-# la documentación oficial y ajusta el string aquí.
-DATA_TYPES = {
-    "steps": "pasos",
-    "calories": "calorias_dia",
-    "distance": "distancia_km",
-    "active-minutes": "minutos_activos",
-    "resting-heart-rate": "fc_reposo",
-    "heart-rate-variability": "hrv",
-    "oxygen-saturation": "spo2",
-    # El sueño se trata aparte (endpoint distinto, estructura por etapas)
-}
+# Tipos "Daily" (ya vienen un registro por día, sin necesidad de sumar)
+# endpoint_id, lista de claves plausibles del valor, campo local
+TIPOS_DAILY = [
+    ("daily-resting-heart-rate", ["restingHeartRate", "bpm", "value"], "fc_reposo"),
+    ("daily-heart-rate-variability", ["heartRateVariability", "hrv", "ms", "value"], "hrv"),
+    ("daily-oxygen-saturation", ["oxygenSaturation", "spo2", "percentage", "value"], "spo2"),
+]
 
 
 def obtener_access_token():
-    """Intercambia el refresh_token por un access_token nuevo (expiran ~1h)."""
     client_id = os.environ["FITBIT_CLIENT_ID"]
     client_secret = os.environ["FITBIT_CLIENT_SECRET"]
     refresh_token = os.environ["FITBIT_REFRESH_TOKEN"]
@@ -73,93 +71,193 @@ def obtener_access_token():
         },
         timeout=30,
     )
+    if not resp.ok:
+        print(f"❌ Google devolvió {resp.status_code} al pedir el access_token:")
+        print(f"   {resp.text}")
     resp.raise_for_status()
     return resp.json()["access_token"]
 
 
-def rango_fechas(dias_atras):
+def extraer_valor(punto, claves_posibles):
+    """Prueba varias claves plausibles dentro de un data point y devuelve la primera que
+    encuentre como número. Devuelve None si ninguna coincide."""
+    for clave in claves_posibles:
+        if clave in punto and isinstance(punto[clave], (int, float)):
+            return punto[clave]
+    return None
+
+
+def extraer_fecha_civil(punto):
+    """Saca la fecha (YYYY-MM-DD) del startTime de un data point. Devuelve None si no se
+    puede determinar."""
+    ts = punto.get("startTime") or punto.get("civilStartTime") or punto.get("date")
+    if not ts:
+        return None
+    try:
+        return ts[:10]
+    except (TypeError, IndexError):
+        return None
+
+
+def pedir_lista(session, tipo_endpoint, desde, hasta):
+    """Llama al método list para un tipo de dato en un rango de fechas. Devuelve la lista de
+    data points (posiblemente vacía) o None si la petición falla."""
+    url = f"{API_BASE}/users/me/dataTypes/{tipo_endpoint}/dataPoints"
+    campo_filtro = tipo_endpoint.replace("-", "_")
+    filtro = (
+        f'{campo_filtro}.interval.start_time >= "{desde}T00:00:00Z" AND '
+        f'{campo_filtro}.interval.start_time < "{hasta}T00:00:00Z"'
+    )
+    try:
+        resp = session.get(url, params={"filter": filtro, "pageSize": 10000}, timeout=30)
+        if resp.status_code == 404:
+            print(f"  ⚠️  {tipo_endpoint}: 404 — el tipo de dato o el filtro no es válido, revisar nombre de endpoint/campo de filtro.")
+            return None
+        if not resp.ok:
+            print(f"  ⚠️  {tipo_endpoint}: HTTP {resp.status_code} — {resp.text[:300]}")
+            return None
+        data = resp.json()
+    except requests.RequestException as e:
+        print(f"  ⚠️  {tipo_endpoint}: error de red — {e}")
+        return None
+
+    puntos = data.get("dataPoints") or data.get("data_points") or []
+    if not puntos and data:
+        print(f"  ℹ️  {tipo_endpoint}: respuesta sin dataPoints reconocibles, forma completa:")
+        print(f"      {json.dumps(data)[:400]}")
+    return puntos
+
+
+def procesar_intervalos(session, dias):
     hoy = date.today()
-    for i in range(dias_atras, -1, -1):
-        yield hoy - timedelta(days=i)
+    desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
+    hasta = (hoy + timedelta(days=1)).isoformat()
+
+    for tipo_endpoint, claves, campo_local in TIPOS_INTERVAL:
+        print(f"Pidiendo {tipo_endpoint}...")
+        puntos = pedir_lista(session, tipo_endpoint, desde, hasta)
+        if puntos is None:
+            continue
+        acumulado_por_dia = {}
+        sin_reconocer = 0
+        for p in puntos:
+            fecha = extraer_fecha_civil(p)
+            valor = extraer_valor(p, claves)
+            if fecha is None or valor is None:
+                sin_reconocer += 1
+                continue
+            acumulado_por_dia[fecha] = acumulado_por_dia.get(fecha, 0) + valor
+        if sin_reconocer and puntos:
+            print(f"  ⚠️  {tipo_endpoint}: {sin_reconocer}/{len(puntos)} puntos con forma no reconocida. Ejemplo:")
+            print(f"      {json.dumps(puntos[0])[:400]}")
+        for fecha, total in acumulado_por_dia.items():
+            if fecha not in dias:
+                dias[fecha] = {}
+            dias[fecha][campo_local] = round(total, 2)
+
+    for fecha, dia in dias.items():
+        if "_distancia_m" in dia:
+            dia["distancia_km"] = round(dia.pop("_distancia_m") / 1000, 2)
 
 
-def pedir_daily_rollup(session, tipo, fecha_str):
-    """Pide el rollup diario de un tipo de dato para una fecha concreta.
-    Devuelve el valor numérico si se puede extraer, o None si falla/no hay datos.
-    """
-    url = f"{API_BASE}/users/me/dataTypes/{tipo}:dailyRollUp"
-    params = {"date": fecha_str}
+def procesar_daily(session, dias):
+    hoy = date.today()
+    desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
+    hasta = (hoy + timedelta(days=1)).isoformat()
+
+    for tipo_endpoint, claves, campo_local in TIPOS_DAILY:
+        print(f"Pidiendo {tipo_endpoint}...")
+        url = f"{API_BASE}/users/me/dataTypes/{tipo_endpoint}/dataPoints"
+        try:
+            resp = session.get(url, params={"pageSize": 100}, timeout=30)
+            if resp.status_code == 404:
+                print(f"  ⚠️  {tipo_endpoint}: 404 — revisar nombre de endpoint.")
+                continue
+            if not resp.ok:
+                print(f"  ⚠️  {tipo_endpoint}: HTTP {resp.status_code} — {resp.text[:300]}")
+                continue
+            data = resp.json()
+        except requests.RequestException as e:
+            print(f"  ⚠️  {tipo_endpoint}: error de red — {e}")
+            continue
+
+        puntos = data.get("dataPoints") or data.get("data_points") or []
+        if not puntos:
+            print(f"  ℹ️  {tipo_endpoint}: sin dataPoints. Respuesta completa:")
+            print(f"      {json.dumps(data)[:400]}")
+            continue
+
+        sin_reconocer = 0
+        for p in puntos:
+            fecha = extraer_fecha_civil(p)
+            valor = extraer_valor(p, claves)
+            if fecha is None or valor is None or fecha < desde or fecha >= hasta:
+                sin_reconocer += 1
+                continue
+            if fecha not in dias:
+                dias[fecha] = {}
+            dias[fecha][campo_local] = round(valor, 2) if isinstance(valor, float) else valor
+        if sin_reconocer == len(puntos) and puntos:
+            print(f"  ⚠️  {tipo_endpoint}: ningún punto reconocido de {len(puntos)}. Ejemplo:")
+            print(f"      {json.dumps(puntos[0])[:400]}")
+
+
+def procesar_sueno(session, dias):
+    print("Pidiendo sleep...")
+    hoy = date.today()
+    desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
+    hasta = (hoy + timedelta(days=1)).isoformat()
+    url = f"{API_BASE}/users/me/dataTypes/sleep/dataPoints"
+    filtro = f'sleep.interval.start_time >= "{desde}T00:00:00Z" AND sleep.interval.start_time < "{hasta}T00:00:00Z"'
     try:
-        resp = session.get(url, params=params, timeout=30)
+        resp = session.get(url, params={"filter": filtro, "pageSize": 100}, timeout=30)
         if resp.status_code == 404:
-            # Tipo de dato sin datos ese día, o nombre de tipo incorrecto — no es fatal
-            return None
-        resp.raise_for_status()
+            print("  ⚠️  sleep: 404 — revisar nombre de endpoint/campo de filtro.")
+            return
+        if not resp.ok:
+            print(f"  ⚠️  sleep: HTTP {resp.status_code} — {resp.text[:300]}")
+            return
         data = resp.json()
     except requests.RequestException as e:
-        print(f"  ⚠️  {tipo} {fecha_str}: error de red/HTTP — {e}")
-        return None
+        print(f"  ⚠️  sleep: error de red — {e}")
+        return
 
-    # La forma exacta de la respuesta no está confirmada al 100% para todos los tipos —
-    # probamos las rutas más probables y avisamos si no encontramos nada reconocible.
-    valor = None
-    if isinstance(data, dict):
-        for clave in ("value", "total", "sum", "aggregateValue"):
-            if clave in data:
-                valor = data[clave]
-                break
-        if valor is None and "dataPoints" in data and data["dataPoints"]:
-            # Fallback: promedio/último punto si viene como lista de puntos
-            puntos = data["dataPoints"]
-            valores = [p.get("value") for p in puntos if isinstance(p.get("value"), (int, float))]
-            if valores:
-                valor = sum(valores) / len(valores) if tipo in ("resting-heart-rate", "heart-rate-variability", "oxygen-saturation") else sum(valores)
+    puntos = data.get("dataPoints") or data.get("data_points") or []
+    if not puntos:
+        print("  ℹ️  sleep: sin dataPoints. Respuesta completa:")
+        print(f"      {json.dumps(data)[:400]}")
+        return
 
-    if valor is None:
-        print(f"  ⚠️  {tipo} {fecha_str}: respuesta con forma inesperada, revisar manualmente:")
-        print(f"      {json.dumps(data)[:300]}")
-    return valor
+    for p in puntos:
+        fecha = extraer_fecha_civil(p)
+        if fecha is None:
+            continue
+        summary = p.get("summary") or p.get("sleepSummary") or {}
+        total_seg = summary.get("totalSleepDuration") or p.get("totalSleepDuration")
+        if total_seg is None:
+            print(f"  ⚠️  sleep {fecha}: forma no reconocida, punto completo:")
+            print(f"      {json.dumps(p)[:400]}")
+            continue
 
+        def mins(v):
+            if v is None:
+                return 0
+            return round(v / 60) if v > 1440 else round(v)
 
-def pedir_sueno(session, fecha_str):
-    """Pide el rollup de sueño del día. Devuelve dict con minutos totales y por etapa,
-    o None si no hay datos."""
-    url = f"{API_BASE}/users/me/dataTypes/sleep:dailyRollUp"
-    params = {"date": fecha_str}
-    try:
-        resp = session.get(url, params=params, timeout=30)
-        if resp.status_code == 404:
-            return None
-        resp.raise_for_status()
-        data = resp.json()
-    except requests.RequestException as e:
-        print(f"  ⚠️  sleep {fecha_str}: error de red/HTTP — {e}")
-        return None
-
-    def mins(segundos_o_min):
-        # Algunos endpoints de Google devuelven duración en segundos; si el número es grande
-        # asumimos segundos y convertimos, si es pequeño asumimos que ya viene en minutos.
-        if segundos_o_min is None:
-            return 0
-        return round(segundos_o_min / 60) if segundos_o_min > 1440 else round(segundos_o_min)
-
-    total = data.get("totalSleepDuration") or data.get("value") or data.get("total")
-    if total is None:
-        print(f"  ⚠️  sleep {fecha_str}: respuesta con forma inesperada, revisar manualmente:")
-        print(f"      {json.dumps(data)[:300]}")
-        return None
-
-    etapas = data.get("stages", {}) or {}
-    return {
-        "sueno_total_min": mins(total),
-        "sueno_profundo_min": mins(etapas.get("deep")),
-        "sueno_ligero_min": mins(etapas.get("light")),
-        "sueno_rem_min": mins(etapas.get("rem")),
-    }
+        if fecha not in dias:
+            dias[fecha] = {}
+        dias[fecha]["sueno_total_min"] = mins(total_seg)
+        etapas = summary.get("stages", {}) or {}
+        if etapas.get("deep") is not None:
+            dias[fecha]["sueno_profundo_min"] = mins(etapas.get("deep"))
+        if etapas.get("light") is not None:
+            dias[fecha]["sueno_ligero_min"] = mins(etapas.get("light"))
+        if etapas.get("rem") is not None:
+            dias[fecha]["sueno_rem_min"] = mins(etapas.get("rem"))
 
 
 def main():
-    print("=== Fitbit sync — Google Health API v4 ===")
+    print("=== Fitbit sync v2 — Google Health API v4 ===")
     try:
         access_token = obtener_access_token()
     except Exception as e:
@@ -169,7 +267,6 @@ def main():
     session = requests.Session()
     session.headers.update({"Authorization": f"Bearer {access_token}"})
 
-    # Cargar histórico previo si existe, para no perder días fuera del rango sincronizado hoy
     dias = {}
     if os.path.exists(OUTPUT_FILE):
         try:
@@ -179,22 +276,9 @@ def main():
         except (json.JSONDecodeError, OSError):
             print("⚠️  No se pudo leer el fitbit_historial.json previo, empezando de cero.")
 
-    for fecha in rango_fechas(DIAS_ATRAS):
-        fecha_str = fecha.isoformat()
-        print(f"Sincronizando {fecha_str}...")
-        dia = dias.get(fecha_str, {})
-
-        for tipo, campo_local in DATA_TYPES.items():
-            valor = pedir_daily_rollup(session, tipo, fecha_str)
-            if valor is not None:
-                dia[campo_local] = round(valor, 2) if isinstance(valor, float) else valor
-
-        sueno = pedir_sueno(session, fecha_str)
-        if sueno:
-            dia.update(sueno)
-
-        if dia:
-            dias[fecha_str] = dia
+    procesar_intervalos(session, dias)
+    procesar_daily(session, dias)
+    procesar_sueno(session, dias)
 
     salida = {
         "actualizado": datetime.now(timezone.utc).isoformat(),

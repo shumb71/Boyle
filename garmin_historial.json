@@ -2583,13 +2583,13 @@
     },
     "2026-08-21": {
       "fecha": "2026-08-21",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 37,
+      "calorias_dia": 310.0,
+      "calorias_activas": 0.0,
+      "distancia_km": 0.03,
+      "minutos_activos": 0,
+      "fc_reposo": 44,
+      "estres_medio": 17
     }
   },
   "actualizado": "2026-08-21"

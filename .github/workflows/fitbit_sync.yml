@@ -2,9 +2,8 @@ name: Fitbit Sync
 
 on:
   schedule:
-    # Cada 3 horas, mismo ritmo que garmin_sync
     - cron: '0 */3 * * *'
-  workflow_dispatch: {}   # permite lanzarlo a mano desde la pestaña Actions de GitHub
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -36,5 +35,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add fitbit_historial.json
-          git diff --staged --quiet || git commit -m "Actualizar fitbit_historial.json [skip ci]"
+          git diff --staged --quiet && exit 0
+          git commit -m "Actualizar fitbit_historial.json [skip ci]"
+          git pull --rebase --autostash origin main
           git push

@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=157', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=158', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1078,6 +1078,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="garmin-import-status" style="font-size:12px;color:var(--green-text);display:none;margin-bottom:8px;padding:6px 10px;background:var(--green-bg);border-radius:var(--rs)"></div>
       <button class="bkbtn" style="background:var(--bg2);color:var(--text2);border-color:var(--border2);font-size:12px" onclick="document.getElementById('garmin-input').click()"><i class="ti ti-upload"></i> Importar JSON día suelto</button>
       <input type="file" id="garmin-input" accept=".json" style="display:none" onchange="importarGarmin(this)">
+    </div>
+    <div class="card">
+      <div class="card-lbl">Sync automático Fitbit Air</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:.5rem">Fuente de pasos, sueño, FC reposo, HRV, SpO2 y calorías. Los entrenos siguen viniendo de Garmin.</div>
+      <div id="fitbit-auto-status" style="font-size:12px;padding:8px 10px;border-radius:var(--rs);margin-bottom:8px;background:var(--blue-bg);color:var(--blue-text)">⏳ Cargando datos desde GitHub...</div>
+      <button class="bkbtn bkimp" onclick="fetchFitbitAuto(true)"><i class="ti ti-refresh"></i> Actualizar ahora desde GitHub</button>
     </div>
   </div>
   <div class="screen" id="s-config">
@@ -7607,7 +7613,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v157';
+const APP_VERSION='v158';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7790,6 +7796,35 @@ function importarGarmin(input){
 // ============================================================
 const GARMIN_JSON_URL = 'https://shumb71.github.io/Boyle/garmin_historial.json';
 
+// Campos que Fitbit Air pasa a controlar (todo salvo el propio entreno registrado por Garmin).
+// Decisión de Jou: Garmin = entrenos (actividades/fuerza), Fitbit Air = el resto del día.
+const FITBIT_OWNED_FIELDS=['pasos','calorias_dia','calorias_activas','fc_reposo','sueno_total_min',
+  'sueno_profundo_min','sueno_ligero_min','sueno_rem_min','sueno_puntuacion','hrv','spo2',
+  'estres_medio','distancia_km','minutos_activos'];
+
+// Fusiona un día proveniente de Garmin. Si ese día ya tiene datos de Fitbit (marcados con
+// _fuenteFitbit), Garmin SOLO aporta actividades/fuerza — no pisa pasos/sueño/FC/etc.
+// Si Fitbit aún no ha sincronizado ese día, Garmin sigue siendo el fallback completo (continuidad
+// del histórico previo a tener la Fitbit Air).
+function mergeDiaGarmin(fecha,nuevo){
+  if(!ST.garminHist[fecha]) ST.garminHist[fecha]={};
+  var actual=ST.garminHist[fecha];
+  if(actual._fuenteFitbit){
+    if(nuevo.actividades) actual.actividades=nuevo.actividades;
+    if(nuevo.fuerza) actual.fuerza=nuevo.fuerza;
+  } else {
+    Object.assign(actual,nuevo);
+  }
+}
+// Fusiona un día proveniente de Fitbit Air. Siempre manda en sus campos propios; nunca toca
+// actividades/fuerza (eso sigue siendo exclusivo de Garmin).
+function mergeDiaFitbit(fecha,nuevo){
+  if(!ST.garminHist[fecha]) ST.garminHist[fecha]={};
+  var actual=ST.garminHist[fecha];
+  FITBIT_OWNED_FIELDS.forEach(function(k){ if(nuevo[k]!==undefined) actual[k]=nuevo[k]; });
+  actual._fuenteFitbit=true;
+}
+
 async function fetchGarminAuto(manual) {
   const statusEl = document.getElementById('garmin-auto-status');
   if (statusEl) {
@@ -7803,10 +7838,10 @@ async function fetchGarminAuto(manual) {
     const data = await resp.json();
     if (!data.dias) throw new Error('Formato incorrecto');
 
-    // Siempre sobreescribir — Garmin actualiza datos progresivamente durante el día
+    // Fusión respetando prioridad por fuente (ver mergeDiaGarmin)
     if (!ST.garminHist) ST.garminHist = {};
     var diasAntes=Object.keys(ST.garminHist);
-    Object.assign(ST.garminHist, data.dias);
+    Object.keys(data.dias).forEach(function(fecha){ mergeDiaGarmin(fecha,data.dias[fecha]); });
     if (!ST.garmin) ST.garmin = {};
     Object.assign(ST.garmin, data.dias);
     // Append días nuevos a Google Sheets Garmin
@@ -7843,6 +7878,56 @@ async function fetchGarminAuto(manual) {
       statusEl.textContent = '⚠️ No se pudo cargar automáticamente. Usa importación manual.';
     }
     console.warn('Garmin auto-fetch error:', e);
+  }
+}
+
+// ============================================================
+// FITBIT AIR AUTO-FETCH desde GitHub Pages (mismo patrón que Garmin)
+// ============================================================
+const FITBIT_JSON_URL = 'https://shumb71.github.io/Boyle/fitbit_historial.json';
+
+async function fetchFitbitAuto(manual) {
+  const statusEl = document.getElementById('fitbit-auto-status');
+  if (statusEl) {
+    statusEl.style.background = 'var(--blue-bg)';
+    statusEl.style.color = 'var(--blue-text)';
+    statusEl.textContent = '⏳ Descargando historial desde GitHub...';
+  }
+  try {
+    const resp = await fetch(FITBIT_JSON_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.dias) throw new Error('Formato incorrecto');
+
+    if (!ST.garminHist) ST.garminHist = {};
+    Object.keys(data.dias).forEach(function(fecha){ mergeDiaFitbit(fecha,data.dias[fecha]); });
+
+    var ahora = new Date();
+    var horaLocal = ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    var fechaLocal = ahora.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+    ST.fitbitActualizado = (data.actualizado||fechaLocal) + ' · ' + horaLocal;
+    save();
+    if (typeof renderGarminHoy === 'function') renderGarminHoy();
+    if (typeof renderHoy === 'function') renderHoy();
+    if(document.getElementById('s-cal')&&document.getElementById('s-cal').classList.contains('active')&&typeof renders!=='undefined'&&renders.cal) renders.cal();
+
+    const total = Object.keys(data.dias).length;
+    if (statusEl) {
+      statusEl.style.background = 'var(--green-bg)';
+      statusEl.style.color = 'var(--green-text)';
+      statusEl.textContent = '✅ ' + total + ' días cargados · Actualizado: ' + (ST.fitbitActualizado || '');
+    }
+    if (manual) {
+      const t = document.getElementById('fb-toast');
+      if (t) { t.textContent = '✅ Fitbit actualizado · ' + total + ' días'; t.style.opacity='1'; setTimeout(()=>{t.style.opacity='0';},3000); }
+    }
+  } catch(e) {
+    if (statusEl) {
+      statusEl.style.background = 'var(--orange-bg)';
+      statusEl.style.color = 'var(--orange-text)';
+      statusEl.textContent = '⚠️ No se pudo cargar automáticamente.';
+    }
+    console.warn('Fitbit auto-fetch error:', e);
   }
 }
 
@@ -7999,6 +8084,7 @@ window.addEventListener('load', () => {
     }
   }
   setTimeout(fetchGarminAuto, 3000); // 3s después de cargar completo
+  setTimeout(fetchFitbitAuto, 4000); // 4s — justo después de Garmin, para que el merge respete prioridad
   setTimeout(function(){ exportarExcelDrive(true); }, 8000); // 8s — volcado inicial al Drive
 });
 

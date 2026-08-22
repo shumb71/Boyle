@@ -2613,7 +2613,17 @@
         "fc_media": 109.0,
         "fc_max": 152.0
       }
+    },
+    "2026-08-22": {
+      "fecha": "2026-08-22",
+      "pasos": null,
+      "calorias_dia": null,
+      "calorias_activas": null,
+      "distancia_km": 0.0,
+      "minutos_activos": null,
+      "fc_reposo": null,
+      "estres_medio": null
     }
   },
-  "actualizado": "2026-08-21"
+  "actualizado": "2026-08-22"
 }

@@ -1,14 +1,14 @@
 {
-  "actualizado": "2026-08-22T09:27:56.116122+00:00",
+  "actualizado": "2026-08-22T12:41:37.032495+00:00",
   "dias": {
     "2026-08-22": {
-      "pasos": 2373,
+      "pasos": 3951,
       "fc_reposo": 50.0,
-      "distancia_km": 1.24,
-      "minutos_activos": 101,
+      "distancia_km": 2.44,
+      "minutos_activos": 163,
       "hrv": 42.35,
       "spo2": 94,
-      "calorias_dia": 1082.55
+      "calorias_dia": 1504.56
     },
     "2026-08-21": {
       "pasos": 4357,

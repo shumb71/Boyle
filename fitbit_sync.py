@@ -4,30 +4,22 @@ fitbit_sync.py — Sincroniza datos de Fitbit Air (via Google Health API v4) y g
 fitbit_historial.json en el mismo formato que garmin_historial.json, para que la app
 Entreno PRO lo descargue directamente desde GitHub Pages (fetchFitbitAuto en index.html).
 
-v3 — corregido con datos REALES capturados del log de un Run que sí llegó a la API (v2
-fallaba en el parseo, no en la conexión). Confirmado por la propia respuesta de Google:
+v4 — steps y FC reposo ya funcionaban en v3. Correcciones de esta versión, confirmadas con
+datos reales del log de un Run:
 
-  - steps / distance / active-minutes: el valor no está en la raíz del data point, está
-    anidado bajo una clave con el nombre del tipo en camelCase, ej.:
-      {"dataSource": {...}, "steps": {"interval": {...}}}
-    (el campo final del valor dentro de ese objeto sigue sin confirmar al 100% — se prueban
-    varias claves candidatas y se imprime el JSON COMPLETO, sin truncar, si no se reconoce).
-
-  - daily-resting-heart-rate: SÍ funciona con `list`, pero el valor viene como STRING
-    ("beatsPerMinute": "55") no como número, y la fecha viene en
-    {"date": {"year":Y,"month":M,"day":D}} anidado — no como texto ISO.
-
-  - total-calories: NO admite `list` (error 400 explícito de Google: "supported: rollup,
-    dailyRollup"). Se cambia a POST .../dataPoints:dailyRollUp.
-
-  - sleep: el filtro `sleep.interval.start_time` es rechazado por la API
-    (INVALID_DATA_POINT_FILTER_DATA_TYPE_MEMBER). Se quita el filtro y se pide la lista
-    reciente sin filtrar, descartando en Python lo que quede fuera del rango de fechas.
-
-  - daily-heart-rate-variability / daily-oxygen-saturation: devolvieron {} vacío — puede ser
-    simplemente que Fitbit Air aún no ha calculado esas métricas derivadas (llevan más de un
-    día de uso en muchos wearables). No se toca la lógica, solo se deja preparada para cuando
-    haya datos.
+  - distance: el valor viene en "millimeters" (como string), no "meters"/"distance"/"value".
+  - active-minutes: NO es un campo único — es un array "activeMinutesByActivityLevel" con un
+    objeto {"activityLevel":..., "activeMinutes": "N"} por nivel de intensidad. Se suman todos.
+  - total-calories (dailyRollUp): el cuerpo POST anterior daba 400 porque "range" no acepta
+    "startTime"/"endTime" directos. Se prueba con "civilStartTime"/"civilEndTime" anidando
+    {"date": {...}}, siguiendo el mismo patrón usado en el resto de la API. Sigue siendo una
+    suposición fundamentada, no 100% confirmada — si vuelve a fallar, el log lo dirá.
+  - daily-heart-rate-variability: campo real "averageHeartRateVariabilityMilliseconds".
+  - daily-oxygen-saturation: campo real "averagePercentage".
+  - sleep: NO trae un resumen ("summary") — trae una lista "stages" con tramos individuales
+    (tipo AWAKE/LIGHT/DEEP/REM, cada uno con su propio startTime/endTime). Se suman las
+    duraciones por tipo en Python. La fecha civil tampoco viene directa en el intervalo de
+    sleep (a diferencia de steps/distance/etc.) — se calcula a partir de startTime + utcOffset.
 
 Variables de entorno requeridas (Secrets del repo en GitHub):
   FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN
@@ -44,25 +36,55 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 API_BASE = "https://health.googleapis.com/v4"
 OUTPUT_FILE = "fitbit_historial.json"
 DIAS_ATRAS = 8
-
-# Límite de caracteres al imprimir JSON de depuración en el log. Antes estaba en 300-400 y
-# eso ocultaba justo el campo que necesitábamos ver — ahora se imprime bastante más.
 DEBUG_LEN = 2000
 
 
 def log_json(prefijo, obj):
-    print(f"{prefijo}")
+    print(prefijo)
     print(f"    {json.dumps(obj, ensure_ascii=False)[:DEBUG_LEN]}")
 
 
 def fecha_desde_civil_date(date_obj):
-    """Convierte {"year":Y,"month":M,"day":D} en 'YYYY-MM-DD'."""
     if not date_obj:
         return None
     y, m, d = date_obj.get("year"), date_obj.get("month"), date_obj.get("day")
     if not (y and m and d):
         return None
     return f"{y:04d}-{m:02d}-{d:02d}"
+
+
+def parse_iso(ts):
+    if not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def fecha_civil_desde_utc(iso_str, utc_offset_str):
+    """Fecha local a partir de un timestamp UTC + offset tipo '7200s'."""
+    dt = parse_iso(iso_str)
+    if dt is None:
+        return None
+    offset_sec = 0
+    if utc_offset_str and utc_offset_str.endswith("s"):
+        try:
+            offset_sec = int(utc_offset_str[:-1])
+        except ValueError:
+            pass
+    return (dt + timedelta(seconds=offset_sec)).date().isoformat()
+
+
+def a_numero(v):
+    if isinstance(v, (int, float)):
+        return v
+    if isinstance(v, str):
+        try:
+            return float(v)
+        except ValueError:
+            return None
+    return None
 
 
 def obtener_access_token():
@@ -87,90 +109,117 @@ def obtener_access_token():
     return resp.json()["access_token"]
 
 
-# ── Tipos "Interval" (steps, distance, active-minutes): un valor por franja horaria ────────
-# endpoint_id, clave_anidada_camelCase, claves candidatas del valor dentro de esa clave, campo local
-TIPOS_INTERVAL = [
-    ("steps", "steps", ["count", "value", "steps", "total"], "pasos"),
-    ("distance", "distance", ["meters", "value", "distance", "total"], "_distancia_m"),
-    ("active-minutes", "activeMinutes", ["minutes", "value", "activeMinutes", "total"], "minutos_activos"),
-]
-
-
-def procesar_intervalos(session, dias):
+def pedir_lista_interval(session, tipo_endpoint):
+    """GET .../dataPoints con filtro de rango de fechas. Devuelve la lista de puntos o None."""
     hoy = date.today()
     desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
     hasta = (hoy + timedelta(days=1)).isoformat()
+    url = f"{API_BASE}/users/me/dataTypes/{tipo_endpoint}/dataPoints"
+    campo_filtro = tipo_endpoint.replace("-", "_")
+    filtro = (
+        f'{campo_filtro}.interval.start_time >= "{desde}T00:00:00Z" AND '
+        f'{campo_filtro}.interval.start_time < "{hasta}T00:00:00Z"'
+    )
+    try:
+        resp = session.get(url, params={"filter": filtro, "pageSize": 10000}, timeout=30)
+        if not resp.ok:
+            print(f"  ⚠️  {tipo_endpoint}: HTTP {resp.status_code} — {resp.text[:DEBUG_LEN]}")
+            return None
+        data = resp.json()
+    except requests.RequestException as e:
+        print(f"  ⚠️  {tipo_endpoint}: error de red — {e}")
+        return None
 
-    for tipo_endpoint, clave_anidada, claves_valor, campo_local in TIPOS_INTERVAL:
-        print(f"Pidiendo {tipo_endpoint}...")
-        url = f"{API_BASE}/users/me/dataTypes/{tipo_endpoint}/dataPoints"
-        campo_filtro = tipo_endpoint.replace("-", "_")
-        filtro = (
-            f'{campo_filtro}.interval.start_time >= "{desde}T00:00:00Z" AND '
-            f'{campo_filtro}.interval.start_time < "{hasta}T00:00:00Z"'
-        )
-        try:
-            resp = session.get(url, params={"filter": filtro, "pageSize": 10000}, timeout=30)
-            if not resp.ok:
-                print(f"  ⚠️  {tipo_endpoint}: HTTP {resp.status_code} — {resp.text[:DEBUG_LEN]}")
-                continue
-            data = resp.json()
-        except requests.RequestException as e:
-            print(f"  ⚠️  {tipo_endpoint}: error de red — {e}")
+    puntos = data.get("dataPoints") or data.get("data_points") or []
+    if not puntos:
+        log_json(f"  ℹ️  {tipo_endpoint}: sin dataPoints, respuesta completa:", data)
+    return puntos
+
+
+def procesar_steps(session, dias):
+    print("Pidiendo steps...")
+    puntos = pedir_lista_interval(session, "steps")
+    if not puntos:
+        return
+    acumulado = {}
+    sin_reconocer = 0
+    for p in puntos:
+        sub = p.get("steps") or {}
+        civil = (sub.get("interval") or {}).get("civilStartTime") or {}
+        fecha = fecha_desde_civil_date(civil.get("date"))
+        valor = a_numero(sub.get("count")) or a_numero(sub.get("value"))
+        if fecha is None or valor is None:
+            sin_reconocer += 1
             continue
+        acumulado[fecha] = acumulado.get(fecha, 0) + valor
+    if sin_reconocer:
+        log_json(f"  ⚠️  steps: {sin_reconocer}/{len(puntos)} sin reconocer. Ejemplo:", puntos[0])
+    for fecha, total in acumulado.items():
+        dias.setdefault(fecha, {})["pasos"] = round(total)
 
-        puntos = data.get("dataPoints") or data.get("data_points") or []
-        if not puntos:
-            log_json(f"  ℹ️  {tipo_endpoint}: sin dataPoints, respuesta completa:", data)
+
+def procesar_distancia(session, dias):
+    print("Pidiendo distance...")
+    puntos = pedir_lista_interval(session, "distance")
+    if not puntos:
+        return
+    acumulado_mm = {}
+    sin_reconocer = 0
+    for p in puntos:
+        sub = p.get("distance") or {}
+        civil = (sub.get("interval") or {}).get("civilStartTime") or {}
+        fecha = fecha_desde_civil_date(civil.get("date"))
+        valor = a_numero(sub.get("millimeters"))
+        if fecha is None or valor is None:
+            sin_reconocer += 1
             continue
-
-        acumulado_por_dia = {}
-        sin_reconocer = 0
-        for p in puntos:
-            sub = p.get(clave_anidada) or {}
-            interval = sub.get("interval") or {}
-            civil = interval.get("civilStartTime") or {}
-            fecha = fecha_desde_civil_date(civil.get("date"))
-            valor = None
-            for clave in claves_valor:
-                v = sub.get(clave)
-                if isinstance(v, (int, float)):
-                    valor = v
-                    break
-                if isinstance(v, str):
-                    try:
-                        valor = float(v)
-                        break
-                    except ValueError:
-                        pass
-            if fecha is None or valor is None:
-                sin_reconocer += 1
-                continue
-            acumulado_por_dia[fecha] = acumulado_por_dia.get(fecha, 0) + valor
-
-        if sin_reconocer:
-            log_json(f"  ⚠️  {tipo_endpoint}: {sin_reconocer}/{len(puntos)} puntos sin reconocer. Ejemplo completo:", puntos[0])
-
-        for fecha, total in acumulado_por_dia.items():
-            if fecha not in dias:
-                dias[fecha] = {}
-            dias[fecha][campo_local] = round(total, 2)
-
-    for fecha, dia in dias.items():
-        if "_distancia_m" in dia:
-            dia["distancia_km"] = round(dia.pop("_distancia_m") / 1000, 2)
+        acumulado_mm[fecha] = acumulado_mm.get(fecha, 0) + valor
+    if sin_reconocer:
+        log_json(f"  ⚠️  distance: {sin_reconocer}/{len(puntos)} sin reconocer. Ejemplo:", puntos[0])
+    for fecha, total_mm in acumulado_mm.items():
+        dias.setdefault(fecha, {})["distancia_km"] = round(total_mm / 1_000_000, 2)
 
 
-# ── total-calories: solo admite rollup/dailyRollup (POST), no list ─────────────────────────
+def procesar_minutos_activos(session, dias):
+    print("Pidiendo active-minutes...")
+    puntos = pedir_lista_interval(session, "active-minutes")
+    if not puntos:
+        return
+    acumulado = {}
+    sin_reconocer = 0
+    for p in puntos:
+        sub = p.get("activeMinutes") or {}
+        civil = (sub.get("interval") or {}).get("civilStartTime") or {}
+        fecha = fecha_desde_civil_date(civil.get("date"))
+        niveles = sub.get("activeMinutesByActivityLevel") or []
+        total_punto = 0
+        encontrado = False
+        for nivel in niveles:
+            v = a_numero(nivel.get("activeMinutes"))
+            if v is not None:
+                total_punto += v
+                encontrado = True
+        if fecha is None or not encontrado:
+            sin_reconocer += 1
+            continue
+        acumulado[fecha] = acumulado.get(fecha, 0) + total_punto
+    if sin_reconocer:
+        log_json(f"  ⚠️  active-minutes: {sin_reconocer}/{len(puntos)} sin reconocer. Ejemplo:", puntos[0])
+    for fecha, total in acumulado.items():
+        dias.setdefault(fecha, {})["minutos_activos"] = round(total)
+
+
 def procesar_calorias(session, dias):
     print("Pidiendo total-calories (dailyRollUp)...")
     hoy = date.today()
-    desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
-    hasta = (hoy + timedelta(days=1)).isoformat()
+    desde_d = hoy - timedelta(days=DIAS_ATRAS)
+    hasta_d = hoy + timedelta(days=1)
     url = f"{API_BASE}/users/me/dataTypes/total-calories/dataPoints:dailyRollUp"
     body = {
-        "range": {"startTime": f"{desde}T00:00:00Z", "endTime": f"{hasta}T00:00:00Z"},
-        "windowSizeDays": 1,
+        "range": {
+            "civilStartTime": {"date": {"year": desde_d.year, "month": desde_d.month, "day": desde_d.day}},
+            "civilEndTime": {"date": {"year": hasta_d.year, "month": hasta_d.month, "day": hasta_d.day}},
+        }
     }
     try:
         resp = session.post(url, json=body, timeout=30)
@@ -189,33 +238,22 @@ def procesar_calorias(session, dias):
 
     sin_reconocer = 0
     for p in puntos:
-        sub = p.get("totalCalories") or p.get("total_calories") or {}
-        interval = sub.get("interval") or {}
-        civil = interval.get("civilStartTime") or {}
+        sub = p.get("totalCalories") or {}
+        civil = (sub.get("interval") or {}).get("civilStartTime") or {}
         fecha = fecha_desde_civil_date(civil.get("date"))
-        valor = None
-        for clave in ("kcal", "value", "calories"):
-            v = sub.get(clave)
-            if isinstance(v, (int, float)):
-                valor = v
-                break
+        valor = a_numero(sub.get("kcal")) or a_numero(sub.get("value"))
         if fecha is None or valor is None:
             sin_reconocer += 1
             continue
-        if fecha not in dias:
-            dias[fecha] = {}
-        dias[fecha]["calorias_dia"] = round(valor, 2)
-
+        dias.setdefault(fecha, {})["calorias_dia"] = round(valor, 2)
     if sin_reconocer:
-        log_json(f"  ⚠️  total-calories: {sin_reconocer}/{len(puntos)} puntos sin reconocer. Ejemplo completo:", puntos[0])
+        log_json(f"  ⚠️  total-calories: {sin_reconocer}/{len(puntos)} sin reconocer. Ejemplo:", puntos[0])
 
 
-# ── Tipos "Daily" (ya vienen un registro por día) ───────────────────────────────────────────
-# endpoint_id, clave_anidada_camelCase, claves candidatas del valor, campo local
 TIPOS_DAILY = [
     ("daily-resting-heart-rate", "dailyRestingHeartRate", ["beatsPerMinute", "value"], "fc_reposo"),
-    ("daily-heart-rate-variability", "dailyHeartRateVariability", ["milliseconds", "value", "hrv"], "hrv"),
-    ("daily-oxygen-saturation", "dailyOxygenSaturation", ["percentage", "value", "spo2"], "spo2"),
+    ("daily-heart-rate-variability", "dailyHeartRateVariability", ["averageHeartRateVariabilityMilliseconds", "value"], "hrv"),
+    ("daily-oxygen-saturation", "dailyOxygenSaturation", ["averagePercentage", "value"], "spo2"),
 ]
 
 
@@ -239,7 +277,7 @@ def procesar_daily(session, dias):
 
         puntos = data.get("dataPoints") or data.get("data_points") or []
         if not puntos:
-            log_json(f"  ℹ️  {tipo_endpoint}: sin dataPoints (puede que aún no haya datos calculados). Respuesta:", data)
+            log_json(f"  ℹ️  {tipo_endpoint}: sin dataPoints. Respuesta:", data)
             continue
 
         sin_reconocer = 0
@@ -248,28 +286,18 @@ def procesar_daily(session, dias):
             fecha = fecha_desde_civil_date(sub.get("date"))
             valor = None
             for clave in claves_valor:
-                v = sub.get(clave)
-                if isinstance(v, (int, float)):
-                    valor = v
+                valor = a_numero(sub.get(clave))
+                if valor is not None:
                     break
-                if isinstance(v, str):
-                    try:
-                        valor = float(v)
-                        break
-                    except ValueError:
-                        pass
             if fecha is None or valor is None or fecha < desde or fecha >= hasta:
                 sin_reconocer += 1
                 continue
-            if fecha not in dias:
-                dias[fecha] = {}
-            dias[fecha][campo_local] = round(valor, 2) if isinstance(valor, float) else valor
+            dias.setdefault(fecha, {})[campo_local] = round(valor, 2)
 
         if sin_reconocer == len(puntos) and puntos:
-            log_json(f"  ⚠️  {tipo_endpoint}: ningún punto reconocido de {len(puntos)}. Ejemplo completo:", puntos[0])
+            log_json(f"  ⚠️  {tipo_endpoint}: ningún punto reconocido de {len(puntos)}. Ejemplo:", puntos[0])
 
 
-# ── sleep: sin filtro (el nombre de campo de filtro no es válido según la API) ──────────────
 def procesar_sueno(session, dias):
     print("Pidiendo sleep (sin filtro, tomando lo más reciente)...")
     hoy = date.today()
@@ -295,37 +323,39 @@ def procesar_sueno(session, dias):
     for p in puntos:
         sub = p.get("sleep") or {}
         interval = sub.get("interval") or {}
-        civil = interval.get("civilStartTime") or {}
-        fecha = fecha_desde_civil_date(civil.get("date"))
-        summary = sub.get("summary") or {}
-        total_seg = summary.get("totalSleepDuration") or summary.get("totalDuration")
+        fecha = fecha_civil_desde_utc(interval.get("startTime"), interval.get("startUtcOffset"))
+        stages = sub.get("stages") or []
 
-        if fecha is None or fecha < desde or fecha >= hasta or total_seg is None:
+        if fecha is None or fecha < desde or fecha >= hasta or not stages:
             sin_reconocer += 1
             continue
 
-        def mins(v):
-            if v is None:
-                return 0
-            return round(v / 60) if v > 1440 else round(v)
+        segundos = {"DEEP": 0, "LIGHT": 0, "REM": 0}
+        for s in stages:
+            tipo = s.get("type")
+            if tipo not in segundos:
+                continue
+            ini, fin = parse_iso(s.get("startTime")), parse_iso(s.get("endTime"))
+            if ini and fin:
+                segundos[tipo] += (fin - ini).total_seconds()
 
-        if fecha not in dias:
-            dias[fecha] = {}
-        dias[fecha]["sueno_total_min"] = mins(total_seg)
-        etapas = summary.get("stages", {}) or {}
-        if etapas.get("deep") is not None:
-            dias[fecha]["sueno_profundo_min"] = mins(etapas.get("deep"))
-        if etapas.get("light") is not None:
-            dias[fecha]["sueno_ligero_min"] = mins(etapas.get("light"))
-        if etapas.get("rem") is not None:
-            dias[fecha]["sueno_rem_min"] = mins(etapas.get("rem"))
+        total_seg = segundos["DEEP"] + segundos["LIGHT"] + segundos["REM"]
+        if total_seg <= 0:
+            sin_reconocer += 1
+            continue
+
+        dia = dias.setdefault(fecha, {})
+        dia["sueno_total_min"] = round(total_seg / 60)
+        dia["sueno_profundo_min"] = round(segundos["DEEP"] / 60)
+        dia["sueno_ligero_min"] = round(segundos["LIGHT"] / 60)
+        dia["sueno_rem_min"] = round(segundos["REM"] / 60)
 
     if sin_reconocer == len(puntos) and puntos:
-        log_json(f"  ⚠️  sleep: ningún punto reconocido de {len(puntos)}. Ejemplo completo:", puntos[0])
+        log_json(f"  ⚠️  sleep: ningún punto reconocido de {len(puntos)}. Ejemplo:", puntos[0])
 
 
 def main():
-    print("=== Fitbit sync v3 — Google Health API v4 ===")
+    print("=== Fitbit sync v4 — Google Health API v4 ===")
     try:
         access_token = obtener_access_token()
     except Exception as e:
@@ -344,7 +374,9 @@ def main():
         except (json.JSONDecodeError, OSError):
             print("⚠️  No se pudo leer el fitbit_historial.json previo, empezando de cero.")
 
-    procesar_intervalos(session, dias)
+    procesar_steps(session, dias)
+    procesar_distancia(session, dias)
+    procesar_minutos_activos(session, dias)
     procesar_calorias(session, dias)
     procesar_daily(session, dias)
     procesar_sueno(session, dias)

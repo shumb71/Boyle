@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=159', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=160', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -3210,6 +3210,14 @@ function toggleEnf(bodyId,btnId){
 
 const renders={
   hoy(){
+    // Autocorregir el día del ciclo desde la fecha de anclaje SIEMPRE que se muestre Hoy —
+    // antes solo se recalculaba al fijar un día manual, así que si pasaba tiempo sin tocar
+    // esa función, ST.dia se quedaba desfasado respecto a la fecha real (bug real detectado
+    // por Jou: 22/8 mostraba "Dia 2" en vez de "Dia 3" con anclaje 20/8).
+    if(ST.cicloAnclaje){
+      var _diaAnclado=calcularDiaDesdeAnclaje();
+      if(_diaAnclado&&_diaAnclado!==ST.dia){ ST.dia=_diaAnclado; save(); }
+    }
     const d=new Date();
     document.getElementById('f-fecha').textContent=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
     const verEl=document.getElementById('f-version');if(verEl)verEl.textContent=APP_VERSION;
@@ -7614,7 +7622,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v159';
+const APP_VERSION='v160';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

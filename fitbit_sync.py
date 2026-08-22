@@ -308,6 +308,7 @@ def procesar_sueno(session, dias):
     hoy = date.today()
     desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
     hasta = (hoy + timedelta(days=1)).isoformat()
+
     url = f"{API_BASE}/users/me/dataTypes/sleep/dataPoints"
     try:
         # pageSize subido de 25 a 200: sin filtro de fecha disponible en este endpoint, no hay
@@ -327,6 +328,19 @@ def procesar_sueno(session, dias):
     if not puntos:
         log_json("  ℹ️  sleep: sin dataPoints, respuesta completa:", data)
         return
+
+    # Limpiar campos de sueño obsoletos dentro del rango, SOLO ahora que sabemos que la petición
+    # trajo puntos con los que repoblar (si hubiera fallado antes, ya habríamos salido con
+    # `return` sin tocar nada). Necesario porque este endpoint no admite filtro de fecha fiable
+    # y en una versión anterior del script la fecha se calculaba desde el inicio del sueño en
+    # vez del despertar — eso dejó restos mal fechados en el JSON (sueño de una noche archivado
+    # un día antes de lo correcto). Al limpiar y repoblar cada vez, esos restos se autocorrigen
+    # solos en la siguiente ejecución sin tener que editar el JSON a mano.
+    CAMPOS_SUENO = ("sueno_total_min", "sueno_profundo_min", "sueno_ligero_min", "sueno_rem_min")
+    for fecha_existente, dia_existente in dias.items():
+        if desde <= fecha_existente < hasta:
+            for campo in CAMPOS_SUENO:
+                dia_existente.pop(campo, None)
 
     sin_reconocer = 0
     fechas_vistas = []

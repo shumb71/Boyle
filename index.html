@@ -4259,6 +4259,13 @@ function autoRegistrarFecha(){
       completado:true, nota:(ST.notaDia&&ST.notaDia[hoy])||(prev&&prev.nota)||''
     });
     if(!prev){ rec.auto=true; }
+    // Duración/hora de inicio automáticas — solo mientras la sesión no se haya finalizado ya
+    // manualmente con el cronómetro (finalizarSesion() tiene entonces prioridad y no se pisa aquí).
+    if(!(prev&&prev.confirmado)){
+      var _ahoraAuto=Date.now();
+      if(!rec.horaInicio) rec.horaInicio=_ahoraAuto;
+      rec.duracion_min=Math.max(1,Math.round((_ahoraAuto-rec.horaInicio)/60000));
+    }
     rec.timestamp=Date.now(); // siempre actualizar timestamp al registrar sets
     ST.historialFechas[hoy]=rec;
     if(!ST.fechaSesiones) ST.fechaSesiones={};
@@ -5858,8 +5865,8 @@ function finalizarSesion(){
     manual:true,
     nota:(ST.notaDia&&ST.notaDia[hoy])||'',
     timestamp:lockTs,
-    duracion_min:elapsed>0?Math.round(elapsed/60000):null,
-    horaInicio:ST.timerInicio||null,
+    duracion_min:elapsed>0?Math.round(elapsed/60000):(existing2&&existing2.duracion_min!=null?existing2.duracion_min:null),
+    horaInicio:ST.timerInicio||(existing2&&existing2.horaInicio)||null,
   };
   if(!ST.fechaSesiones) ST.fechaSesiones={};
   ST.fechaSesiones[hoy]=ST.dia;
@@ -7622,7 +7629,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v160';
+const APP_VERSION='v161';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -7700,14 +7707,37 @@ function exportar(){
   });
 
   // Hoja 1 — Series registradas
+  // Fuente principal: ST.historialFechas, indexado por fecha REAL — cada sesión guarda ya
+  // sus ejerciciosRealizados con las series tal cual se hicieron ese día. Se sustituye así
+  // el mapa día-de-ciclo→fecha (que solo recordaba la primera vez que se dio esa posición del
+  // ciclo, y por tanto asignaba fecha equivocada a repeticiones posteriores del ciclo de 12 días).
   const sRows=[[hdr('Fecha'),hdr('Programa'),hdr('Día Ciclo'),hdr('Día Boyle'),hdr('Fase'),hdr('Semana'),hdr('Ejercicio'),hdr('Serie'),hdr('Peso kg'),hdr('Reps/Tiempo/Dist'),hdr('Tipo'),hdr('RPE'),hdr('Nota')]];
+  var diasCubiertos={}; // diaCiclo ya representado con fecha real, para no duplicarlo desde ST.sets
+  Object.keys(ST.historialFechas||{}).sort().forEach(function(fecha){
+    var ses=ST.historialFechas[fecha];
+    var ejsReal=ses&&ses.ejerciciosRealizados;
+    if(!ejsReal||!ejsReal.length) return; // sin detalle de series -> lo cubre el fallback si hay datos en ST.sets
+    if(ses.diaCiclo) diasCubiertos[ses.diaCiclo]=true;
+    ejsReal.forEach(function(e){
+      var ejNombre=(e.finisher?'🔥 ':'')+(e.ej||e.ejBase||'—');
+      (e.sets||[]).forEach(function(s,i){
+        if(!s) return;
+        var tipo=s.tipo||'reps';
+        var val=tipo==='tiempo'?(s.t||0):tipo==='distancia'?(s.dist||0):(s.r||0);
+        sRows.push([cel(fecha),cel(ST.programaInicio||''),cel(ses.diaCiclo),cel(ses.diaBoyleReal||'—'),cel(ses.fase||'—'),cel(ses.semana||'—'),cel(ejNombre,true),cel('S'+(i+1)),{v:s.p,t:'n'},{v:val,t:'n'},cel(tipo),{v:s.rpe,t:'n'},cel(s.n||'')]);
+      });
+    });
+  });
+  // Red de seguridad: series presentes en ST.sets que no tienen ninguna fecha real asociada
+  // (p.ej. datos muy antiguos de antes de que se guardara ejerciciosRealizados). Se marcan con
+  // "(aprox.)" porque su fecha viene del mismo mapa día-de-ciclo→fecha que tenía el bug.
   Object.entries(ST.sets).sort(function(a,b){
     var pa=parseKey(a[0]), pb=parseKey(b[0]);
     if(!pa||!pb) return 0;
     return pa.dia-pb.dia;
   }).forEach(function([key,sets]){
     var info=parseKey(key);
-    if(!info) return;
+    if(!info||diasCubiertos[info.dia]) return;
     var fechaSes=fechaMap[info.dia]||'—';
     var histSes=ST.historialFechas[fechaSes]||{};
     var dB=histSes.diaBoyleReal||CICLO[(info.dia-1)%12]&&CICLO[(info.dia-1)%12].b||'—';
@@ -7717,8 +7747,7 @@ function exportar(){
       if(!s) return;
       var tipo=s.tipo||'reps';
       var val=tipo==='tiempo'?(s.t||0):tipo==='distancia'?(s.dist||0):(s.r||0);
-      var vol=tipo==='reps'?Math.round(s.p*s.r):0;
-      sRows.push([cel(fechaSes),cel(info.programa),cel(info.dia),cel(dB),cel(fase),cel(sem),cel(info.ej,true),cel('S'+(i+1)),{v:s.p,t:'n'},{v:val,t:'n'},cel(tipo),{v:s.rpe,t:'n'},cel(s.n||'')]);
+      sRows.push([cel(fechaSes+(fechaSes!=='—'?' (aprox.)':'')),cel(info.programa),cel(info.dia),cel(dB),cel(fase),cel(sem),cel(info.ej,true),cel('S'+(i+1)),{v:s.p,t:'n'},{v:val,t:'n'},cel(tipo),{v:s.rpe,t:'n'},cel(s.n||'')]);
     });
   });
   if(sRows.length===1) sRows.push([cel('Sin datos aun'),'','','','','','','','','','','','']);

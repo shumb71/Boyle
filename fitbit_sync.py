@@ -310,7 +310,10 @@ def procesar_sueno(session, dias):
     hasta = (hoy + timedelta(days=1)).isoformat()
     url = f"{API_BASE}/users/me/dataTypes/sleep/dataPoints"
     try:
-        resp = session.get(url, params={"pageSize": 25}, timeout=30)
+        # pageSize subido de 25 a 200: sin filtro de fecha disponible en este endpoint, no hay
+        # garantía de que la API devuelva los puntos más recientes primero — con pocos días de
+        # historial no se notaba, pero al acumular más sesiones podía dejar fuera las de hoy.
+        resp = session.get(url, params={"pageSize": 200}, timeout=30)
         if not resp.ok:
             print(f"  ⚠️  sleep: HTTP {resp.status_code} — {resp.text[:DEBUG_LEN]}")
             return
@@ -320,15 +323,23 @@ def procesar_sueno(session, dias):
         return
 
     puntos = data.get("dataPoints") or data.get("data_points") or []
+    print(f"  ℹ️  sleep: {len(puntos)} puntos recibidos en total.")
     if not puntos:
         log_json("  ℹ️  sleep: sin dataPoints, respuesta completa:", data)
         return
 
     sin_reconocer = 0
+    fechas_vistas = []
     for p in puntos:
         sub = p.get("sleep") or {}
         interval = sub.get("interval") or {}
-        fecha = fecha_civil_desde_utc(interval.get("startTime"), interval.get("startUtcOffset"))
+        # Fecha del sueño = día en que te DESPIERTAS (endTime), no en que te duermes (startTime).
+        # Es la convención habitual (Garmin, Fitbit, etc): el sueño de la noche del 21 al 22
+        # se etiqueta como "sueño del 22", que es el día al que realmente pertenece para el
+        # usuario. Con startTime se etiquetaba mal bajo el día anterior.
+        fecha = fecha_civil_desde_utc(interval.get("endTime"), interval.get("endUtcOffset"))
+        if fecha:
+            fechas_vistas.append(fecha)
         stages = sub.get("stages") or []
 
         if fecha is None or fecha < desde or fecha >= hasta or not stages:
@@ -355,6 +366,8 @@ def procesar_sueno(session, dias):
         dia["sueno_ligero_min"] = round(segundos["LIGHT"] / 60)
         dia["sueno_rem_min"] = round(segundos["REM"] / 60)
 
+    if fechas_vistas:
+        print(f"  ℹ️  sleep: fechas recibidas desde {min(fechas_vistas)} hasta {max(fechas_vistas)}.")
     if sin_reconocer == len(puntos) and puntos:
         log_json(f"  ⚠️  sleep: ningún punto reconocido de {len(puntos)}. Ejemplo:", puntos[0])
 

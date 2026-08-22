@@ -215,11 +215,14 @@ def procesar_calorias(session, dias):
     desde_d = hoy - timedelta(days=DIAS_ATRAS)
     hasta_d = hoy + timedelta(days=1)
     url = f"{API_BASE}/users/me/dataTypes/total-calories/dataPoints:dailyRollUp"
+    # CivilTimeInterval real: {"start": CivilDateTime, "end": CivilDateTime}, y CivilDateTime
+    # es {"date": {"year","month","day"}} — confirmado en la referencia RPC oficial.
     body = {
         "range": {
-            "civilStartTime": {"date": {"year": desde_d.year, "month": desde_d.month, "day": desde_d.day}},
-            "civilEndTime": {"date": {"year": hasta_d.year, "month": hasta_d.month, "day": hasta_d.day}},
-        }
+            "start": {"date": {"year": desde_d.year, "month": desde_d.month, "day": desde_d.day}},
+            "end": {"date": {"year": hasta_d.year, "month": hasta_d.month, "day": hasta_d.day}},
+        },
+        "windowSizeDays": 1,
     }
     try:
         resp = session.post(url, json=body, timeout=30)
@@ -231,17 +234,19 @@ def procesar_calorias(session, dias):
         print(f"  ⚠️  total-calories: error de red — {e}")
         return
 
-    puntos = data.get("dataPoints") or data.get("data_points") or []
+    # La respuesta de dailyRollUp usa "rollupDataPoints", no "dataPoints" (distinto del list).
+    puntos = data.get("rollupDataPoints") or data.get("rollup_data_points") or data.get("dataPoints") or []
     if not puntos:
-        log_json("  ℹ️  total-calories: sin dataPoints, respuesta completa:", data)
+        log_json("  ℹ️  total-calories: sin rollupDataPoints, respuesta completa:", data)
         return
 
     sin_reconocer = 0
     for p in puntos:
-        sub = p.get("totalCalories") or {}
-        civil = (sub.get("interval") or {}).get("civilStartTime") or {}
+        # civilStartTime va directo en el punto (no anidado bajo "interval" como en list)
+        civil = p.get("civilStartTime") or {}
         fecha = fecha_desde_civil_date(civil.get("date"))
-        valor = a_numero(sub.get("kcal")) or a_numero(sub.get("value"))
+        sub = p.get("totalCalories") or {}
+        valor = a_numero(sub.get("kcalSum")) or a_numero(sub.get("kcal")) or a_numero(sub.get("value"))
         if fecha is None or valor is None:
             sin_reconocer += 1
             continue

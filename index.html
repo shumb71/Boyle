@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=158', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=159', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -623,7 +623,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
     <div class="card" id="f-garmin-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-        <div class="card-lbl" style="margin-bottom:0">⌚ Garmin Epic</div>
+        <div class="card-lbl" id="f-garmin-titulo" style="margin-bottom:0">⌚ Garmin</div>
         <span id="f-garmin-fecha" style="font-size:11px;color:var(--text3)"></span>
       </div>
       <div id="f-garmin-data">
@@ -3215,7 +3215,8 @@ const renders={
     const verEl=document.getElementById('f-version');if(verEl)verEl.textContent=APP_VERSION;
     document.title='Entreno Boyle '+APP_VERSION;
     const c=CICLO[(ST.dia-1)%12];
-    document.getElementById('f-dia').textContent='Dia '+c.d;
+    var fechaCorta=d.toLocaleDateString('es-ES',{day:'numeric',month:'numeric'});
+    document.getElementById('f-dia').textContent='Dia '+c.d+' · '+fechaCorta;
     document.getElementById('f-turno').textContent=tnom(c.t)+' · '+c.h;
     // Mostrar fecha de anclaje del ciclo
     var anclajeEl=document.getElementById('f-anclaje-lbl');
@@ -7613,7 +7614,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v158';
+const APP_VERSION='v159';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8185,8 +8186,23 @@ function calSelDia(fecha){
   let htmlG='',htmlE='';
   if(g){
     const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+(g.sueno_total_min%60)+'min':'—';
+    var bloqueGarminCal='';
+    if(g.fuerza||(g.actividades&&g.actividades.length)){
+      bloqueGarminCal='<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin-bottom:6px">⌚ GARMIN — ENTRENO</div>';
+      if(g.actividades&&g.actividades.length){
+        bloqueGarminCal+=g.actividades.map(function(act){
+          var t=(act.tipo||'').toLowerCase();
+          var icono=t.includes('strength')||t.includes('weight')||t.includes('fuerza')?'💪':t.includes('walk')||t.includes('hik')?'🚶':t.includes('cycl')||t.includes('bik')?'🚴':t.includes('swim')?'🏊':t.includes('yoga')?'🧘':'🏃';
+          return '<div style="background:var(--green-bg);border-radius:var(--rs);padding:.4rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">'+icono+' '+(act.nombre||act.tipo)+'</span><span style="font-size:12px;color:var(--green-text)">'+act.duracion_min+' min · '+act.calorias+' kcal</span></div>';
+        }).join('');
+      } else if(g.fuerza){
+        bloqueGarminCal+=`<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .7rem;display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal</span></div>`;
+      }
+      bloqueGarminCal+='<div style="margin-top:10px"></div>';
+    }
     htmlG=`<div style="margin-bottom:.5rem">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:6px">⌚ GARMIN</div>
+      ${bloqueGarminCal}
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin-bottom:6px">🩹 FITBIT AIR</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
         <div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center">
           <div style="font-size:18px;font-weight:700;color:var(--blue)">${(g.pasos||0).toLocaleString()}</div>
@@ -8205,20 +8221,13 @@ function calSelDia(fecha){
           <div style="font-size:10px;color:var(--text2)">FC reposo</div>
         </div>
       </div>
-      ${g.body_battery_max?`<div class="prow" style="background:var(--bg3);border-radius:var(--rs);padding:.4rem .6rem;margin-bottom:4px"><span class="plbl">⚡ Body Battery</span><span class="pval">${g.body_battery_min||0} → ${g.body_battery_max}</span></div>`:''}
-      ${(function(){
-        if(g.actividades&&g.actividades.length){
-          return g.actividades.map(function(act){
-            var t=(act.tipo||'').toLowerCase();
-            var icono=t.includes('strength')||t.includes('weight')||t.includes('fuerza')?'💪':t.includes('walk')||t.includes('hik')?'🚶':t.includes('cycl')||t.includes('bik')?'🚴':t.includes('swim')?'🏊':t.includes('yoga')?'🧘':'🏃';
-            return '<div style="background:var(--green-bg);border-radius:var(--rs);padding:.4rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">'+icono+' '+(act.nombre||act.tipo)+'</span><span style="font-size:12px;color:var(--green-text)">'+act.duracion_min+' min · '+act.calorias+' kcal</span></div>';
-          }).join('');
-        }
-        return g.fuerza?`<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal</span></div>`:'';
-      })()}
+      ${(g.hrv||g.spo2)?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        ${g.hrv?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:14px;font-weight:700;color:var(--blue)">${g.hrv} ms</div><div style="font-size:10px;color:var(--text2)">HRV</div></div>`:''}
+        ${g.spo2?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:14px;font-weight:700;color:var(--blue)">${g.spo2}%</div><div style="font-size:10px;color:var(--text2)">SpO2</div></div>`:''}
+      </div>`:''}
     </div>`;
   } else {
-    htmlG=`<div style="color:var(--text3);font-size:12px;margin-bottom:.75rem">Sin datos Garmin este día</div>`;
+    htmlG=`<div style="color:var(--text3);font-size:12px;margin-bottom:.75rem">Sin datos Garmin/Fitbit este día</div>`;
   }
   // Entrenos (sets del programa)
   const fechaSesiones=ST.fechaSesiones||{};
@@ -8527,14 +8536,32 @@ function renderGarminHoy(){
   const card=document.getElementById('f-garmin-card');
   const el=document.getElementById('f-garmin-data');
   const felEl=document.getElementById('f-garmin-fecha');
+  const titEl=document.getElementById('f-garmin-titulo');
   if(!g){card.style.display='none';return;}
   card.style.display='block';
+  if(titEl) titEl.textContent='🩺 Salud del día';
   // Mostrar hora del sync para el día actual
   var esHoy = g.fecha===hoy;
   var syncInfo = esHoy&&ST.garminActualizado ? '📡 '+ST.garminActualizado.split(' · ')[1]||ST.garminActualizado : g.fecha||hoy;
   if(felEl) felEl.textContent=syncInfo;
   const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+( g.sueno_total_min%60)+'min':'—';
-  el.innerHTML=`
+  // Bloque Garmin: SOLO actividades/entrenos, nada de pasos/sueño/FC/etc
+  var bloqueGarmin='';
+  if(g.fuerza||( g.actividades&&g.actividades.length)){
+    bloqueGarmin='<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin:0 0 6px">⌚ GARMIN — ENTRENO</div>';
+    if(g.actividades&&g.actividades.length){
+      bloqueGarmin+=g.actividades.map(function(act){
+        var t=(act.tipo||'').toLowerCase();
+        var icono=t.includes('strength')||t.includes('weight')||t.includes('fuerza')?'💪':t.includes('walk')||t.includes('hik')?'🚶':t.includes('cycl')||t.includes('bik')?'🚴':t.includes('swim')?'🏊':t.includes('yoga')?'🧘':'🏃';
+        return '<div style="background:var(--green-bg);border-radius:var(--rs);padding:.5rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">'+icono+' '+(act.nombre||act.tipo)+'</span><span style="font-size:12px;color:var(--green-text)">'+act.duracion_min+' min · '+act.calorias+' kcal</span></div>';
+      }).join('');
+    } else if(g.fuerza){
+      bloqueGarmin+=`<div style="background:var(--green-bg);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal · FC ${g.fuerza.fc_media}/${g.fuerza.fc_max}</span></div>`;
+    }
+    bloqueGarmin+='<div style="margin-top:10px"></div>';
+  }
+  // Bloque Fitbit: pasos, kcal, sueño, FC reposo, HRV, SpO2 — todo lo que no es entreno
+  var bloqueFitbit=`<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin:0 0 6px">🩹 FITBIT AIR</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem;text-align:center">
         <div style="font-size:20px;font-weight:700;color:var(--blue)">${(g.pasos||0).toLocaleString()}</div>
@@ -8553,9 +8580,11 @@ function renderGarminHoy(){
         <div style="font-size:10px;color:var(--text2);margin-top:1px">FC reposo</div>
       </div>
     </div>
-    ${g.body_battery_max?`<div style="margin-top:8px;background:var(--bg3);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">Body Battery</span><span style="font-size:15px;font-weight:700;color:var(--blue)">${g.body_battery_min||0} → ${g.body_battery_max} ⚡</span></div>`:''}
-    ${g.fuerza?`<div style="margin-top:8px;background:var(--green-bg);border-radius:var(--rs);padding:.6rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">💪 Fuerza</span><span style="font-size:12px;color:var(--green-text)">${g.fuerza.duracion_min} min · ${g.fuerza.calorias} kcal · FC ${g.fuerza.fc_media}/${g.fuerza.fc_max}</span></div>`:''}
-  `;
+    ${(g.hrv||g.spo2)?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      ${g.hrv?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">${g.hrv} ms</div><div style="font-size:10px;color:var(--text2)">HRV</div></div>`:''}
+      ${g.spo2?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">${g.spo2}%</div><div style="font-size:10px;color:var(--text2)">SpO2</div></div>`:''}
+    </div>`:''}`;
+  el.innerHTML = bloqueGarmin + bloqueFitbit;
 }
 
 // ── GARMIN NAV ────────────────────────────────────────────

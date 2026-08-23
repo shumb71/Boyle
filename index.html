@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=165', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=166', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -4275,6 +4275,14 @@ function autoRegistrarFecha(){
     saveSesionV2(hoy);
     try{ renderFinalizarStatus(); }catch(e){}
     try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
+    // Backup automático a Drive, con límite de 6h — este es el flujo real que usa Jou
+    // (autoRegistrarFecha, no finalizarSesion), ver bug pendiente detectado 22/08.
+    try{
+      var _ultimoBk=ST.ultimoBackup?new Date(ST.ultimoBackup).getTime():0;
+      if(Date.now()-_ultimoBk>6*60*60*1000){
+        backupJSONDrive().catch(function(e){console.warn('backup auto (autoRegistrarFecha)',e);});
+      }
+    }catch(e){}
   }catch(e){ console.warn('autoRegistrarFecha',e); }
 }
 
@@ -5040,9 +5048,10 @@ const DRIVE_FOLDER_NAME = 'Entreno Boyle';
 const DRIVE_FILE_NAME   = 'Entreno_Boyle.xlsx';
 var _driveFileId = null; // se cachea tras la primera búsqueda
 
-async function getGdriveToken(){
-  // Si ya tenemos un token cacheado, usarlo
-  if(window._gdriveToken) return window._gdriveToken;
+var _gdriveTokenExpiry = 0; // timestamp ms en que caduca el token cacheado
+async function getGdriveToken(forceRefresh){
+  // Si ya tenemos un token cacheado y sigue vigente, usarlo
+  if(!forceRefresh && window._gdriveToken && Date.now() < _gdriveTokenExpiry) return window._gdriveToken;
   // Pedir token nuevo via google.accounts.oauth2
   return new Promise(function(resolve, reject){
     if(typeof google==='undefined'||!google.accounts||!google.accounts.oauth2){
@@ -5054,6 +5063,9 @@ async function getGdriveToken(){
       callback:function(resp){
         if(resp.error){reject(new Error(resp.error));return;}
         window._gdriveToken=resp.access_token;
+        // Los tokens de Google suelen durar ~3600s; refrescamos 60s antes de que caduquen de verdad
+        var ttl=resp.expires_in?parseInt(resp.expires_in,10):3300;
+        _gdriveTokenExpiry=Date.now()+Math.max(60,ttl-60)*1000;
         resolve(resp.access_token);
       }
     });
@@ -5254,6 +5266,15 @@ function buildEntrenoExcel(){
   }
 }
 
+// Campos que solo deben vivir en ESTE dispositivo y nunca deben salir en un backup/export
+// (aunque estén en ST para poder usarlos localmente). Ver incidente token GitHub 22/08.
+const CAMPOS_SENSIBLES_BACKUP=['githubToken'];
+function datosParaBackup(){
+  var clon={};
+  Object.keys(ST).forEach(function(k){ if(CAMPOS_SENSIBLES_BACKUP.indexOf(k)<0) clon[k]=ST[k]; });
+  return JSON.stringify(clon,null,2);
+}
+
 async function backupJSONDrive(){
   var token=await getGdriveToken();
   if(!token) return; // silencioso — no molestar al usuario
@@ -5265,7 +5286,7 @@ async function backupJSONDrive(){
     if(!backupFolderId) return;
     var fecha=hoyLocal();
     var nombre='backup_'+fecha+'.json';
-    var datos=JSON.stringify(ST, null, 2);
+    var datos=datosParaBackup();
     var metadata={name:nombre,mimeType:'application/json',parents:[backupFolderId]};
     // Buscar si ya existe backup de hoy y sobreescribir
     var searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D\''+nombre+'\'%20and%20\''+backupFolderId+'\'%20in%20parents%20and%20trashed%3Dfalse&fields=files(id)',{
@@ -5281,6 +5302,8 @@ async function backupJSONDrive(){
     if(!existingId) form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
     form.append('file',new Blob([datos],{type:'application/json'}));
     await fetch(url,{method:method,headers:{'Authorization':'Bearer '+token},body:form});
+    ST.ultimoBackup=new Date().toISOString();
+    save();
     console.log('Backup JSON guardado en Drive:', nombre);
   }catch(e){
     console.warn('backupJSONDrive error:',e);
@@ -5288,6 +5311,7 @@ async function backupJSONDrive(){
 }
 
 async function getOrCreateSubFolder(parentId, nombre){
+  var token=await getGdriveToken();
   if(!token) return null;
   try{
     var searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D\''+nombre+'\'%20and%20\''+parentId+'\'%20in%20parents%20and%20mimeType%3D\'application%2Fvnd.google-apps.folder\'%20and%20trashed%3Dfalse&fields=files(id)',{
@@ -7777,11 +7801,11 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v165';
+const APP_VERSION='v166';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
-  var datos=JSON.stringify(ST, null, 2);
+  var datos=datosParaBackup();
   var blob=new Blob([datos],{type:'application/json'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
@@ -8154,17 +8178,26 @@ async function getSheetsId(){
 }
 
 async function sheetsAppend(sheetName, values){
-  // Añade una fila al final de la hoja indicada
+  // Añade una fila al final de la hoja indicada. Si el token ha caducado a mitad de sesión
+  // (fetch devuelve 401), pide uno nuevo y reintenta una sola vez antes de rendirse.
   var token=await getGdriveToken();
   if(!token) return false;
   var sheetId=await getSheetsId();
   if(!sheetId) return false;
   var range=encodeURIComponent(sheetName+'!A:Z');
-  var resp=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({values:[values]})
-  });
+  function intentar(tok){
+    return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({values:[values]})
+    });
+  }
+  var resp=await intentar(token);
+  if(resp.status===401){
+    token=await getGdriveToken(true);
+    if(!token) return false;
+    resp=await intentar(token);
+  }
   return resp.ok;
 }
 
@@ -8988,7 +9021,7 @@ function mostrarSelectorBackups(archivos,token){
 
 function subirSilencioso(token){
   var fecha=hoyLocal();
-  var blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
+  var blob=new Blob([datosParaBackup()],{type:'application/json'});
   var fileName='entreno_jose_backup_'+fecha+'.json';
   fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',
     {headers:{Authorization:'Bearer '+token}})
@@ -9053,7 +9086,7 @@ function checkBackupReminder(){
 }
 
 function hacerBackupAhora(){
-  var data=JSON.stringify(ST,null,2);
+  var data=datosParaBackup();
   var blob=new Blob([data],{type:'application/json'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');

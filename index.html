@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=162', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=163', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -6684,6 +6684,19 @@ function toggleWarmupFase(checkKey,fi){
   warmupFaseOpen[k]=!warmupFaseOpen[k];
   renderWarmupBody();
 }
+// EXPLICACIONES — explicaciones largas "cómo se hace" por nombre exacto de ejercicio.
+// Vacío de momento: si no hay entrada aquí, se usa la descripción corta ('d') que ya trae cada ejercicio.
+// Para ampliar un ejercicio, añade: 'Nombre exacto del ejercicio': 'Texto explicando cómo hacerlo...',
+const EXPLICACIONES={};
+function getExplicacion(nombre,fallback){
+  return EXPLICACIONES[nombre]||fallback||'';
+}
+var warmupExplOpen={};
+function toggleWarmupExpl(checkKey,key){
+  var k=checkKey+'_'+key;
+  warmupExplOpen[k]=!warmupExplOpen[k];
+  renderWarmupBody();
+}
 function toggleEspacioReducido(){
   ST.espacioReducido=!ST.espacioReducido;
   save(); renderWarmupBody();
@@ -6742,11 +6755,21 @@ function renderWarmupBody(){
   function itemRow(key,n,desc,t,imgName){
     var isDone=checks[key]||false;
     var ejImgs=imgName?getEjImgs(imgName):[];
+    var isExplOpen=!!warmupExplOpen[checkKey+'_'+key];
+    var explText=getExplicacion(n,desc);
     var h='<div style="padding:.45rem 0;border-bottom:.5px solid var(--border)"><div style="display:flex;align-items:flex-start;gap:10px">';
     h+='<div onclick="toggleWarmupCheck(\''+checkKey+'\',\''+key+'\')" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">'+(isDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')+'</div>';
     if(ejImgs.length) h+='<img src="'+ejImgs[0]+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">';
-    h+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</div>';
-    if(desc) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+desc+'</div>';
+    h+='<div style="flex:1">';
+    if(explText){
+      h+='<div onclick="toggleWarmupExpl(\''+checkKey+'\',\''+key+'\')" style="cursor:pointer;display:flex;align-items:center;gap:5px">';
+      h+='<span style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</span>';
+      h+='<i class="ti ti-chevron-'+(isExplOpen?'down':'right')+'" style="font-size:12px;color:var(--text3);flex-shrink:0"></i>';
+      h+='</div>';
+      if(isExplOpen) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:4px;background:var(--bg3);border-radius:6px;padding:.4rem .55rem">'+explText+'</div>';
+    } else {
+      h+='<div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</div>';
+    }
     if(t) h+='<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+t+'</span>';
     if(ST.espacioReducido){
       var nota=notaEspacioReducido(n);
@@ -7668,7 +7691,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v162';
+const APP_VERSION='v163';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

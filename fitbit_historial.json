@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-08-24T03:55:55.138581+00:00",
+  "actualizado": "2026-08-24T07:01:07.860212+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 9564,
@@ -35,14 +35,17 @@
       "sueno_rem_min": 92
     },
     "2026-08-24": {
-      "pasos": 210,
-      "distancia_km": 0.13,
-      "minutos_activos": 12,
-      "calorias_dia": 456.71,
-      "sueno_total_min": 46,
-      "sueno_profundo_min": 30,
-      "sueno_ligero_min": 16,
-      "sueno_rem_min": 0
+      "pasos": 261,
+      "distancia_km": 0.17,
+      "minutos_activos": 15,
+      "calorias_dia": 687.53,
+      "fc_reposo": 50.0,
+      "hrv": 40.8,
+      "spo2": 94.1,
+      "sueno_total_min": 429,
+      "sueno_profundo_min": 74,
+      "sueno_ligero_min": 290,
+      "sueno_rem_min": 65
     }
   }
 }

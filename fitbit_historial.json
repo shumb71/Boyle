@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-08-24T15:40:22.592608+00:00",
+  "actualizado": "2026-08-24T18:42:23.216617+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 9564,
@@ -35,10 +35,10 @@
       "sueno_rem_min": 92
     },
     "2026-08-24": {
-      "pasos": 6152,
-      "distancia_km": 3.58,
-      "minutos_activos": 312,
-      "calorias_dia": 1782.37,
+      "pasos": 8779,
+      "distancia_km": 5.51,
+      "minutos_activos": 447,
+      "calorias_dia": 2651.33,
       "fc_reposo": 50.0,
       "hrv": 40.8,
       "spo2": 94.1,

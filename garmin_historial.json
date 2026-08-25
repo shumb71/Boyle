@@ -2682,13 +2682,13 @@
     },
     "2026-08-25": {
       "fecha": "2026-08-25",
-      "pasos": 2807,
-      "calorias_dia": 1734.0,
-      "calorias_activas": 32.0,
-      "distancia_km": 2.32,
+      "pasos": 3256,
+      "calorias_dia": 1872.0,
+      "calorias_activas": 42.0,
+      "distancia_km": 2.69,
       "minutos_activos": 0,
       "fc_reposo": 51,
-      "estres_medio": 26
+      "estres_medio": 27
     }
   },
   "actualizado": "2026-08-25"

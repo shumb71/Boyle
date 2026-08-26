@@ -554,7 +554,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=162', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=169', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -2637,7 +2637,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[]};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[]};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2666,6 +2666,8 @@ function getConfigFields(){
     notasGenerales:ST.notasGenerales||[],
     alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},nutricionComidaAlimentos:ST.nutricionComidaAlimentos||{},
     boxeoBloque:ST.boxeoBloque||'B1',boxeoChecklist:ST.boxeoChecklist||{},boxeoSesiones:ST.boxeoSesiones||[],boxeoLibreItems:ST.boxeoLibreItems||[],
+    espacioReducido:!!ST.espacioReducido,githubToken:ST.githubToken||'',
+    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
@@ -2704,7 +2706,8 @@ function aplicarConfigRemoto(data){
     'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','eval',
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
-    'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems'];
+    'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
+    'espacioReducido','githubToken','actividadesFitbitOcultas'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2824,7 +2827,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -4303,6 +4306,14 @@ function autoRegistrarFecha(){
     saveSesionV2(hoy);
     try{ renderFinalizarStatus(); }catch(e){}
     try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
+    // Backup automático a Drive, con límite de 6h — este es el flujo real que usa Jou
+    // (autoRegistrarFecha, no finalizarSesion), ver bug pendiente detectado 22/08.
+    try{
+      var _ultimoBk=ST.ultimoBackup?new Date(ST.ultimoBackup).getTime():0;
+      if(Date.now()-_ultimoBk>6*60*60*1000){
+        backupJSONDrive().catch(function(e){console.warn('backup auto (autoRegistrarFecha)',e);});
+      }
+    }catch(e){}
   }catch(e){ console.warn('autoRegistrarFecha',e); }
 }
 
@@ -5266,9 +5277,10 @@ const DRIVE_FOLDER_NAME = 'Entreno Boyle';
 const DRIVE_FILE_NAME   = 'Entreno_Boyle.xlsx';
 var _driveFileId = null; // se cachea tras la primera búsqueda
 
-async function getGdriveToken(){
-  // Si ya tenemos un token cacheado, usarlo
-  if(window._gdriveToken) return window._gdriveToken;
+var _gdriveTokenExpiry = 0; // timestamp ms en que caduca el token cacheado
+async function getGdriveToken(forceRefresh){
+  // Si ya tenemos un token cacheado y sigue vigente, usarlo
+  if(!forceRefresh && window._gdriveToken && Date.now() < _gdriveTokenExpiry) return window._gdriveToken;
   // Pedir token nuevo via google.accounts.oauth2
   return new Promise(function(resolve, reject){
     if(typeof google==='undefined'||!google.accounts||!google.accounts.oauth2){
@@ -5280,6 +5292,9 @@ async function getGdriveToken(){
       callback:function(resp){
         if(resp.error){reject(new Error(resp.error));return;}
         window._gdriveToken=resp.access_token;
+        // Los tokens de Google suelen durar ~3600s; refrescamos 60s antes de que caduquen de verdad
+        var ttl=resp.expires_in?parseInt(resp.expires_in,10):3300;
+        _gdriveTokenExpiry=Date.now()+Math.max(60,ttl-60)*1000;
         resolve(resp.access_token);
       }
     });
@@ -5480,6 +5495,15 @@ function buildEntrenoExcel(){
   }
 }
 
+// Campos que solo deben vivir en ESTE dispositivo y nunca deben salir en un backup/export
+// (aunque estén en ST para poder usarlos localmente). Ver incidente token GitHub 22/08.
+const CAMPOS_SENSIBLES_BACKUP=['githubToken'];
+function datosParaBackup(){
+  var clon={};
+  Object.keys(ST).forEach(function(k){ if(CAMPOS_SENSIBLES_BACKUP.indexOf(k)<0) clon[k]=ST[k]; });
+  return JSON.stringify(clon,null,2);
+}
+
 async function backupJSONDrive(){
   var token=await getGdriveToken();
   if(!token) return; // silencioso — no molestar al usuario
@@ -5491,7 +5515,7 @@ async function backupJSONDrive(){
     if(!backupFolderId) return;
     var fecha=hoyLocal();
     var nombre='backup_'+fecha+'.json';
-    var datos=JSON.stringify(ST, null, 2);
+    var datos=datosParaBackup();
     var metadata={name:nombre,mimeType:'application/json',parents:[backupFolderId]};
     // Buscar si ya existe backup de hoy y sobreescribir
     var searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D\''+nombre+'\'%20and%20\''+backupFolderId+'\'%20in%20parents%20and%20trashed%3Dfalse&fields=files(id)',{
@@ -5507,6 +5531,8 @@ async function backupJSONDrive(){
     if(!existingId) form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
     form.append('file',new Blob([datos],{type:'application/json'}));
     await fetch(url,{method:method,headers:{'Authorization':'Bearer '+token},body:form});
+    ST.ultimoBackup=new Date().toISOString();
+    save();
     console.log('Backup JSON guardado en Drive:', nombre);
   }catch(e){
     console.warn('backupJSONDrive error:',e);
@@ -5514,6 +5540,7 @@ async function backupJSONDrive(){
 }
 
 async function getOrCreateSubFolder(parentId, nombre){
+  var token=await getGdriveToken();
   if(!token) return null;
   try{
     var searchResp=await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D\''+nombre+'\'%20and%20\''+parentId+'\'%20in%20parents%20and%20mimeType%3D\'application%2Fvnd.google-apps.folder\'%20and%20trashed%3Dfalse&fields=files(id)',{
@@ -6915,6 +6942,131 @@ function wuGetData(){
     custom:ST.warmupCustom[checkKey]||[]};
 }
 
+var warmupFaseOpen={};
+function toggleWarmupFase(checkKey,fi){
+  var k=checkKey+'_f'+fi;
+  warmupFaseOpen[k]=!warmupFaseOpen[k];
+  renderWarmupBody();
+}
+// EXPLICACIONES — explicaciones largas "cómo se hace" por nombre exacto de ejercicio.
+// Si no hay entrada aquí, se usa la descripción corta ('d') que ya trae cada ejercicio.
+const EXPLICACIONES={
+  'Foam roll gluteo y rotadores de cadera':'Siéntate sobre el rodillo apoyando un glúteo, cruza el tobillo de ese lado sobre la rodilla contraria (posición de "4") e inclínate hacia ese lado. Rueda despacio adelante-atrás sobre el glúteo profundo, parando unos segundos si encuentras un punto tenso.',
+  'Foam roll isquiotibiales':'Siéntate con el rodillo bajo la parte de atrás del muslo, apóyate con las manos detrás y rueda desde debajo del glúteo hasta antes de la corva, sin pasar sobre la rodilla. Puedes cruzar una pierna sobre la otra para más presión.',
+  'Foam roll gemelos':'Siéntate con el rodillo bajo la pantorrilla, manos apoyadas detrás para levantar la cadera del suelo, y rueda desde detrás de la rodilla hasta el tobillo. Cruza el tobillo contrario encima para añadir presión si lo necesitas.',
+  'Foam roll dorsal (zona lumbar/alta)':'Tumbado boca arriba con el rodillo perpendicular a la columna y los brazos cruzados sobre el pecho, eleva la cadera ligeramente y rueda desde la zona media hasta la parte alta de la espalda, evitando rodar directamente sobre la zona lumbar baja.',
+  'Foam roll dorsal':'Tumbado boca arriba con el rodillo perpendicular a la columna y los brazos cruzados sobre el pecho, eleva la cadera ligeramente y rueda desde la zona media hasta la parte alta de la espalda, evitando rodar directamente sobre la zona lumbar baja.',
+  'Foam roll hombro posterior':'Tumbado de lado con el rodillo bajo el omóplato y el brazo de ese lado cruzado sobre el pecho, rueda suavemente la parte posterior del hombro buscando puntos de tensión, sin cargar el cuello.',
+  'Foam roll aductores y cuadriceps':'Boca abajo: para el cuádriceps, coloca el rodillo bajo el muslo y rueda desde la cadera hasta antes de la rodilla; para los aductores, abre la rodilla hacia fuera (como una rana) y rueda desde la ingle hacia la rodilla por la cara interna.',
+  'Respiracion supina rodillas flexionadas':'Tumbado boca arriba con las rodillas dobladas y los pies apoyados, respira profundo hinchando el abdomen (no solo el pecho) y suelta el aire despacio. Sirve para bajar el tono del sistema nervioso antes de moverte.',
+  'Rotacion 90/90 de cadera (interna y externa)':'Sentado en el suelo con ambas piernas dobladas a 90° (una hacia dentro, otra hacia fuera, en forma de Z), rota el tronco para pasar ambas rodillas de un lado a otro sin apoyarte con las manos, sintiendo el movimiento en la cadera.',
+  'Rotacion 90/90 de cadera':'Sentado en el suelo con ambas piernas dobladas a 90° (una hacia dentro, otra hacia fuera, en forma de Z), rota el tronco para pasar ambas rodillas de un lado a otro sin apoyarte con las manos, sintiendo el movimiento en la cadera.',
+  'Estiramiento box hip flexor':'Zancada baja con la rodilla trasera apoyada en una caja o cojín y el torso vertical. Aprieta el glúteo de la pierna trasera y empuja la cadera hacia delante y abajo para sentir el estiramiento en la parte delantera de esa cadera.',
+  'Adductor rock':'A cuatro patas, estira una pierna hacia el lado con el pie plano en el suelo y balancea la cadera hacia atrás, hacia el talón de la rodilla apoyada, sintiendo el estiramiento en la ingle. Es dinámico: vas y vuelves, no te quedas parado.',
+  'Spiderman alternado':'Zancada larga hacia delante apoyando la mano del mismo lado en el suelo, con la cadera baja sintiendo la ingle y el flexor de cadera trasero. Puedes añadir un giro de tronco levantando el brazo hacia el techo, avanzando y alternando pierna en cada paso.',
+  'Rotacion toracica a cuatro patas (quadruped T-spine)':'A cuatro patas, lleva una mano a la nuca y rota el codo hacia arriba abriendo el pecho hacia ese lado, siguiendo el movimiento con la mirada. Vuelve al centro y repite; el giro sale de la espalda media, no de la zona lumbar.',
+  'Rotacion toracica a cuatro patas':'A cuatro patas, lleva una mano a la nuca y rota el codo hacia arriba abriendo el pecho hacia ese lado, siguiendo el movimiento con la mirada. Vuelve al centro y repite; el giro sale de la espalda media, no de la zona lumbar.',
+  'Leg lower':'Tumbado boca arriba con las piernas rectas hacia el techo, baja una pierna despacio hacia el suelo manteniendo la zona lumbar pegada al suelo en todo momento. Si la espalda se despega, no bajes tanto la pierna.',
+  'Supine floor slide':'Tumbado boca arriba, rodillas dobladas, brazos en forma de W con codos y muñecas tocando el suelo. Desliza los brazos hacia arriba (como un ángel de nieve) manteniendo siempre el contacto de brazos y zona lumbar con el suelo.',
+  'Cook hip lift':'Tumbado boca arriba, lleva una rodilla al pecho sujetándola con las manos y empuja el talón de la otra pierna contra el suelo para elevar la cadera, apretando fuerte el glúteo de esa pierna. Mantén arriba los segundos indicados.',
+  'Mini-band rotacion externa/interna':'Con una mini-band alrededor de tobillos o rodillas, en posición atlética, rota una pierna hacia fuera y hacia dentro contra la resistencia de la goma, manteniendo la pelvis estable.',
+  'Mini-band squat':'Con la mini-band por encima de las rodillas, haz una sentadilla manteniendo tensión constante en la goma (rodillas hacia fuera, no hacia dentro) durante todo el recorrido.',
+  'Mini-band walk lateral':'Con la mini-band por encima de rodillas o tobillos, en posición de media sentadilla, da pasos laterales cortos manteniendo tensión en la goma y sin que las rodillas colapsen hacia dentro.',
+  'Bear crawl':'A cuatro patas con las rodillas ligeramente despegadas del suelo, desplázate hacia delante moviendo mano y pie contrario a la vez, manteniendo la cadera baja y la espalda plana.',
+  'Inchworm':'De pie, dobla el tronco y lleva las manos al suelo, camina con las manos hacia delante hasta quedar en posición de plancha, y luego camina con los pies hacia las manos. Piernas lo más rectas posible.',
+  'Knee hug':'Caminando hacia delante, lleva una rodilla al pecho abrazándola con ambas manos, aprieta un segundo y suelta dando el siguiente paso, alternando pierna.',
+  'Leg cradle':'Caminando hacia delante, sujeta el tobillo y la rodilla de una pierna levantada y ábrela hacia fuera y arriba, sintiendo el estiramiento en el glúteo, luego suelta y avanza con el siguiente paso.',
+  'Reverse lunge to hamstring stretch':'Da un paso atrás en zancada y, al volver al centro, endereza esa pierna delante y flexiona el tronco hacia el pie manteniendo la espalda recta, sintiendo el isquiotibial. Alterna pierna avanzando.',
+  'Single-leg straight-leg deadlift sin peso':'De pie sobre una pierna, inclina el tronco hacia delante manteniendo la pierna de apoyo casi recta, mientras la otra pierna se eleva atrás en línea con el tronco (forma de T). Vuelve arriba controlado.',
+  'Half-kneeling ankle mobility':'Semiarrodillado frente a una pared, con el pie delantero a unos 10 cm, empuja la rodilla delantera hacia la pared sin despegar el talón del suelo. Si tocas con facilidad, aléjate un poco; si no llegas, acércate.',
+  'Body-weight squat':'Pies a la anchura de los hombros, baja la cadera hacia atrás y abajo manteniendo el pecho arriba y los talones en el suelo, hasta donde la técnica te lo permita, y sube controlado.',
+  'Split squat con isometrico 5 seg':'En posición de zancada estática, baja hasta que la rodilla trasera casi toque el suelo y mantén esa posición 5 segundos antes de subir, con el torso vertical.',
+  'Lateral squat':'Pies muy separados, flexiona una pierna llevando la cadera hacia ese lado mientras la pierna contraria queda estirada, con ambos pies planos en el suelo. Vuelve al centro y cambia de lado.',
+  'Rotational squat':'Haz una sentadilla y, al bajar, rota el tronco hacia la pierna de apoyo llevando los brazos con el giro, volviendo al centro al subir. Alterna el lado del giro.',
+  'Backward lunge walk + estiramiento isquios':'Combina una zancada hacia atrás con, al recuperar, un estiramiento de isquiotibial llevando el tronco hacia la pierna delantera estirada, avanzando paso a paso.',
+  'Split squat':'Posición de zancada estática (no caminando), baja controlado flexionando ambas rodillas hasta que la rodilla trasera roce el suelo, manteniendo el torso erguido.',
+  'Forward lunge':'Da un paso largo hacia delante, flexiona ambas rodillas hasta 90° manteniendo el torso vertical, y empuja para volver a la posición inicial o continuar avanzando.',
+  'Lateral lunge':'Da un paso amplio hacia el lado, flexiona esa rodilla manteniendo la contraria estirada y el pie plano en el suelo, empujando de vuelta al centro.',
+  'Rotational lunge':'Da un paso hacia delante en zancada y, ya abajo, rota el tronco hacia la pierna delantera, volviendo al centro antes de recuperar la posición inicial.',
+  'Single-leg stiff-leg deadlift sin peso':'De pie sobre una pierna con la rodilla de apoyo casi recta, inclina el tronco hacia delante mientras la pierna libre se eleva atrás formando una línea recta con la espalda, y vuelve arriba controlado.',
+  'Straight-leg walk':'Caminando con las piernas casi rectas, lleva una pierna adelante y toca la punta del pie con la mano contraria, alternando en cada paso.',
+  'Straight-leg skip':'Igual que el straight-leg walk pero con un pequeño salto en cada paso, piernas rectas tocando la punta del pie contrario en el aire.',
+  'High-knee run':'Corre en el sitio o avanzando llevando las rodillas bien altas (a la altura de la cadera) a ritmo rápido, apoyando la parte delantera del pie.',
+  'Butt kick':'Trota llevando el talón hacia el glúteo en cada zancada, a ritmo rápido, con el tronco erguido.',
+  'High-knee march':'Igual que el high-knee run pero caminando en vez de trotando, más controlado, llevando cada rodilla a la altura de la cadera antes de dar el paso.',
+  'Linear skip':'Skip progresivo hacia delante (rodilla arriba + pequeño salto), aumentando la velocidad y la amplitud del salto en cada repetición hasta cubrir la distancia.',
+  'Butt kick con rodillas':'Similar al butt kick pero enfatizando la flexión de rodilla (el talón sube más y más rápido), manteniendo el muslo casi vertical.',
+  'Lateral march':'Da pasos laterales marchando, levantando bien la rodilla de la pierna que se mueve antes de apoyarla al lado.',
+  'Lateral skip':'Igual que el lateral march pero con un pequeño salto lateral en cada paso.',
+  'Cross-behind skip':'Skip lateral en el que el pie que se mueve cruza por detrás de la pierna de apoyo antes de abrirse hacia el lado.',
+  'Cross-in-front skip':'Skip lateral en el que el pie que se mueve cruza por delante de la pierna de apoyo antes de abrirse hacia el lado.',
+  'Shuffle':'Posición atlética baja, desplázate lateralmente con pasos cortos y rápidos sin cruzar los pies ni juntarlos del todo.',
+  'Carioca':'Desplázate lateralmente cruzando un pie alternando por delante y por detrás de la pierna de apoyo, con las caderas rotando ligeramente.',
+  'Lateral crawl':'A cuatro patas con la cadera baja, desplázate hacia un lado moviendo mano y pie del mismo lado a la vez.',
+  'Speed — Half-kneeling sprint':'Desde posición semi-arrodillada (una rodilla en el suelo), sal explosivamente hacia delante llevando la rodilla trasera arriba y acelerando los primeros pasos. Es solo para aprender la mecánica de salida, sin buscar máxima velocidad.',
+  'Linear plyos — Box Jump':'Sitúate frente a un cajón, flexiona cadera y rodillas y salta con ambos pies a la vez, aterrizando suave y controlado en la misma posición de la que despegaste. Baja caminando, nunca saltando del cajón.',
+  'Medicine ball — Standing chest pass':'De pie frente a una pared, lanza el balón medicinal desde el pecho con ambas manos, extendiendo los brazos con fuerza, y recupéralo al rebote.',
+  'Medicine ball — Standing overhead slam':'Sube el balón por encima de la cabeza con los brazos extendidos y lánzalo con fuerza contra el suelo delante de ti, usando todo el cuerpo, no solo los brazos.',
+  'Activacion especifica — 1 serie al 40%':'Una serie muy ligera (aproximadamente al 40% de tu peso habitual) del primer ejercicio de fuerza que vas a hacer ese día, para ensayar el patrón técnico justo antes de cargar peso real.',
+  'Speed — 2-point start':'Desde posición de pie con el tronco inclinado hacia delante (2 puntos de apoyo: los pies), sal explosivamente empujando fuerte con la pierna trasera.',
+  'Linear plyos — Hurdle Jump and Stick':'Salta con ambos pies sobre una valla baja y aterriza quieto y estable antes del siguiente salto, sin rebotar. Prioriza un aterrizaje silencioso y controlado sobre la altura del salto.',
+  'Speed — Plate sprint':'Igual que una salida de velocista, pero empujando un disco de peso por delante durante los primeros metros para añadir resistencia a la salida.',
+  'Linear plyos — Hurdle Jump With Bounce':'Igual que el salto de vallas anterior, pero en vez de pararte al aterrizar, rebotas inmediatamente hacia el siguiente salto, aprovechando la elasticidad de la pierna (ciclo estiramiento-acortamiento).',
+  'Speed — Sprinter start':'Salida de velocista completa: posición baja con ambas manos en el suelo, empuje explosivo con ambas piernas y aceleración progresiva.',
+  'Medicine ball — Sprinter start chest pass':'Desde la posición de salida de velocista, lanza el balón medicinal desde el pecho hacia delante en el mismo instante en que sales, combinando el patrón de salida con el lanzamiento.',
+  'Ladder — Shuffle wide + stick':'Con la escalera de agilidad en el suelo, desplázate lateralmente pisando dentro de cada hueco con pasos amplios, aterrizando estable en cada apoyo antes de continuar.',
+  'Ladder — Shuffle quick + stick':'Igual que el shuffle wide pero con pasos más rápidos y cortos, manteniendo igualmente un aterrizaje estable en cada hueco.',
+  'Ladder — Cross-in-front':'Avanza lateralmente por la escalera cruzando un pie por delante del otro en cada hueco, alternando el pie que cruza.',
+  'Ladder — Cross-behind':'Igual que el cross-in-front pero cruzando el pie por detrás en cada hueco.',
+  'Ladder — In-in-out-out':'Dos apoyos dentro del hueco y dos fuera, en secuencia rápida, avanzando hueco a hueco por la escalera.',
+  'Ladder — Lateral in-in-out-out':'Igual que el in-in-out-out pero desplazándote lateralmente a lo largo de la escalera en vez de hacia delante.',
+  'Ladder — Scissors':'Con un pie dentro y otro fuera del hueco, alterna su posición con un pequeño salto, como unas tijeras, avanzando hueco a hueco.',
+  'Ladder — Crossover stick':'Cruza lateralmente por la escalera llevando un pie por delante del otro en cada hueco y aterrizando estable antes de continuar.',
+  'Lateral plyos — Lateral Bound and Stick':'Salta lateralmente a una sola pierna, aterrizando estable sobre la pierna contraria y manteniendo la postura un segundo antes de saltar de vuelta al otro lado.',
+  'Medicine ball — Standing overhead throw':'De pie frente a la pared, lanza el balón por encima de la cabeza con ambos brazos hacia un punto marcado arriba, usando la extensión de todo el cuerpo.',
+  'Medicine ball — Standing side toss':'Desde posición de rodilla en el suelo (half-kneeling) de lado a la pared, lanza el balón medicinal rotando el tronco, como un giro de golpeo lateral.',
+  'Ladder — Shuffle quick + stick ':'Igual que el shuffle wide pero con pasos más rápidos y cortos, manteniendo igualmente un aterrizaje estable en cada hueco.',
+  'Ladder — 2-in-2-out + stick':'Dos apoyos dentro del hueco y dos fuera, con un aterrizaje estable (stick) antes de pasar al siguiente hueco.',
+  'Ladder — Lateral in-in-out-out ':'Igual que el in-in-out-out pero desplazándote lateralmente a lo largo de la escalera en vez de hacia delante.',
+  'Ladder — Crossover stick to sprint':'Igual que el crossover stick, pero al llegar al final de la escalera, sales inmediatamente en sprint hacia delante.',
+  'Lateral plyos — Single-leg Lateral Hurdle Hop and Stick':'Salta lateralmente sobre una mini-valla a una sola pierna, aterrizando estable antes del siguiente salto (medial o lateral según toque), sin encadenar saltos seguidos.',
+  'Medicine ball — Stepping side toss':'Igual que el side toss pero añadiendo un paso de aproximación lateral antes de rotar y lanzar el balón contra la pared.',
+  'Speed — Plate sprint ':'Igual que una salida de velocista, pero empujando un disco de peso por delante durante los primeros metros para añadir resistencia a la salida.',
+  'Ladder — 1-2-3 cross':'Secuencia de tres apoyos con cruce de pierna en el tercer paso, avanzando hueco a hueco por la escalera.',
+  'Ladder — Hip switch':'Con la cadera orientada hacia la escalera, alterna rápidamente la pierna que pisa dentro de cada hueco, rotando la cadera en cada cambio.',
+  'Ladder — Crossover':'Cruza lateralmente por la escalera alternando el pie que pasa por delante en cada hueco, a ritmo continuo.',
+  'Ladder — Crossover to sprint':'Igual que el crossover, terminando con una salida en sprint al llegar al final de la escalera.',
+  'Lateral plyos — Lateral Hurdle Hop With Bounce':'Igual que el salto lateral de vallas, pero encadenando un rebote inmediato hacia el siguiente salto en vez de pararte a estabilizar.',
+  'Ladder — Scissors reach-behind':'Igual que el scissors pero añadiendo un alcance hacia atrás con el brazo contrario en cada cambio, para incorporar rotación de tronco.',
+  'Ladder — Crossover sprint and return':'Cruza la escalera lateralmente, sal en sprint al terminar, y vuelve corriendo a la posición inicial.',
+  'Medicine ball — Shuffle side toss':'Con un desplazamiento lateral (shuffle) previo, rota el tronco y lanza el balón medicinal contra la pared al llegar, combinando desplazamiento con potencia rotacional.'
+};
+function getExplicacion(nombre,fallback){
+  return EXPLICACIONES[nombre]||fallback||'';
+}
+var warmupExplOpen={};
+function toggleWarmupExpl(checkKey,key){
+  var k=checkKey+'_'+key;
+  warmupExplOpen[k]=!warmupExplOpen[k];
+  renderWarmupBody();
+}
+function toggleEspacioReducido(){
+  ST.espacioReducido=!ST.espacioReducido;
+  save(); renderWarmupBody();
+}
+// Notas de sustitucion para espacio reducido — regla por palabras clave en el nombre del ejercicio.
+function notaEspacioReducido(nombre){
+  var n=nombre.toLowerCase();
+  if(n.indexOf('ladder')>=0) return 'Sin escalera: marca los huecos con cinta/tiza en 2-3 metros, o marca el patrón de pies en el sitio.';
+  if(n.indexOf('sprint')>=0) return 'Sustituye por 5-8 zancadas explosivas en el sitio, sin desplazarte.';
+  if(n.indexOf('hurdle')>=0) return 'Usa una línea en el suelo en vez de vallas, mismo número de repeticiones.';
+  if(n.indexOf('yardas')>=0 || n.indexOf('shuffle')>=0 || n.indexOf('skip')>=0 || n.indexOf('march')>=0 ||
+     n.indexOf('walk')>=0 || n.indexOf('run')>=0 || n.indexOf('carioca')>=0 || n.indexOf('crawl')>=0 ||
+     n.indexOf('lunge')>=0 || n.indexOf('cradle')>=0)
+    return 'Hazlo en el sitio o reduce a 2-3 metros ida y vuelta, mismo número de repeticiones.';
+  return null;
+}
+
 function renderWarmupBody(){
   var dB=getDiaBoyle();
   var body=document.getElementById("warmup-body");
@@ -6937,17 +7089,30 @@ function renderWarmupBody(){
 
   var out=[];
   out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+tipoDia+'</span><span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+doneItems+'/'+totalItems+'</span></div>');
-  out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.75rem;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div></div>');
+  out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.6rem;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div></div>');
+  out.push('<div onclick="toggleEspacioReducido()" style="display:flex;align-items:center;justify-content:space-between;background:'+(ST.espacioReducido?'var(--green-bg)':'var(--bg3)')+';border-radius:var(--rs);padding:.45rem .7rem;margin-bottom:.75rem;cursor:pointer">'
+    +'<span style="font-size:12px;font-weight:600;color:'+(ST.espacioReducido?'var(--green-text)':'var(--text2)')+'">🏠 Espacio reducido</span>'
+    +'<span style="font-size:11px;font-weight:700;color:'+(ST.espacioReducido?'var(--green-text)':'var(--text3)')+'">'+(ST.espacioReducido?'ON':'OFF')+'</span></div>');
 
   function itemRow(key,n,desc,t,imgName){
     var isDone=checks[key]||false;
     var ejImgs=imgName?getEjImgs(imgName):[];
+    var isExplOpen=!!warmupExplOpen[checkKey+'_'+key];
+    var explText=getExplicacion(n,desc);
     var h='<div style="padding:.45rem 0;border-bottom:.5px solid var(--border)"><div style="display:flex;align-items:flex-start;gap:10px">';
     h+='<div onclick="toggleWarmupCheck(\''+checkKey+'\',\''+key+'\')" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">'+(isDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')+'</div>';
     if(ejImgs.length) h+='<img src="'+ejImgs[0]+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">';
-    h+='<div style="flex:1"><div style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</div>';
-    if(desc) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:1px">'+desc+'</div>';
+    h+='<div style="flex:1">';
+    h+='<div onclick="toggleWarmupExpl(\''+checkKey+'\',\''+key+'\')" style="cursor:pointer;display:flex;align-items:center;gap:5px">';
+    h+='<span style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</span>';
+    h+='<i class="ti ti-chevron-'+(isExplOpen?'down':'right')+'" style="font-size:12px;color:var(--text3);flex-shrink:0"></i>';
+    h+='</div>';
+    if(isExplOpen) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:4px;background:var(--bg3);border-radius:6px;padding:.4rem .55rem">'+(explText||'Sin descripción todavía.')+'</div>';
     if(t) h+='<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+t+'</span>';
+    if(ST.espacioReducido){
+      var nota=notaEspacioReducido(n);
+      if(nota) h+='<div style="font-size:11px;color:var(--green-text);background:var(--green-bg);border-radius:6px;padding:.3rem .5rem;margin-top:4px">🏠 '+nota+'</div>';
+    }
     h+='<div style="margin-top:3px">'+rdRefsBtnHtml(n)+'</div>';
     h+='</div>';
     h+='<button onclick="removeWarmupItem(\''+checkKey+'\',\''+key+'\')" title="Quitar" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1;flex-shrink:0"><i class="ti ti-x"></i></button>';
@@ -6961,8 +7126,16 @@ function renderWarmupBody(){
     if(!visibles.length) return;
     if(!firstFase) out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
     firstFase=false;
-    out.push('<div style="margin-bottom:.4rem"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem"><span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span><span style="font-size:11px;color:var(--text3)">'+fase.tiempo+'</span></div>');
-    visibles.forEach(function(o){ out.push(itemRow(o.key,o.item.n,o.item.d,o.item.t,o.item.n)); });
+    var faseKey=checkKey+'_f'+fi;
+    var isOpen=!!warmupFaseOpen[faseKey];
+    var faseDone=visibles.filter(function(o){return checks[o.key];}).length;
+    out.push('<div style="margin-bottom:.4rem">'
+      +'<div onclick="toggleWarmupFase(\''+checkKey+'\','+fi+')" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;cursor:pointer;padding:.15rem 0">'
+      +'<div style="display:flex;align-items:center;gap:6px"><i class="ti ti-chevron-'+(isOpen?'down':'right')+'" style="font-size:14px;color:var(--text3)"></i><span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span></div>'
+      +'<span style="font-size:11px;color:var(--text3)">'+faseDone+'/'+visibles.length+' · '+fase.tiempo+'</span></div>');
+    if(isOpen){
+      visibles.forEach(function(o){ out.push(itemRow(o.key,o.item.n,o.item.d,o.item.t,o.item.n)); });
+    }
     out.push('</div>');
   });
 
@@ -7856,11 +8029,11 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v162';
+const APP_VERSION='v169';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
-  var datos=JSON.stringify(ST, null, 2);
+  var datos=datosParaBackup();
   var blob=new Blob([datos],{type:'application/json'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
@@ -8065,7 +8238,65 @@ function mergeDiaFitbit(fecha,nuevo){
   if(!ST.garminHist[fecha]) ST.garminHist[fecha]={};
   var actual=ST.garminHist[fecha];
   FITBIT_OWNED_FIELDS.forEach(function(k){ if(nuevo[k]!==undefined) actual[k]=nuevo[k]; });
+  // actividadesFitbit: lista de CUALQUIER sesión de ejercicio registrada en Google Health
+  // (no solo boxeo). Separado a propósito de 'actividades' (exclusivo de Garmin).
+  if(nuevo.actividadesFitbit!==undefined) actual.actividadesFitbit=nuevo.actividadesFitbit;
   actual._fuenteFitbit=true;
+}
+
+// Traduce el exerciseType crudo de Google Health a nombre+icono en español. Si no reconoce
+// el tipo (API con valores que aún no hemos visto), lo muestra igualmente de forma legible
+// en vez de ocultarlo.
+const FITBIT_EXTYPE_LABEL={
+  RUNNING:{n:'Running',i:'🏃'}, WALKING:{n:'Andar',i:'🚶'}, BIKING:{n:'Bici',i:'🚴'},
+  AEROBIC_WORKOUT:{n:'Aeróbico',i:'🏋️'}, SWIMMING:{n:'Natación',i:'🏊'},
+  ELLIPTICAL:{n:'Elíptica',i:'🏃'}, ROWING:{n:'Remo',i:'🚣'}, YOGA:{n:'Yoga',i:'🧘'},
+  BOXING:{n:'Boxeo',i:'🥊'}, KICKBOXING:{n:'Kickboxing',i:'🥊'},
+  STRENGTH_TRAINING:{n:'Fuerza',i:'💪'}, WEIGHT_LIFTING:{n:'Pesas',i:'💪'},
+  HIKING:{n:'Senderismo',i:'🥾'}, DANCING:{n:'Baile',i:'💃'},
+  MARTIAL_ARTS:{n:'Artes marciales',i:'🥋'}, HIIT:{n:'HIIT',i:'🔥'}
+};
+function fitbitExLabel(tipo){
+  var t=FITBIT_EXTYPE_LABEL[tipo];
+  if(t) return t;
+  var legible=(tipo||'Actividad').replace(/_/g,' ').toLowerCase();
+  legible=legible.charAt(0).toUpperCase()+legible.slice(1);
+  return {n:legible,i:'🏃'};
+}
+
+// HTML de las actividades de Fitbit para un día concreto (g = ST.garminHist[fecha]),
+// excluyendo las que el usuario haya ocultado. onclick de "quitar" recibe la fecha para
+// saber qué vista refrescar después.
+function renderActividadesFitbitHtml(g,fecha){
+  var lista=(g&&g.actividadesFitbit)||[];
+  var ocultas=ST.actividadesFitbitOcultas||[];
+  lista=lista.filter(function(a){ return !a.id||ocultas.indexOf(a.id)<0; });
+  if(!lista.length) return '';
+  var h='<div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em">🏃 ACTIVIDADES (Fitbit)</div>';
+  h+=lista.map(function(a){
+    var lbl=fitbitExLabel(a.tipo);
+    var meta=[];
+    if(a.duracion_min) meta.push(a.duracion_min+' min');
+    if(a.calorias) meta.push(a.calorias+' kcal');
+    if(a.fc_media) meta.push('FC '+a.fc_media+(a.fc_max?'/'+a.fc_max:''));
+    return '<div style="background:var(--bg3);border-radius:var(--rs);padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">'
+      +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+lbl.i+' '+lbl.n+'</span>'
+      +'<span style="display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:11px;color:var(--text2)">'+meta.join(' · ')+'</span>'
+      +(a.id?'<button onclick="ocultarActividadFitbit(\''+a.id+'\',\''+(fecha||'')+'\')" title="Quitar de la app" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:13px;line-height:1"><i class="ti ti-x"></i></button>':'')
+      +'</span></div>';
+  }).join('');
+  return h;
+}
+// Oculta una actividad de Fitbit (por id) solo en esta app — no la borra de Google Health.
+// Se guarda en ST y sincroniza entre dispositivos, así que ocultar en uno la oculta en todos.
+function ocultarActividadFitbit(id,fecha){
+  if(!id) return;
+  if(!ST.actividadesFitbitOcultas) ST.actividadesFitbitOcultas=[];
+  if(ST.actividadesFitbitOcultas.indexOf(id)<0) ST.actividadesFitbitOcultas.push(id);
+  save();
+  if(fecha){ try{calSelDia(fecha);}catch(e){} }
+  try{renderGarminHoy();}catch(e){}
 }
 
 async function fetchGarminAuto(manual) {
@@ -8217,11 +8448,19 @@ async function sheetsAppend(sheetName, values){
   var sheetId=await getSheetsId();
   if(!sheetId) return false;
   var range=encodeURIComponent(sheetName+'!A:Z');
-  var resp=await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify({values:[values]})
-  });
+  function intentar(tok){
+    return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+sheetId+'/values/'+range+':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({values:[values]})
+    });
+  }
+  var resp=await intentar(token);
+  if(resp.status===401){
+    token=await getGdriveToken(true);
+    if(!token) return false;
+    resp=await intentar(token);
+  }
   return resp.ok;
 }
 
@@ -8467,6 +8706,7 @@ function calSelDia(fecha){
         ${g.hrv?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:14px;font-weight:700;color:var(--blue)">${g.hrv} ms</div><div style="font-size:10px;color:var(--text2)">HRV</div></div>`:''}
         ${g.spo2?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:14px;font-weight:700;color:var(--blue)">${g.spo2}%</div><div style="font-size:10px;color:var(--text2)">SpO2</div></div>`:''}
       </div>`:''}
+      ${renderActividadesFitbitHtml(g,fecha)}
     </div>`;
   } else {
     htmlG=`<div style="color:var(--text3);font-size:12px;margin-bottom:.75rem">Sin datos Garmin/Fitbit este día</div>`;
@@ -8826,7 +9066,7 @@ function renderGarminHoy(){
       ${g.hrv?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">${g.hrv} ms</div><div style="font-size:10px;color:var(--text2)">HRV</div></div>`:''}
       ${g.spo2?`<div style="background:var(--bg3);border-radius:var(--rs);padding:.5rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">${g.spo2}%</div><div style="font-size:10px;color:var(--text2)">SpO2</div></div>`:''}
     </div>`:''}`;
-  el.innerHTML = bloqueGarmin + bloqueFitbit;
+  el.innerHTML = bloqueGarmin + bloqueFitbit + renderActividadesFitbitHtml(g,null);
 }
 
 // ── GARMIN NAV ────────────────────────────────────────────
@@ -9045,7 +9285,7 @@ function mostrarSelectorBackups(archivos,token){
 
 function subirSilencioso(token){
   var fecha=hoyLocal();
-  var blob=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});
+  var blob=new Blob([datosParaBackup()],{type:'application/json'});
   var fileName='entreno_jose_backup_'+fecha+'.json';
   fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%22Entreno+PRO%22+and+mimeType%3D%22application%2Fvnd.google-apps.folder%22+and+trashed%3Dfalse&fields=files(id)',
     {headers:{Authorization:'Bearer '+token}})
@@ -9110,7 +9350,7 @@ function checkBackupReminder(){
 }
 
 function hacerBackupAhora(){
-  var data=JSON.stringify(ST,null,2);
+  var data=datosParaBackup();
   var blob=new Blob([data],{type:'application/json'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');

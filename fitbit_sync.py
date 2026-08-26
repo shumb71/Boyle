@@ -21,12 +21,6 @@ datos reales del log de un Run:
     duraciones por tipo en Python. La fecha civil tampoco viene directa en el intervalo de
     sleep (a diferencia de steps/distance/etc.) — se calcula a partir de startTime + utcOffset.
 
-v5 — Añadido procesar_ejercicios(): trae CUALQUIER sesión "exercise" (no solo boxeo), como
-  lista por día en 'actividadesFitbit'. Los nombres de campo de calorías/FC de "exercise" no
-  están confirmados con datos reales todavía (a diferencia del resto del script) — revisar el
-  log "🔍 exercise: ejemplo de punto crudo" en la primera ejecución con datos reales y ajustar
-  los candidatos en procesar_ejercicios() si hiciera falta.
-
 Variables de entorno requeridas (Secrets del repo en GitHub):
   FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN
 """
@@ -392,119 +386,6 @@ def procesar_sueno(session, dias):
         log_json(f"  ⚠️  sleep: ningún punto reconocido de {len(puntos)}. Ejemplo:", puntos[0])
 
 
-def procesar_ejercicios(session, dias):
-    """Sesiones de ejercicio (CUALQUIER tipo: running, walking, boxing, kickboxing...)
-    registradas manual o automáticamente en Google Health. Se guardan como una LISTA por
-    día en dias[fecha]['actividadesFitbit'] — a diferencia del resto de campos (que son un
-    único valor por día), separado a propósito de 'actividades'/'fuerza' que sigue
-    aportando Garmin en exclusiva (ver FITBIT_OWNED_FIELDS en index.html).
-
-    NOTA: a diferencia del resto de este script, los nombres de los campos de resumen
-    (calorías, FC media/máxima) de "exercise" NO están confirmados todavía con datos reales
-    — se prueban varios candidatos habituales y, si ninguno encaja, la sesión se guarda
-    igualmente con lo que sí se puede leer con seguridad (tipo, inicio, fin, duración), y se
-    loguea el JSON crudo del primer punto para poder afinar los nombres en una próxima
-    versión, siguiendo el mismo patrón iterativo que ya se usó para total-calories y sleep.
-    """
-    print("Pidiendo exercise...")
-    hoy = date.today()
-    desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
-    hasta = (hoy + timedelta(days=1)).isoformat()
-    url = f"{API_BASE}/users/me/dataTypes/exercise/dataPoints"
-    # "exercise" es un tipo Session (no Interval como steps/distance): se filtra por
-    # interval.end_time, no start_time, según la documentación oficial de la API.
-    filtro = (
-        f'exercise.interval.end_time >= "{desde}T00:00:00Z" AND '
-        f'exercise.interval.end_time < "{hasta}T00:00:00Z"'
-    )
-
-    puntos = []
-    page_token = None
-    for _ in range(10):  # tope de seguridad: 10 páginas x 25 (máximo de este tipo) = 250 sesiones
-        params = {"filter": filtro, "pageSize": 25}
-        if page_token:
-            params["pageToken"] = page_token
-        try:
-            resp = session.get(url, params=params, timeout=30)
-            if not resp.ok:
-                print(f"  ⚠️  exercise: HTTP {resp.status_code} — {resp.text[:DEBUG_LEN]}")
-                break
-            data = resp.json()
-        except requests.RequestException as e:
-            print(f"  ⚠️  exercise: error de red — {e}")
-            break
-        pagina = data.get("dataPoints") or data.get("data_points") or []
-        puntos.extend(pagina)
-        page_token = data.get("nextPageToken") or data.get("next_page_token")
-        if not page_token or not pagina:
-            break
-
-    print(f"  ℹ️  exercise: {len(puntos)} sesiones recibidas en total.")
-    if not puntos:
-        return
-
-    # Log del primer punto SIEMPRE (no solo si algo falla) — es territorio no confirmado
-    # todavía, interesa ver la forma real del dato la primera vez que haya sesiones de verdad.
-    log_json("  🔍  exercise: ejemplo de punto crudo recibido:", puntos[0])
-
-    # Limpiar sesiones dentro del rango antes de repoblar (mismo patrón que sleep), para no
-    # ir acumulando duplicados en cada ejecución del cron cada 3h.
-    for fecha_existente, dia_existente in dias.items():
-        if desde <= fecha_existente < hasta:
-            dia_existente["actividadesFitbit"] = []
-
-    sin_reconocer = 0
-    for p in puntos:
-        sub = p.get("exercise") or {}
-        interval = sub.get("interval") or {}
-        fecha = fecha_civil_desde_utc(interval.get("endTime"), interval.get("endUtcOffset"))
-        if fecha is None or fecha < desde or fecha >= hasta:
-            sin_reconocer += 1
-            continue
-
-        inicio_dt = parse_iso(interval.get("startTime"))
-        fin_dt = parse_iso(interval.get("endTime"))
-        duracion_min = None
-        if inicio_dt and fin_dt:
-            duracion_min = round((fin_dt - inicio_dt).total_seconds() / 60)
-
-        tipo = sub.get("exerciseType") or sub.get("activityType") or sub.get("type") or "DESCONOCIDO"
-
-        resumen = sub.get("exerciseSummary") or sub.get("summary") or {}
-        calorias = (
-            a_numero(resumen.get("activeCalories"))
-            or a_numero(resumen.get("totalCalories"))
-            or a_numero(resumen.get("calories"))
-        )
-        fc_media_obj = resumen.get("averageHeartRate") or resumen.get("avgHeartRate") or {}
-        fc_media = (
-            a_numero(fc_media_obj.get("beatsPerMinute"))
-            if isinstance(fc_media_obj, dict) else a_numero(fc_media_obj)
-        )
-        fc_max_obj = resumen.get("maxHeartRate") or {}
-        fc_max = (
-            a_numero(fc_max_obj.get("beatsPerMinute"))
-            if isinstance(fc_max_obj, dict) else a_numero(fc_max_obj)
-        )
-
-        punto_id = (p.get("name") or "").rstrip("/").split("/")[-1] or None
-
-        sesion = {
-            "id": punto_id,
-            "tipo": tipo,
-            "inicio": interval.get("startTime"),
-            "fin": interval.get("endTime"),
-            "duracion_min": duracion_min,
-            "calorias": round(calorias) if calorias is not None else None,
-            "fc_media": round(fc_media) if fc_media is not None else None,
-            "fc_max": round(fc_max) if fc_max is not None else None,
-        }
-        dias.setdefault(fecha, {}).setdefault("actividadesFitbit", []).append(sesion)
-
-    if sin_reconocer:
-        print(f"  ⚠️  exercise: {sin_reconocer}/{len(puntos)} fuera de rango o sin fecha reconocible.")
-
-
 def main():
     print("=== Fitbit sync v4 — Google Health API v4 ===")
     try:
@@ -531,7 +412,6 @@ def main():
     procesar_calorias(session, dias)
     procesar_daily(session, dias)
     procesar_sueno(session, dias)
-    procesar_ejercicios(session, dias)
 
     salida = {
         "actualizado": datetime.now(timezone.utc).isoformat(),

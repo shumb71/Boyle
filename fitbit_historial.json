@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-08-27T13:53:43.637304+00:00",
+  "actualizado": "2026-08-27T15:22:56.755196+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 9564,
@@ -12,14 +12,27 @@
       "sueno_total_min": 476,
       "sueno_profundo_min": 90,
       "sueno_ligero_min": 287,
-      "sueno_rem_min": 99
+      "sueno_rem_min": 99,
+      "actividadesFitbit": [
+        {
+          "id": "2491707655258585032",
+          "tipo": "CARDIO_WORKOUT",
+          "inicio": "2026-08-22T09:10:33Z",
+          "fin": "2026-08-22T09:26:49Z",
+          "duracion_min": 16,
+          "calorias": null,
+          "fc_media": null,
+          "fc_max": null
+        }
+      ]
     },
     "2026-08-21": {
       "pasos": 2983,
       "fc_reposo": 55.0,
       "distancia_km": 3.11,
       "minutos_activos": 104,
-      "calorias_dia": 1461.92
+      "calorias_dia": 1461.92,
+      "actividadesFitbit": []
     },
     "2026-08-23": {
       "pasos": 8537,
@@ -32,7 +45,19 @@
       "sueno_total_min": 494,
       "sueno_profundo_min": 82,
       "sueno_ligero_min": 319,
-      "sueno_rem_min": 92
+      "sueno_rem_min": 92,
+      "actividadesFitbit": [
+        {
+          "id": "8135619429153149488",
+          "tipo": "FREE_WEIGHTS",
+          "inicio": "2026-08-23T10:43:33Z",
+          "fin": "2026-08-23T11:22:37Z",
+          "duracion_min": 39,
+          "calorias": null,
+          "fc_media": null,
+          "fc_max": null
+        }
+      ]
     },
     "2026-08-24": {
       "pasos": 11598,
@@ -45,7 +70,19 @@
       "sueno_total_min": 429,
       "sueno_profundo_min": 74,
       "sueno_ligero_min": 290,
-      "sueno_rem_min": 65
+      "sueno_rem_min": 65,
+      "actividadesFitbit": [
+        {
+          "id": "5692193595671629984",
+          "tipo": "FREE_WEIGHTS",
+          "inicio": "2026-08-24T16:45:51Z",
+          "fin": "2026-08-24T17:24:48Z",
+          "duracion_min": 39,
+          "calorias": null,
+          "fc_media": null,
+          "fc_max": null
+        }
+      ]
     },
     "2026-08-25": {
       "pasos": 10933,
@@ -58,7 +95,19 @@
       "sueno_total_min": 387,
       "sueno_profundo_min": 91,
       "sueno_ligero_min": 256,
-      "sueno_rem_min": 40
+      "sueno_rem_min": 40,
+      "actividadesFitbit": [
+        {
+          "id": "6022447131775721968",
+          "tipo": "BOXING",
+          "inicio": "2026-08-25T17:00:00Z",
+          "fin": "2026-08-25T18:00:00Z",
+          "duracion_min": 60,
+          "calorias": null,
+          "fc_media": null,
+          "fc_max": null
+        }
+      ]
     },
     "2026-08-26": {
       "pasos": 10852,
@@ -71,20 +120,33 @@
       "sueno_total_min": 278,
       "sueno_profundo_min": 48,
       "sueno_ligero_min": 205,
-      "sueno_rem_min": 24
+      "sueno_rem_min": 24,
+      "actividadesFitbit": []
     },
     "2026-08-27": {
       "pasos": 5339,
       "distancia_km": 2.2,
       "minutos_activos": 131,
-      "calorias_dia": 1403.25,
+      "calorias_dia": 1510.47,
       "fc_reposo": 49.0,
       "hrv": 47.5,
       "spo2": 95,
       "sueno_total_min": 556,
       "sueno_profundo_min": 44,
       "sueno_ligero_min": 383,
-      "sueno_rem_min": 128
+      "sueno_rem_min": 128,
+      "actividadesFitbit": [
+        {
+          "id": "5553708600738184392",
+          "tipo": "WALKING",
+          "inicio": "2026-08-27T10:44:30.800Z",
+          "fin": "2026-08-27T11:12:09.200Z",
+          "duracion_min": 28,
+          "calorias": null,
+          "fc_media": null,
+          "fc_max": null
+        }
+      ]
     }
   }
 }

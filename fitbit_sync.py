@@ -30,8 +30,17 @@ v5 — Añadido procesar_ejercicios(): trae CUALQUIER sesión "exercise" (no sol
 v6 — Corregido el filtro de exercise: devolvía siempre HTTP 400 (INVALID_DATA_POINT_FILTER)
   porque usaba interval.end_time, que la API NO soporta para este tipo de dato (confirmado
   contra la doc oficial). "exercise" (salvo Sleep y ECG) solo admite filtrar por
-  interval.civil_start_time, con fecha civil (sin "Z"). Con esto ya llegan sesiones reales —
-  sigue pendiente confirmar los nombres de campo de calorías/FC del punto de v5.
+  interval.civil_start_time, con fecha civil (sin "Z"). Con esto ya llegan sesiones reales.
+  Confirmado con datos reales: el resumen de calorías/FC vive en "metricsSummary"
+  (caloriesKcal, averageHeartRateBeatsPerMinute), no en "exerciseSummary"/"summary".
+
+v7 — Añadido procesar_peso(): peso corporal desde la báscula Renpho, vía Google Health
+  (tipo de dato "weight"). "weight" es Sample (medición puntual), se filtra por
+  weight.sample_time.physical_time — NO por interval como los tipos Interval/Session. El
+  nombre exacto del campo del valor de peso NO está confirmado todavía con datos reales;
+  se prueban varios candidatos y se loguea el punto crudo del primer dato recibido, mismo
+  patrón que se usó para exercise en v5/v6. Revisar ese log tras la primera ejecución real
+  y ajustar procesar_peso() si el candidato acertado no es el primero de la lista.
 
 Variables de entorno requeridas (Secrets del repo en GitHub):
   FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN
@@ -507,6 +516,79 @@ def procesar_ejercicios(session, dias):
         print(f"  ⚠️  exercise: {sin_reconocer}/{len(puntos)} fuera de rango o sin fecha reconocible.")
 
 
+def procesar_peso(session, dias):
+    """Peso corporal (báscula Renpho vía Google Health). "weight" es un tipo Sample
+    (medición puntual, no un intervalo ni una sesión) — se filtra por
+    weight.sample_time.physical_time, igual que body-fat en la documentación oficial.
+
+    IMPORTANTE: el nombre exacto del campo con el valor del peso NO está confirmado
+    todavía con datos reales (a diferencia del resto de este script). Se prueban varios
+    candidatos razonables y, además, SIEMPRE se loguea el punto crudo completo del primer
+    dato recibido — hay que revisar ese log tras la primera ejecución con datos reales y
+    ajustar la extracción si el candidato acertado no es el primero de la lista.
+    """
+    print("Pidiendo weight...")
+    hoy = date.today()
+    desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
+    hasta = (hoy + timedelta(days=1)).isoformat()
+    url = f"{API_BASE}/users/me/dataTypes/weight/dataPoints"
+    filtro = (
+        f'weight.sample_time.physical_time >= "{desde}T00:00:00Z" AND '
+        f'weight.sample_time.physical_time < "{hasta}T00:00:00Z"'
+    )
+    try:
+        resp = session.get(url, params={"filter": filtro, "pageSize": 1000}, timeout=30)
+        if not resp.ok:
+            print(f"  ⚠️  weight: HTTP {resp.status_code} — {resp.text[:DEBUG_LEN]}")
+            return
+        data = resp.json()
+    except requests.RequestException as e:
+        print(f"  ⚠️  weight: error de red — {e}")
+        return
+
+    puntos = data.get("dataPoints") or data.get("data_points") or []
+    if not puntos:
+        log_json("  ℹ️  weight: sin dataPoints, respuesta completa:", data)
+        return
+
+    print(f"  ℹ️  weight: {len(puntos)} puntos recibidos en total.")
+    log_json("  🔍  weight: ejemplo de punto crudo recibido:", puntos[0])
+
+    sin_reconocer = 0
+    for p in puntos:
+        sub = p.get("weight") or {}
+        sample_time = sub.get("sampleTime") or {}
+        civil = sample_time.get("civilTime") or {}
+        fecha = fecha_desde_civil_date(civil.get("date"))
+        if fecha is None:
+            fecha = fecha_civil_desde_utc(sample_time.get("physicalTime"), sample_time.get("utcOffset"))
+
+        # Candidatos sin confirmar — probar varios nombres/formas posibles del valor.
+        peso_kg = None
+        peso_obj = sub.get("weight")
+        if isinstance(peso_obj, dict):
+            if peso_obj.get("kilograms") is not None:
+                peso_kg = a_numero(peso_obj.get("kilograms"))
+            elif peso_obj.get("grams") is not None:
+                g = a_numero(peso_obj.get("grams"))
+                peso_kg = g / 1000 if g is not None else None
+        if peso_kg is None:
+            peso_kg = a_numero(sub.get("kilograms"))
+        if peso_kg is None and sub.get("grams") is not None:
+            g = a_numero(sub.get("grams"))
+            peso_kg = g / 1000 if g is not None else None
+        if peso_kg is None:
+            peso_kg = a_numero(sub.get("mass"))
+
+        if fecha is None or peso_kg is None or fecha < desde or fecha >= hasta:
+            sin_reconocer += 1
+            continue
+        dias.setdefault(fecha, {})["peso_kg"] = round(peso_kg, 1)
+
+    if sin_reconocer:
+        print(f"  ⚠️  weight: {sin_reconocer}/{len(puntos)} sin reconocer (revisa el log del punto crudo de arriba).")
+
+
 def main():
     print("=== Fitbit sync v4 — Google Health API v4 ===")
     try:
@@ -534,6 +616,7 @@ def main():
     procesar_daily(session, dias)
     procesar_sueno(session, dias)
     procesar_ejercicios(session, dias)
+    procesar_peso(session, dias)
 
     salida = {
         "actualizado": datetime.now(timezone.utc).isoformat(),

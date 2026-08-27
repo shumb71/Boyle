@@ -27,6 +27,12 @@ v5 — Añadido procesar_ejercicios(): trae CUALQUIER sesión "exercise" (no sol
   log "🔍 exercise: ejemplo de punto crudo" en la primera ejecución con datos reales y ajustar
   los candidatos en procesar_ejercicios() si hiciera falta.
 
+v6 — Corregido el filtro de exercise: devolvía siempre HTTP 400 (INVALID_DATA_POINT_FILTER)
+  porque usaba interval.end_time, que la API NO soporta para este tipo de dato (confirmado
+  contra la doc oficial). "exercise" (salvo Sleep y ECG) solo admite filtrar por
+  interval.civil_start_time, con fecha civil (sin "Z"). Con esto ya llegan sesiones reales —
+  sigue pendiente confirmar los nombres de campo de calorías/FC del punto de v5.
+
 Variables de entorno requeridas (Secrets del repo en GitHub):
   FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN
 """
@@ -411,11 +417,12 @@ def procesar_ejercicios(session, dias):
     desde = (hoy - timedelta(days=DIAS_ATRAS)).isoformat()
     hasta = (hoy + timedelta(days=1)).isoformat()
     url = f"{API_BASE}/users/me/dataTypes/exercise/dataPoints"
-    # "exercise" es un tipo Session (no Interval como steps/distance): se filtra por
-    # interval.end_time, no start_time, según la documentación oficial de la API.
+    # "exercise" (salvo Sleep y ECG) SOLO admite filtrar por civil_start_time — la doc
+    # oficial de la API rechaza interval.end_time e interval.start_time (físico) para este
+    # tipo de dato con INVALID_DATA_POINT_FILTER. Formato: fecha civil YYYY-MM-DD, sin "Z".
     filtro = (
-        f'exercise.interval.end_time >= "{desde}T00:00:00Z" AND '
-        f'exercise.interval.end_time < "{hasta}T00:00:00Z"'
+        f'exercise.interval.civil_start_time >= "{desde}" AND '
+        f'exercise.interval.civil_start_time < "{hasta}"'
     )
 
     puntos = []

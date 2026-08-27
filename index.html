@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=173', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=174', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -8111,7 +8111,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v173';
+const APP_VERSION='v174';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8381,12 +8381,13 @@ function renderActividadesFitbitHtml(g,fecha){
   var h='<div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em">🏃 ACTIVIDADES (Fitbit)</div>';
   h+=lista.map(function(a){
     var lbl=fitbitExLabel(a.tipo);
+    var etiqueta=a.nombre||lbl.n;
     var meta=[];
     if(a.duracion_min) meta.push(a.duracion_min+' min');
     if(a.calorias) meta.push(a.calorias+' kcal');
     if(a.fc_media) meta.push('FC '+a.fc_media+(a.fc_max?'/'+a.fc_max:''));
     return '<div style="background:var(--bg3);border-radius:var(--rs);padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">'
-      +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+lbl.i+' '+lbl.n+'</span>'
+      +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+lbl.i+' '+etiqueta+'</span>'
       +'<span style="display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:11px;color:var(--text2)">'+meta.join(' · ')+'</span>'
       +(a.id?'<button onclick="ocultarActividadFitbit(\''+a.id+'\',\''+(fecha||'')+'\')" title="Quitar de la app" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:13px;line-height:1"><i class="ti ti-x"></i></button>':'')

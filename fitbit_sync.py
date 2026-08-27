@@ -476,29 +476,24 @@ def procesar_ejercicios(session, dias):
             duracion_min = round((fin_dt - inicio_dt).total_seconds() / 60)
 
         tipo = sub.get("exerciseType") or sub.get("activityType") or sub.get("type") or "DESCONOCIDO"
+        nombre = sub.get("displayName") or None
 
-        resumen = sub.get("exerciseSummary") or sub.get("summary") or {}
-        calorias = (
-            a_numero(resumen.get("activeCalories"))
-            or a_numero(resumen.get("totalCalories"))
-            or a_numero(resumen.get("calories"))
-        )
-        fc_media_obj = resumen.get("averageHeartRate") or resumen.get("avgHeartRate") or {}
-        fc_media = (
-            a_numero(fc_media_obj.get("beatsPerMinute"))
-            if isinstance(fc_media_obj, dict) else a_numero(fc_media_obj)
-        )
-        fc_max_obj = resumen.get("maxHeartRate") or {}
-        fc_max = (
-            a_numero(fc_max_obj.get("beatsPerMinute"))
-            if isinstance(fc_max_obj, dict) else a_numero(fc_max_obj)
-        )
+        # CONFIRMADO con datos reales (log del 27/08): el resumen de calorías/FC vive en
+        # "metricsSummary", no en "exerciseSummary"/"summary" (los candidatos de v5 estaban
+        # equivocados). Campos reales: caloriesKcal (número) y averageHeartRateBeatsPerMinute
+        # (string). FC máxima NO apareció en el ejemplo recibido — se deja como candidato sin
+        # confirmar por si algún tipo de ejercicio más intenso sí la trae.
+        metrics = sub.get("metricsSummary") or {}
+        calorias = a_numero(metrics.get("caloriesKcal"))
+        fc_media = a_numero(metrics.get("averageHeartRateBeatsPerMinute"))
+        fc_max = a_numero(metrics.get("maxHeartRateBeatsPerMinute") or metrics.get("peakHeartRateBeatsPerMinute"))
 
         punto_id = (p.get("name") or "").rstrip("/").split("/")[-1] or None
 
         sesion = {
             "id": punto_id,
             "tipo": tipo,
+            "nombre": nombre,
             "inicio": interval.get("startTime"),
             "fin": interval.get("endTime"),
             "duracion_min": duracion_min,

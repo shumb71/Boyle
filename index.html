@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=172', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=173', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -3952,6 +3952,52 @@ function guardarEdicionSesion(){
   if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
   var t=document.getElementById('fb-toast');
   if(t){t.textContent='✅ Sesión actualizada';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},2500);}
+}
+
+// Elimina por completo la sesión de una fecha concreta (local + Firestore). A diferencia de
+// "Eliminar entreno de hoy" (que solo opera sobre el día actual), esta funciona para cualquier
+// fecha del calendario, usando el diaCiclo/semana GUARDADOS en esa sesión — nunca ST.dia (hoy) —
+// para no borrar por error los sets de otro día que comparta la misma posición de ciclo.
+function eliminarSesionFecha(fecha){
+  if(!fecha) return;
+  if(!confirm('¿Eliminar por completo la sesión del '+fecha+'? Esto borra sus series registradas (si las tiene) en este dispositivo y en la nube. No se puede deshacer.')) return;
+  var ses=ST.historialFechas&&ST.historialFechas[fecha];
+  var diaCiclo=ses?ses.diaCiclo:(ST.fechaSesiones&&ST.fechaSesiones[fecha]);
+  var semana=ses?ses.semana:null;
+  // Solo borrar los sets de esa posición de ciclo+semana si ninguna OTRA fecha los está usando
+  // (la misma posición se repite cada 12 días, así que sin este check podríamos borrar datos ajenos).
+  if(diaCiclo!=null&&semana!=null){
+    var otraFechaMismaClave=Object.keys(ST.historialFechas||{}).some(function(f){
+      if(f===fecha) return false;
+      var h=ST.historialFechas[f];
+      return h&&h.diaCiclo===diaCiclo&&h.semana===semana;
+    });
+    if(!otraFechaMismaClave){
+      var prefix=getProgramaPrefix()+'s'+semana+'_d'+diaCiclo+'_';
+      Object.keys(ST.sets||{}).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.sets[k]; });
+      if(ST.checksManual){
+        Object.keys(ST.checksManual).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.checksManual[k]; });
+      }
+    }
+  }
+  if(ST.historialFechas) delete ST.historialFechas[fecha];
+  if(ST.fechaSesiones) delete ST.fechaSesiones[fecha];
+  if(ST.notaDia&&ST.notaDia[fecha]) delete ST.notaDia[fecha];
+  save();
+  try{
+    if(typeof fbReady!=='undefined'&&fbReady&&fbUser&&typeof fbDb!=='undefined'){
+      fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sesiones').doc(fecha).delete().catch(function(e){console.warn('borrar sesion fb',e);});
+      fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sets').where('fecha','==',fecha).get().then(function(snap){
+        snap.forEach(function(doc){ doc.ref.delete().catch(function(e){console.warn('borrar set fb',e);}); });
+      }).catch(function(e){console.warn('borrar sets fb',e);});
+    }
+  }catch(e){console.warn('eliminarSesionFecha fb',e);}
+  document.getElementById('mo-editar-sesion').classList.remove('open');
+  try{renders.hoy();}catch(e){}
+  try{renders.entreno();}catch(e){}
+  try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
+  var t2=document.getElementById('fb-toast');
+  if(t2){t2.textContent='🗑 Sesión eliminada';t2.style.opacity='1';setTimeout(function(){t2.style.opacity='0';},2500);}
 }
 
 function getHistorialDiaBoyle(diaKey, fase){
@@ -8065,7 +8111,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v172';
+const APP_VERSION='v173';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9706,6 +9752,7 @@ checkBackupReminder();
       <button onclick="document.getElementById('mo-editar-sesion').classList.remove('open')" class="bcan">Cancelar</button>
       <button onclick="guardarEdicionSesion()" class="bsav" style="background:var(--blue)">✓ Guardar</button>
     </div>
+    <button onclick="eliminarSesionFecha(_editarFecha)" style="width:100%;margin-top:.5rem;padding:10px;border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🗑 Eliminar sesión de este día</button>
   </div>
 </div>
 

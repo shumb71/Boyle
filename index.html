@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=170', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=172', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -608,6 +608,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div style="font-size:13px;font-weight:700;color:var(--red-text,#c00);margin-bottom:4px">⚠️ Problema de conexión</div>
       <div id="banner-salud-txt" style="font-size:12px;color:var(--red-text,#c00);opacity:.85"></div>
       <button onclick="intentarReconectar()" style="margin-top:6px;border:none;background:var(--red-text,#c00);color:#fff;border-radius:var(--rs);padding:5px 12px;font-size:12px;cursor:pointer;font-weight:700">Reconectar</button>
+    </div>
+    <!-- BANNER BACKUP LOCAL DIARIO -->
+    <div id="banner-backup-local" style="display:none;background:var(--blue-bg);border:.5px solid rgba(91,143,255,.3);border-radius:var(--rs);padding:10px 12px;margin-bottom:.75rem">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">💾</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--blue-text)">Backup de hoy</div>
+          <div style="font-size:11px;color:var(--blue-text);opacity:.8;margin-top:1px">Aún no se ha guardado una copia en este dispositivo hoy.</div>
+        </div>
+        <button onclick="confirmarBackupLocalDiario()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">Descargar</button>
+        <button onclick="descartarBackupLocalDiario()" style="border:none;background:transparent;color:var(--blue-text);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Ahora no">✕</button>
+      </div>
     </div>
     <div id="sync-panel" style="display:none;border-radius:var(--rs);padding:8px 12px;margin-bottom:.75rem;font-size:12px">
       <div style="display:flex;align-items:center;gap:8px">
@@ -2659,7 +2671,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[]};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2691,6 +2703,7 @@ function getConfigFields(){
     espacioReducido:!!ST.espacioReducido,githubToken:ST.githubToken||'',
     actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
+    ultimoBackupLocal:ST.ultimoBackupLocal||null,
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
 }
@@ -2729,7 +2742,7 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','githubToken','actividadesFitbitOcultas'];
+    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2849,7 +2862,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3775,7 +3788,7 @@ var _editarFecha = null;
 function crearSesionManual(fecha){
   if(!ST.historialFechas) ST.historialFechas={};
   if(!ST.historialFechas[fecha]){
-    var pos=(ST.fechaSesiones&&ST.fechaSesiones[fecha])?parseInt(ST.fechaSesiones[fecha],10):(ST.dia||1);
+    var pos=(ST.fechaSesiones&&ST.fechaSesiones[fecha])?parseInt(ST.fechaSesiones[fecha],10):(calcularDiaDesdeAnclaje(fecha)||ST.dia||1);
     var dBProg=(CICLO[(pos-1)%12]?CICLO[(pos-1)%12].b:null);
     var dB=(ST.planDia&&ST.planDia[fecha])||dBProg||'D1';
     if(dB==='Descanso') dB='D1';
@@ -6785,12 +6798,13 @@ function toggleSection(id){
 }
 
 // ── ANCLAJE DE CICLO A FECHA REAL ────────────────────────────────────────────
-function calcularDiaDesdeAnclaje(){
+function calcularDiaDesdeAnclaje(fechaStr){
   if(!ST.cicloAnclaje) return null;
   var ancla=new Date(ST.cicloAnclaje+'T00:00:00');
-  var hoy=new Date();
-  hoy.setHours(0,0,0,0);
-  var diff=Math.round((hoy-ancla)/(1000*60*60*24));
+  var ref;
+  if(fechaStr){ ref=new Date(fechaStr+'T00:00:00'); }
+  else { ref=new Date(); ref.setHours(0,0,0,0); }
+  var diff=Math.round((ref-ancla)/(1000*60*60*24));
   if(diff<0) return null;
   return (diff%12)+1;
 }
@@ -8051,7 +8065,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v170';
+const APP_VERSION='v172';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8065,6 +8079,30 @@ function exportarJSON(){
   URL.revokeObjectURL(url);
   var ok=document.getElementById('backup-ok');
   if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},3000);}
+}
+
+// Backup local — una vez al día, al abrir la app, avisa (sin descargar solo) de que aún no
+// hay copia local guardada hoy en este dispositivo. La descarga solo se dispara con un clic
+// real del usuario (botón "Descargar"), así se evita por completo el bloqueo de descargas
+// automáticas que aplican algunos navegadores/PWA a los a.click() sin gesto del usuario.
+function checkAutoBackupLocalDiario(){
+  try{
+    var hoy=hoyLocal();
+    if(ST.ultimoBackupLocal===hoy) return; // ya resuelto hoy (descargado o descartado)
+    var b=document.getElementById('banner-backup-local');
+    if(b) b.style.display='block';
+  }catch(e){ console.warn('backup local diario error',e); }
+}
+function confirmarBackupLocalDiario(){
+  exportarJSON();
+  ST.ultimoBackupLocal=hoyLocal();
+  save();
+  var b=document.getElementById('banner-backup-local'); if(b) b.style.display='none';
+}
+function descartarBackupLocalDiario(){
+  ST.ultimoBackupLocal=hoyLocal();
+  save();
+  var b=document.getElementById('banner-backup-local'); if(b) b.style.display='none';
 }
 
 function restaurarDesdeJSON(input){
@@ -8590,6 +8628,7 @@ window.addEventListener('load', () => {
   setTimeout(fetchGarminAuto, 3000); // 3s después de cargar completo
   setTimeout(fetchFitbitAuto, 4000); // 4s — justo después de Garmin, para que el merge respete prioridad
   setTimeout(function(){ exportarExcelDrive(true); }, 8000); // 8s — volcado inicial al Drive
+  setTimeout(checkAutoBackupLocalDiario, 6000); // 6s — avisa si falta backup JSON local hoy (pide confirmación)
 });
 
 function importarGarminHistorial(input){

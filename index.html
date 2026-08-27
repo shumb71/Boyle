@@ -148,6 +148,24 @@ function cargarNotaDia(){
   el.value=(ST.notaDia&&ST.notaDia[f])||'';
 }
 
+// ---- Nota del calendario (cualquier fecha, pasada o futura) ----
+// Reutiliza ST.notaDia (ya indexado por fecha) — no es un dato nuevo, solo una UI nueva.
+// Si esa fecha tiene una sesión ya registrada, se mantiene sincronizada con histSes.nota
+// para que el resumen "✅ Sesión registrada" del calendario no quede desactualizado.
+function cargarNotaCal(fecha){
+  var el=document.getElementById('cal-nota-input'); if(!el||!fecha) return;
+  el.value=(ST.notaDia&&ST.notaDia[fecha])||'';
+}
+function guardarNotaCal(){
+  var el=document.getElementById('cal-nota-input'); if(!el||!calDiaSeleccionado) return;
+  var f=calDiaSeleccionado;
+  if(!ST.notaDia) ST.notaDia={};
+  ST.notaDia[f]=el.value;
+  if(ST.historialFechas&&ST.historialFechas[f]) ST.historialFechas[f].nota=el.value;
+  clearTimeout(window._notaCalTO);
+  window._notaCalTO=setTimeout(function(){ try{save();}catch(e){} }, 600);
+}
+
 // ---- Aviso de sincronización (no bloqueante) ----
 function avisoSync(on){
   var el=document.getElementById('sync-aviso');
@@ -554,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=169', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=170', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1056,6 +1074,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="cal-det-garmin"></div>
       <div id="cal-det-entreno"></div>
       <div id="cal-det-nutricion"></div>
+      <div style="margin-top:.75rem">
+        <div class="card-lbl" style="margin-bottom:.4rem">📝 Nota</div>
+        <textarea id="cal-nota-input" placeholder="Apunta algo para este día…" oninput="guardarNotaCal()" style="width:100%;min-height:60px;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;resize:vertical;font-family:inherit"></textarea>
+      </div>
     </div>
     <!-- Estadísticas mensuales Garmin -->
     <div class="card" id="cal-stats-card" style="display:none">
@@ -8029,7 +8051,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v169';
+const APP_VERSION='v170';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8664,6 +8686,7 @@ function calSelDia(fecha){
   const [y,m,d]=fecha.split('-');
   const fechaStr=new Date(parseInt(y),parseInt(m)-1,parseInt(d)).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('cal-det-titulo').textContent=fechaStr.charAt(0).toUpperCase()+fechaStr.slice(1);
+  cargarNotaCal(fecha);
   let htmlG='',htmlE='';
   if(g){
     const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+(g.sueno_total_min%60)+'min':'—';
@@ -8787,7 +8810,7 @@ function calSelDia(fecha){
       histSes.diaBoyleReal=dBrecup?dBrecup.b:'—';
     }
     var varTag=histSes.variacion?'<span style="background:var(--orange-bg);color:var(--orange-text);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">⚠ Variación</span>':'';
-    var sustHtml=(histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'')+(histSes.nota?'<div style="font-size:12px;color:var(--text);background:var(--bg3);border-radius:var(--rs);padding:6px 8px;margin-top:6px">📝 '+histSes.nota+'</div>':'');
+    var sustHtml=(histSes.ejsSustituidos&&histSes.ejsSustituidos.length?'<div style="font-size:11px;color:var(--orange-text);margin-top:3px">Sustituidos: '+histSes.ejsSustituidos.join(', ')+'</div>':'');
     // Ejercicios de historialFechas
     var ejsHtml='';
     if(histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){

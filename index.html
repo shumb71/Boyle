@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=174', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=175', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1151,6 +1151,26 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="bkbtn bkimp" onclick="fetchFitbitAuto(true)"><i class="ti ti-refresh"></i> Actualizar ahora desde GitHub</button>
     </div>
   </div>
+
+  <!-- PESO -->
+  <div class="screen" id="s-peso">
+    <div class="ph"><h1>Peso</h1><span style="font-size:13px;color:var(--text2)">Báscula Renpho</span></div>
+    <div class="card" id="peso-actual-card" style="text-align:center;padding:1.25rem 1rem">
+      <div id="peso-actual-val" style="font-size:38px;font-weight:700;color:var(--text)">—</div>
+      <div id="peso-actual-fecha" style="font-size:12px;color:var(--text2);margin-top:2px">Sin datos todavía</div>
+      <div id="peso-tendencia" style="font-size:13px;font-weight:700;margin-top:8px"></div>
+    </div>
+    <div class="card" id="peso-grafico-card" style="display:none">
+      <div class="card-lbl">Evolución</div>
+      <div id="peso-grafico"></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Histórico</div>
+      <div id="peso-lista"></div>
+    </div>
+    <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> El peso se sincroniza solo desde tu báscula Renpho vía Google Health, igual que el resto de datos de Fitbit Air. No hay forma de añadirlo a mano desde aquí todavía.</div>
+  </div>
+
   <div class="screen" id="s-config">
     <div class="ph"><h1>Config</h1><div id="fb-dot-config" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <!-- FIREBASE SYNC PANEL -->
@@ -1262,6 +1282,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </button>
       <button class="dnav-item" id="dnav-garmin" onclick="navTo('garmin','Garmin')">
         <i class="ti ti-device-watch dnav-icon" aria-hidden="true"></i><span class="dnav-label">Garmin Epic</span>
+      </button>
+      <button class="dnav-item" id="dnav-peso" onclick="navTo('peso','Peso')">
+        <i class="ti ti-scale dnav-icon" aria-hidden="true"></i><span class="dnav-label">Peso</span>
       </button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-eval" onclick="navTo('eval','Evaluacion')">
@@ -8111,7 +8134,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v174';
+const APP_VERSION='v175';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8322,7 +8345,7 @@ const GARMIN_JSON_URL = 'https://shumb71.github.io/Boyle/garmin_historial.json';
 // Decisión de Jou: Garmin = entrenos (actividades/fuerza), Fitbit Air = el resto del día.
 const FITBIT_OWNED_FIELDS=['pasos','calorias_dia','calorias_activas','fc_reposo','sueno_total_min',
   'sueno_profundo_min','sueno_ligero_min','sueno_rem_min','sueno_puntuacion','hrv','spo2',
-  'estres_medio','distancia_km','minutos_activos'];
+  'estres_medio','distancia_km','minutos_activos','peso_kg'];
 
 // Fusiona un día proveniente de Garmin. Si ese día ya tiene datos de Fitbit (marcados con
 // _fuenteFitbit), Garmin SOLO aporta actividades/fuerza — no pisa pasos/sueño/FC/etc.
@@ -8491,6 +8514,7 @@ async function fetchFitbitAuto(manual) {
     if (typeof renderGarminHoy === 'function') renderGarminHoy();
     if (typeof renderHoy === 'function') renderHoy();
     if(document.getElementById('s-cal')&&document.getElementById('s-cal').classList.contains('active')&&typeof renders!=='undefined'&&renders.cal) renders.cal();
+    if(document.getElementById('s-peso')&&document.getElementById('s-peso').classList.contains('active')&&typeof renders!=='undefined'&&renders.peso) renders.peso();
 
     const total = Object.keys(data.dias).length;
     if (statusEl) {
@@ -9264,6 +9288,86 @@ renders.garmin=function(){
         <span style="font-size:12px;color:var(--text2)">${a.duracion_min} min · ${a.calorias} kcal · FC ${a.fc_media}/${a.fc_max}</span>
       </div>`).join('');
   }
+};
+
+// ══════════════════════════════════════
+// PESO — histórico desde báscula Renpho (vía Fitbit/Google Health)
+// ══════════════════════════════════════
+renders.peso=function(){
+  var hist=ST.garminHist||{};
+  var entradas=Object.keys(hist)
+    .filter(function(f){return hist[f]&&hist[f].peso_kg!=null;})
+    .sort()
+    .map(function(f){return {fecha:f,kg:hist[f].peso_kg};});
+
+  var actualVal=document.getElementById('peso-actual-val');
+  var actualFecha=document.getElementById('peso-actual-fecha');
+  var tendEl=document.getElementById('peso-tendencia');
+  var graficoCard=document.getElementById('peso-grafico-card');
+  var graficoEl=document.getElementById('peso-grafico');
+  var listaEl=document.getElementById('peso-lista');
+
+  if(!entradas.length){
+    actualVal.textContent='—';
+    actualFecha.textContent='Sin datos todavía — sincroniza tu báscula Renpho vía Google Health.';
+    tendEl.textContent='';
+    graficoCard.style.display='none';
+    listaEl.innerHTML='<div class="empty">Sin registros de peso aún.</div>';
+    return;
+  }
+
+  var ultima=entradas[entradas.length-1];
+  var fechaFmt=new Date(ultima.fecha+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  actualVal.textContent=ultima.kg.toFixed(1)+' kg';
+  actualFecha.textContent=fechaFmt.charAt(0).toUpperCase()+fechaFmt.slice(1);
+
+  if(entradas.length>1){
+    var primera=entradas[0];
+    var diff=Math.round((ultima.kg-primera.kg)*10)/10;
+    var color=diff>0?'var(--red-text)':diff<0?'var(--green-text)':'var(--text2)';
+    var flecha=diff>0?'↗':diff<0?'↘':'→';
+    tendEl.style.color=color;
+    tendEl.textContent=flecha+' '+(diff>0?'+':'')+diff+' kg desde '+new Date(primera.fecha+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  } else {
+    tendEl.textContent='';
+  }
+
+  // Gráfico SVG sencillo (mismo patrón que renders.historial)
+  if(entradas.length>1){
+    graficoCard.style.display='block';
+    var datos=entradas.slice(-30);
+    var W=320,H=110,PL=36,PR=8,PT=16,PB=22;
+    var cW=W-PL-PR,cH=H-PT-PB;
+    var pesos=datos.map(function(d){return d.kg;});
+    var minP=Math.min.apply(null,pesos),maxP=Math.max.apply(null,pesos);
+    var rangoP=(maxP-minP)||1;
+    var pts=datos.map(function(d,i){
+      var x=PL+Math.round(i/(datos.length-1||1)*cW);
+      var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);
+      return x+','+y;
+    }).join(' ');
+    var circles='';
+    datos.forEach(function(d,i){
+      var x=PL+Math.round(i/(datos.length-1||1)*cW);
+      var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);
+      circles+='<circle cx="'+x+'" cy="'+y+'" r="3.5" fill="var(--blue)" stroke="white" stroke-width="1.5"><title>'+d.fecha+': '+d.kg+' kg</title></circle>';
+    });
+    var areaPath='M'+PL+','+(PT+cH)+' L'+datos.map(function(d,i){var x=PL+Math.round(i/(datos.length-1||1)*cW);var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);return x+','+y;}).join(' L')+' L'+(PL+cW)+','+(PT+cH)+' Z';
+    graficoEl.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto">'
+      +'<text x="'+(PL-4)+'" y="'+(PT+4)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+maxP.toFixed(1)+'</text>'
+      +'<text x="'+(PL-4)+'" y="'+(PT+cH)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+minP.toFixed(1)+'</text>'
+      +'<path d="'+areaPath+'" fill="var(--blue)" fill-opacity="0.08"/>'
+      +'<polyline points="'+pts+'" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+      +circles+'</svg>';
+  } else {
+    graficoCard.style.display='none';
+  }
+
+  // Lista (más reciente primero)
+  listaEl.innerHTML=entradas.slice().reverse().map(function(d){
+    var fFmt=new Date(d.fecha+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+    return '<div class="prow"><span class="plbl">'+fFmt+'</span><span class="pval">'+d.kg.toFixed(1)+' kg</span></div>';
+  }).join('');
 };
 
 function importar(input){

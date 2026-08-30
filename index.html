@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=176', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=177', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1086,6 +1086,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="cal-det-garmin"></div>
       <div id="cal-det-entreno"></div>
       <div id="cal-det-nutricion"></div>
+      <div id="cal-det-boxeo"></div>
       <div style="margin-top:.75rem">
         <div class="card-lbl" style="margin-bottom:.4rem">📝 Nota</div>
         <textarea id="cal-nota-input" placeholder="Apunta algo para este día…" oninput="guardarNotaCal()" style="width:100%;min-height:60px;padding:10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;resize:vertical;font-family:inherit"></textarea>
@@ -1879,7 +1880,6 @@ const EJ_INFO={
   "Supine Floor Slide":{tipo:"prog",tecnica:"Tumbado, brazos deslizan por el suelo manteniendo lumbar pegada. Movilidad y estabilidad de hombro."},
   "Spiderman pos. lat stretch":{tipo:"fijo",series:"2",reps:"5 respiraciones",tecnica:"Zancada profunda, mano interior al suelo, abre el pecho rotando. Movilidad de cadera y torácica."},
   "Half-kneeling Overhead Press":{tipo:"prog",tecnica:"Press de hombro medio arrodillado con KB/mancuerna. Estabilidad de core y core antiextensión."},
-  "Standing Overhead Press":{tipo:"prog",tecnica:"Press militar de pie. Glúteos y abdomen firmes para no arquear."},
   "Push-up progression":{tipo:"prog",tecnica:"Flexión con progresión: inclinado → suelo → pies elevados → lastrado. Cuerpo en tabla."},
   "Bench Press":{tipo:"prog",tecnica:"Press de banca. Escápulas retraídas, recorrido controlado."},
   "Bench Press + Med Ball":{tipo:"prog",tecnica:"Complejo: press + lanzamiento/press de balón en banco para potencia."},
@@ -5022,6 +5022,13 @@ function eliminarSesionBoxeo(id){
   ST.boxeoSesiones=ST.boxeoSesiones.filter(function(s){return s.id!==id;});
   save();
   renders.boxeo();
+  try{
+    var sc=document.getElementById('s-cal');
+    if(sc&&sc.classList.contains('active')){
+      renders.cal();
+      if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
+    }
+  }catch(e){}
 }
 
 renders.boxeo=function(){
@@ -6436,6 +6443,13 @@ function getResumenNutricionFecha(fecha){
     });
   });
   return {kcal:totK,p:totP,c:totC,g:totG,extras:extras,comidas:comidas,tieneDatos:(extras.length>0||comidas.length>0)};
+}
+
+// Sesiones de boxeo registradas en una fecha concreta. Independiente de historialFechas a
+// propósito — el boxeo no usa posición de ciclo de 12 días, así que no hay riesgo de colisión
+// de claves entre sesiones de distintas semanas (el bug que sí afecta a las sesiones Boyle).
+function getBoxeoSesionesFecha(fecha){
+  return (ST.boxeoSesiones||[]).filter(function(s){return s.fecha===fecha;});
 }
 
 // --- Visor de historial (solo lectura) ---
@@ -8137,7 +8151,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v176';
+const APP_VERSION='v177';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8226,16 +8240,26 @@ function exportar(){
     return null;
   }
 
-  // Construir mapa fecha→diaCiclo desde historialFechas
+  // Mapa fecha→diaCiclo (compat, fallback cuando la clave no trae semana)
   var fechaMap={};
   Object.keys(ST.historialFechas||{}).forEach(function(f){
     var ses=ST.historialFechas[f];
     if(ses&&ses.diaCiclo) fechaMap[ses.diaCiclo]=fechaMap[ses.diaCiclo]||f;
   });
-  // También desde fechaSesiones
   Object.keys(ST.fechaSesiones||{}).forEach(function(f){
     var dc=ST.fechaSesiones[f];
     if(!fechaMap[dc]) fechaMap[dc]=f;
+  });
+  // Mapa fecha→(diaCiclo+semana) — mucho más preciso: la posición de ciclo se repite cada
+  // 12 días a lo largo de las 9 semanas del programa, pero la combinación posición+semana
+  // prácticamente no colisiona. Se usa siempre que la clave del set trae semana (formato v117+).
+  var fechaMapSem={};
+  Object.keys(ST.historialFechas||{}).forEach(function(f){
+    var ses=ST.historialFechas[f];
+    if(ses&&ses.diaCiclo!=null&&ses.semana!=null){
+      var k=ses.diaCiclo+'_'+ses.semana;
+      fechaMapSem[k]=fechaMapSem[k]||f;
+    }
   });
 
   // Hoja 1 — Series registradas
@@ -8247,11 +8271,21 @@ function exportar(){
   }).forEach(function([key,sets]){
     var info=parseKey(key);
     if(!info) return;
-    var fechaSes=fechaMap[info.dia]||'—';
+    // Semana: directa de la clave si la trae (formato v117+, siempre correcta) — si no,
+    // recurre al historial de esa fecha como antes.
+    var fechaSes, fase, sem;
+    if(info.sem!=null){
+      fechaSes=fechaMapSem[info.dia+'_'+info.sem]||fechaMap[info.dia]||'—';
+      sem=info.sem;
+      fase=getFaseActual(info.sem);
+    } else {
+      fechaSes=fechaMap[info.dia]||'—';
+      var histSesFallback=ST.historialFechas[fechaSes]||{};
+      fase=histSesFallback.fase||'—';
+      sem=histSesFallback.semana||'—';
+    }
     var histSes=ST.historialFechas[fechaSes]||{};
     var dB=histSes.diaBoyleReal||CICLO[(info.dia-1)%12]&&CICLO[(info.dia-1)%12].b||'—';
-    var fase=histSes.fase||'—';
-    var sem=histSes.semana||'—';
     (sets||[]).forEach(function(s,i){
       if(!s) return;
       var tipo=s.tipo||'reps';
@@ -9021,6 +9055,25 @@ function calSelDia(fecha){
       ? '<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin:.75rem 0 .3rem">🍽 NUTRICIÓN</div>'+renderResumenNutricionHTML(resumenNutDia)
       : '';
   }
+  var boxeoEl=document.getElementById('cal-det-boxeo');
+  if(boxeoEl){
+    var boxeoDiaDet=getBoxeoSesionesFecha(fecha);
+    if(boxeoDiaDet.length){
+      var boxeoHtml='<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin:.75rem 0 .3rem">🥊 BOXEO</div>';
+      boxeoHtml+=boxeoDiaDet.map(function(s){
+        var etiquetaB=s.bloque==='LIBRE'?'Libre':s.bloque;
+        var infoB=BOXEO_PROGRESION[s.bloque];
+        var nombreB=infoB?infoB.nombre:(s.bloque==='LIBRE'?'Bloque libre':'');
+        return '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--red-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
+          +'<span style="font-size:12px;font-weight:700;color:var(--red-text)">'+etiquetaB+(nombreB?' — '+nombreB:'')+'</span>'
+          +'<button onclick="eliminarSesionBoxeo(\''+s.id+'\')" style="border:none;background:transparent;color:var(--red-text);cursor:pointer;padding:2px"><i class="ti ti-trash" style="font-size:14px"></i></button>'
+          +'</div>';
+      }).join('');
+      boxeoEl.innerHTML=boxeoHtml;
+    } else {
+      boxeoEl.innerHTML='';
+    }
+  }
   det.style.display='block';
   vacio.style.display='none';
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -9114,6 +9167,13 @@ renders.cal=function(){
     var nutDia=getResumenNutricionFecha(fecha);
     if(nutDia.tieneDatos){
       dots+=`<div style="font-size:8px;font-weight:700;color:var(--orange-text);background:var(--orange-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🍽${Math.round(nutDia.kcal)}</div>`;
+    }
+    // Sesión de boxeo registrada ese día → badge propio (independiente de historialFechas,
+    // no comparte claves por posición de ciclo con las sesiones Boyle — sin riesgo de colisión)
+    var boxeoDia=getBoxeoSesionesFecha(fecha);
+    if(boxeoDia.length){
+      var boxLbl=boxeoDia.length>1?boxeoDia.length+'x':(boxeoDia[0].bloque==='LIBRE'?'Libre':boxeoDia[0].bloque);
+      dots+=`<div style="font-size:8px;font-weight:700;color:var(--red-text);background:var(--red-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🥊${boxLbl}</div>`;
     }
     // Color fondo
     let bg=esHoy?'var(--bg3)':'var(--bg2)';

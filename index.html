@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=175', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=170', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -608,18 +608,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div style="font-size:13px;font-weight:700;color:var(--red-text,#c00);margin-bottom:4px">⚠️ Problema de conexión</div>
       <div id="banner-salud-txt" style="font-size:12px;color:var(--red-text,#c00);opacity:.85"></div>
       <button onclick="intentarReconectar()" style="margin-top:6px;border:none;background:var(--red-text,#c00);color:#fff;border-radius:var(--rs);padding:5px 12px;font-size:12px;cursor:pointer;font-weight:700">Reconectar</button>
-    </div>
-    <!-- BANNER BACKUP LOCAL DIARIO -->
-    <div id="banner-backup-local" style="display:none;background:var(--blue-bg);border:.5px solid rgba(91,143,255,.3);border-radius:var(--rs);padding:10px 12px;margin-bottom:.75rem">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:18px">💾</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--blue-text)">Backup de hoy</div>
-          <div style="font-size:11px;color:var(--blue-text);opacity:.8;margin-top:1px">Aún no se ha guardado una copia en este dispositivo hoy.</div>
-        </div>
-        <button onclick="confirmarBackupLocalDiario()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">Descargar</button>
-        <button onclick="descartarBackupLocalDiario()" style="border:none;background:transparent;color:var(--blue-text);font-size:16px;cursor:pointer;padding:2px 4px;flex-shrink:0" title="Ahora no">✕</button>
-      </div>
     </div>
     <div id="sync-panel" style="display:none;border-radius:var(--rs);padding:8px 12px;margin-bottom:.75rem;font-size:12px">
       <div style="display:flex;align-items:center;gap:8px">
@@ -1151,26 +1139,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="bkbtn bkimp" onclick="fetchFitbitAuto(true)"><i class="ti ti-refresh"></i> Actualizar ahora desde GitHub</button>
     </div>
   </div>
-
-  <!-- PESO -->
-  <div class="screen" id="s-peso">
-    <div class="ph"><h1>Peso</h1><span style="font-size:13px;color:var(--text2)">Báscula Renpho</span></div>
-    <div class="card" id="peso-actual-card" style="text-align:center;padding:1.25rem 1rem">
-      <div id="peso-actual-val" style="font-size:38px;font-weight:700;color:var(--text)">—</div>
-      <div id="peso-actual-fecha" style="font-size:12px;color:var(--text2);margin-top:2px">Sin datos todavía</div>
-      <div id="peso-tendencia" style="font-size:13px;font-weight:700;margin-top:8px"></div>
-    </div>
-    <div class="card" id="peso-grafico-card" style="display:none">
-      <div class="card-lbl">Evolución</div>
-      <div id="peso-grafico"></div>
-    </div>
-    <div class="card">
-      <div class="card-lbl">Histórico</div>
-      <div id="peso-lista"></div>
-    </div>
-    <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> El peso se sincroniza solo desde tu báscula Renpho vía Google Health, igual que el resto de datos de Fitbit Air. No hay forma de añadirlo a mano desde aquí todavía.</div>
-  </div>
-
   <div class="screen" id="s-config">
     <div class="ph"><h1>Config</h1><div id="fb-dot-config" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <!-- FIREBASE SYNC PANEL -->
@@ -1282,9 +1250,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </button>
       <button class="dnav-item" id="dnav-garmin" onclick="navTo('garmin','Garmin')">
         <i class="ti ti-device-watch dnav-icon" aria-hidden="true"></i><span class="dnav-label">Garmin Epic</span>
-      </button>
-      <button class="dnav-item" id="dnav-peso" onclick="navTo('peso','Peso')">
-        <i class="ti ti-scale dnav-icon" aria-hidden="true"></i><span class="dnav-label">Peso</span>
       </button>
       <div class="dnav-sep"></div>
       <button class="dnav-item" id="dnav-eval" onclick="navTo('eval','Evaluacion')">
@@ -2694,7 +2659,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[]};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2726,7 +2691,6 @@ function getConfigFields(){
     espacioReducido:!!ST.espacioReducido,githubToken:ST.githubToken||'',
     actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
-    ultimoBackupLocal:ST.ultimoBackupLocal||null,
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
 }
@@ -2765,7 +2729,7 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal'];
+    'espacioReducido','githubToken','actividadesFitbitOcultas'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2885,7 +2849,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3811,7 +3775,7 @@ var _editarFecha = null;
 function crearSesionManual(fecha){
   if(!ST.historialFechas) ST.historialFechas={};
   if(!ST.historialFechas[fecha]){
-    var pos=(ST.fechaSesiones&&ST.fechaSesiones[fecha])?parseInt(ST.fechaSesiones[fecha],10):(calcularDiaDesdeAnclaje(fecha)||ST.dia||1);
+    var pos=(ST.fechaSesiones&&ST.fechaSesiones[fecha])?parseInt(ST.fechaSesiones[fecha],10):(ST.dia||1);
     var dBProg=(CICLO[(pos-1)%12]?CICLO[(pos-1)%12].b:null);
     var dB=(ST.planDia&&ST.planDia[fecha])||dBProg||'D1';
     if(dB==='Descanso') dB='D1';
@@ -3975,52 +3939,6 @@ function guardarEdicionSesion(){
   if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
   var t=document.getElementById('fb-toast');
   if(t){t.textContent='✅ Sesión actualizada';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},2500);}
-}
-
-// Elimina por completo la sesión de una fecha concreta (local + Firestore). A diferencia de
-// "Eliminar entreno de hoy" (que solo opera sobre el día actual), esta funciona para cualquier
-// fecha del calendario, usando el diaCiclo/semana GUARDADOS en esa sesión — nunca ST.dia (hoy) —
-// para no borrar por error los sets de otro día que comparta la misma posición de ciclo.
-function eliminarSesionFecha(fecha){
-  if(!fecha) return;
-  if(!confirm('¿Eliminar por completo la sesión del '+fecha+'? Esto borra sus series registradas (si las tiene) en este dispositivo y en la nube. No se puede deshacer.')) return;
-  var ses=ST.historialFechas&&ST.historialFechas[fecha];
-  var diaCiclo=ses?ses.diaCiclo:(ST.fechaSesiones&&ST.fechaSesiones[fecha]);
-  var semana=ses?ses.semana:null;
-  // Solo borrar los sets de esa posición de ciclo+semana si ninguna OTRA fecha los está usando
-  // (la misma posición se repite cada 12 días, así que sin este check podríamos borrar datos ajenos).
-  if(diaCiclo!=null&&semana!=null){
-    var otraFechaMismaClave=Object.keys(ST.historialFechas||{}).some(function(f){
-      if(f===fecha) return false;
-      var h=ST.historialFechas[f];
-      return h&&h.diaCiclo===diaCiclo&&h.semana===semana;
-    });
-    if(!otraFechaMismaClave){
-      var prefix=getProgramaPrefix()+'s'+semana+'_d'+diaCiclo+'_';
-      Object.keys(ST.sets||{}).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.sets[k]; });
-      if(ST.checksManual){
-        Object.keys(ST.checksManual).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.checksManual[k]; });
-      }
-    }
-  }
-  if(ST.historialFechas) delete ST.historialFechas[fecha];
-  if(ST.fechaSesiones) delete ST.fechaSesiones[fecha];
-  if(ST.notaDia&&ST.notaDia[fecha]) delete ST.notaDia[fecha];
-  save();
-  try{
-    if(typeof fbReady!=='undefined'&&fbReady&&fbUser&&typeof fbDb!=='undefined'){
-      fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sesiones').doc(fecha).delete().catch(function(e){console.warn('borrar sesion fb',e);});
-      fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sets').where('fecha','==',fecha).get().then(function(snap){
-        snap.forEach(function(doc){ doc.ref.delete().catch(function(e){console.warn('borrar set fb',e);}); });
-      }).catch(function(e){console.warn('borrar sets fb',e);});
-    }
-  }catch(e){console.warn('eliminarSesionFecha fb',e);}
-  document.getElementById('mo-editar-sesion').classList.remove('open');
-  try{renders.hoy();}catch(e){}
-  try{renders.entreno();}catch(e){}
-  try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
-  var t2=document.getElementById('fb-toast');
-  if(t2){t2.textContent='🗑 Sesión eliminada';t2.style.opacity='1';setTimeout(function(){t2.style.opacity='0';},2500);}
 }
 
 function getHistorialDiaBoyle(diaKey, fase){
@@ -6867,13 +6785,12 @@ function toggleSection(id){
 }
 
 // ── ANCLAJE DE CICLO A FECHA REAL ────────────────────────────────────────────
-function calcularDiaDesdeAnclaje(fechaStr){
+function calcularDiaDesdeAnclaje(){
   if(!ST.cicloAnclaje) return null;
   var ancla=new Date(ST.cicloAnclaje+'T00:00:00');
-  var ref;
-  if(fechaStr){ ref=new Date(fechaStr+'T00:00:00'); }
-  else { ref=new Date(); ref.setHours(0,0,0,0); }
-  var diff=Math.round((ref-ancla)/(1000*60*60*24));
+  var hoy=new Date();
+  hoy.setHours(0,0,0,0);
+  var diff=Math.round((hoy-ancla)/(1000*60*60*24));
   if(diff<0) return null;
   return (diff%12)+1;
 }
@@ -8134,7 +8051,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v175';
+const APP_VERSION='v170';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8148,30 +8065,6 @@ function exportarJSON(){
   URL.revokeObjectURL(url);
   var ok=document.getElementById('backup-ok');
   if(ok){ok.style.display='block';setTimeout(function(){ok.style.display='none';},3000);}
-}
-
-// Backup local — una vez al día, al abrir la app, avisa (sin descargar solo) de que aún no
-// hay copia local guardada hoy en este dispositivo. La descarga solo se dispara con un clic
-// real del usuario (botón "Descargar"), así se evita por completo el bloqueo de descargas
-// automáticas que aplican algunos navegadores/PWA a los a.click() sin gesto del usuario.
-function checkAutoBackupLocalDiario(){
-  try{
-    var hoy=hoyLocal();
-    if(ST.ultimoBackupLocal===hoy) return; // ya resuelto hoy (descargado o descartado)
-    var b=document.getElementById('banner-backup-local');
-    if(b) b.style.display='block';
-  }catch(e){ console.warn('backup local diario error',e); }
-}
-function confirmarBackupLocalDiario(){
-  exportarJSON();
-  ST.ultimoBackupLocal=hoyLocal();
-  save();
-  var b=document.getElementById('banner-backup-local'); if(b) b.style.display='none';
-}
-function descartarBackupLocalDiario(){
-  ST.ultimoBackupLocal=hoyLocal();
-  save();
-  var b=document.getElementById('banner-backup-local'); if(b) b.style.display='none';
 }
 
 function restaurarDesdeJSON(input){
@@ -8345,7 +8238,7 @@ const GARMIN_JSON_URL = 'https://shumb71.github.io/Boyle/garmin_historial.json';
 // Decisión de Jou: Garmin = entrenos (actividades/fuerza), Fitbit Air = el resto del día.
 const FITBIT_OWNED_FIELDS=['pasos','calorias_dia','calorias_activas','fc_reposo','sueno_total_min',
   'sueno_profundo_min','sueno_ligero_min','sueno_rem_min','sueno_puntuacion','hrv','spo2',
-  'estres_medio','distancia_km','minutos_activos','peso_kg'];
+  'estres_medio','distancia_km','minutos_activos'];
 
 // Fusiona un día proveniente de Garmin. Si ese día ya tiene datos de Fitbit (marcados con
 // _fuenteFitbit), Garmin SOLO aporta actividades/fuerza — no pisa pasos/sueño/FC/etc.
@@ -8404,13 +8297,12 @@ function renderActividadesFitbitHtml(g,fecha){
   var h='<div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em">🏃 ACTIVIDADES (Fitbit)</div>';
   h+=lista.map(function(a){
     var lbl=fitbitExLabel(a.tipo);
-    var etiqueta=a.nombre||lbl.n;
     var meta=[];
     if(a.duracion_min) meta.push(a.duracion_min+' min');
     if(a.calorias) meta.push(a.calorias+' kcal');
     if(a.fc_media) meta.push('FC '+a.fc_media+(a.fc_max?'/'+a.fc_max:''));
     return '<div style="background:var(--bg3);border-radius:var(--rs);padding:.45rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">'
-      +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+lbl.i+' '+etiqueta+'</span>'
+      +'<span style="font-size:12px;font-weight:700;color:var(--text)">'+lbl.i+' '+lbl.n+'</span>'
       +'<span style="display:flex;align-items:center;gap:8px">'
       +'<span style="font-size:11px;color:var(--text2)">'+meta.join(' · ')+'</span>'
       +(a.id?'<button onclick="ocultarActividadFitbit(\''+a.id+'\',\''+(fecha||'')+'\')" title="Quitar de la app" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:13px;line-height:1"><i class="ti ti-x"></i></button>':'')
@@ -8514,7 +8406,6 @@ async function fetchFitbitAuto(manual) {
     if (typeof renderGarminHoy === 'function') renderGarminHoy();
     if (typeof renderHoy === 'function') renderHoy();
     if(document.getElementById('s-cal')&&document.getElementById('s-cal').classList.contains('active')&&typeof renders!=='undefined'&&renders.cal) renders.cal();
-    if(document.getElementById('s-peso')&&document.getElementById('s-peso').classList.contains('active')&&typeof renders!=='undefined'&&renders.peso) renders.peso();
 
     const total = Object.keys(data.dias).length;
     if (statusEl) {
@@ -8699,7 +8590,6 @@ window.addEventListener('load', () => {
   setTimeout(fetchGarminAuto, 3000); // 3s después de cargar completo
   setTimeout(fetchFitbitAuto, 4000); // 4s — justo después de Garmin, para que el merge respete prioridad
   setTimeout(function(){ exportarExcelDrive(true); }, 8000); // 8s — volcado inicial al Drive
-  setTimeout(checkAutoBackupLocalDiario, 6000); // 6s — avisa si falta backup JSON local hoy (pide confirmación)
 });
 
 function importarGarminHistorial(input){
@@ -9290,86 +9180,6 @@ renders.garmin=function(){
   }
 };
 
-// ══════════════════════════════════════
-// PESO — histórico desde báscula Renpho (vía Fitbit/Google Health)
-// ══════════════════════════════════════
-renders.peso=function(){
-  var hist=ST.garminHist||{};
-  var entradas=Object.keys(hist)
-    .filter(function(f){return hist[f]&&hist[f].peso_kg!=null;})
-    .sort()
-    .map(function(f){return {fecha:f,kg:hist[f].peso_kg};});
-
-  var actualVal=document.getElementById('peso-actual-val');
-  var actualFecha=document.getElementById('peso-actual-fecha');
-  var tendEl=document.getElementById('peso-tendencia');
-  var graficoCard=document.getElementById('peso-grafico-card');
-  var graficoEl=document.getElementById('peso-grafico');
-  var listaEl=document.getElementById('peso-lista');
-
-  if(!entradas.length){
-    actualVal.textContent='—';
-    actualFecha.textContent='Sin datos todavía — sincroniza tu báscula Renpho vía Google Health.';
-    tendEl.textContent='';
-    graficoCard.style.display='none';
-    listaEl.innerHTML='<div class="empty">Sin registros de peso aún.</div>';
-    return;
-  }
-
-  var ultima=entradas[entradas.length-1];
-  var fechaFmt=new Date(ultima.fecha+'T00:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
-  actualVal.textContent=ultima.kg.toFixed(1)+' kg';
-  actualFecha.textContent=fechaFmt.charAt(0).toUpperCase()+fechaFmt.slice(1);
-
-  if(entradas.length>1){
-    var primera=entradas[0];
-    var diff=Math.round((ultima.kg-primera.kg)*10)/10;
-    var color=diff>0?'var(--red-text)':diff<0?'var(--green-text)':'var(--text2)';
-    var flecha=diff>0?'↗':diff<0?'↘':'→';
-    tendEl.style.color=color;
-    tendEl.textContent=flecha+' '+(diff>0?'+':'')+diff+' kg desde '+new Date(primera.fecha+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
-  } else {
-    tendEl.textContent='';
-  }
-
-  // Gráfico SVG sencillo (mismo patrón que renders.historial)
-  if(entradas.length>1){
-    graficoCard.style.display='block';
-    var datos=entradas.slice(-30);
-    var W=320,H=110,PL=36,PR=8,PT=16,PB=22;
-    var cW=W-PL-PR,cH=H-PT-PB;
-    var pesos=datos.map(function(d){return d.kg;});
-    var minP=Math.min.apply(null,pesos),maxP=Math.max.apply(null,pesos);
-    var rangoP=(maxP-minP)||1;
-    var pts=datos.map(function(d,i){
-      var x=PL+Math.round(i/(datos.length-1||1)*cW);
-      var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);
-      return x+','+y;
-    }).join(' ');
-    var circles='';
-    datos.forEach(function(d,i){
-      var x=PL+Math.round(i/(datos.length-1||1)*cW);
-      var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);
-      circles+='<circle cx="'+x+'" cy="'+y+'" r="3.5" fill="var(--blue)" stroke="white" stroke-width="1.5"><title>'+d.fecha+': '+d.kg+' kg</title></circle>';
-    });
-    var areaPath='M'+PL+','+(PT+cH)+' L'+datos.map(function(d,i){var x=PL+Math.round(i/(datos.length-1||1)*cW);var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);return x+','+y;}).join(' L')+' L'+(PL+cW)+','+(PT+cH)+' Z';
-    graficoEl.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto">'
-      +'<text x="'+(PL-4)+'" y="'+(PT+4)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+maxP.toFixed(1)+'</text>'
-      +'<text x="'+(PL-4)+'" y="'+(PT+cH)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+minP.toFixed(1)+'</text>'
-      +'<path d="'+areaPath+'" fill="var(--blue)" fill-opacity="0.08"/>'
-      +'<polyline points="'+pts+'" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-      +circles+'</svg>';
-  } else {
-    graficoCard.style.display='none';
-  }
-
-  // Lista (más reciente primero)
-  listaEl.innerHTML=entradas.slice().reverse().map(function(d){
-    var fFmt=new Date(d.fecha+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
-    return '<div class="prow"><span class="plbl">'+fFmt+'</span><span class="pval">'+d.kg.toFixed(1)+' kg</span></div>';
-  }).join('');
-};
-
 function importar(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
@@ -9857,7 +9667,6 @@ checkBackupReminder();
       <button onclick="document.getElementById('mo-editar-sesion').classList.remove('open')" class="bcan">Cancelar</button>
       <button onclick="guardarEdicionSesion()" class="bsav" style="background:var(--blue)">✓ Guardar</button>
     </div>
-    <button onclick="eliminarSesionFecha(_editarFecha)" style="width:100%;margin-top:.5rem;padding:10px;border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🗑 Eliminar sesión de este día</button>
   </div>
 </div>
 

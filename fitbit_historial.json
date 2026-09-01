@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-01T13:59:08.223920+00:00",
+  "actualizado": "2026-09-01T18:13:52.544249+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -77,7 +77,7 @@
     },
     "2026-08-25": {
       "pasos": 6401,
-      "distancia_km": 5.95,
+      "distancia_km": 4.01,
       "minutos_activos": 13,
       "calorias_dia": 3041.77,
       "fc_reposo": 50.0,
@@ -96,13 +96,13 @@
           "fc_max": null
         }
       ],
-      "sueno_total_min": 387,
-      "sueno_profundo_min": 91,
-      "sueno_ligero_min": 256,
-      "sueno_rem_min": 40
+      "sueno_total_min": 28,
+      "sueno_profundo_min": 8,
+      "sueno_ligero_min": 20,
+      "sueno_rem_min": 0
     },
     "2026-08-26": {
-      "pasos": 10852,
+      "pasos": 9222,
       "distancia_km": 6.72,
       "minutos_activos": 26,
       "calorias_dia": 2447.97,
@@ -169,7 +169,7 @@
       ],
       "pasos": 21148,
       "distancia_km": 11.6,
-      "minutos_activos": 447,
+      "minutos_activos": 434,
       "fc_reposo": 50.0,
       "hrv": 44.8,
       "spo2": 95,
@@ -255,11 +255,23 @@
       "sueno_rem_min": 132
     },
     "2026-09-01": {
-      "calorias_dia": 1725.99,
-      "actividadesFitbit": [],
-      "pasos": 10188,
-      "distancia_km": 7.06,
-      "minutos_activos": 245,
+      "calorias_dia": 2601.45,
+      "actividadesFitbit": [
+        {
+          "id": "3553500707348099992",
+          "tipo": "WORKOUT",
+          "nombre": "Senderismo",
+          "inicio": "2026-09-01T16:26:50Z",
+          "fin": "2026-09-01T17:23:29Z",
+          "duracion_min": 57,
+          "calorias": 537,
+          "fc_media": 114,
+          "fc_max": null
+        }
+      ],
+      "pasos": 22859,
+      "distancia_km": 14.8,
+      "minutos_activos": 405,
       "fc_reposo": 49.0,
       "hrv": 43.05,
       "spo2": 94.4,

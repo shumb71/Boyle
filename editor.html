@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de Programa — Entreno Boyle</title>
+<style>
+  :root{
+    --bg:#12161d; --bg2:#1a202b; --bg3:#212938; --border:#2a3244;
+    --text:#e9edf3; --text2:#8d9bb0; --text3:#5c6779;
+    --blue:#2f7fd1; --blue-dim:#1f4d80; --blue-bg:rgba(47,127,209,.12);
+    --green:#5aa858; --green-bg:rgba(90,168,88,.12);
+    --red:#d9614f; --red-bg:rgba(217,97,79,.12);
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    line-height:1.4;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:24px 16px 80px}
+  header{margin-bottom:20px}
+  h1{font-size:20px; font-weight:700; margin:0 0 2px}
+  .sub{color:var(--text2); font-size:13px; margin:0}
+
+  .toolbar{display:flex; flex-wrap:wrap; gap:8px; margin:18px 0}
+  button{
+    font:inherit; font-size:13px; font-weight:600; cursor:pointer;
+    border-radius:8px; border:1px solid var(--border); background:var(--bg3);
+    color:var(--text); padding:8px 12px;
+  }
+  button:hover{border-color:var(--text3)}
+  button.primary{background:var(--blue); border-color:var(--blue); color:#fff}
+  button.primary:hover{background:var(--blue-dim)}
+  button.ghost{background:transparent}
+  button.danger{color:var(--red)}
+  button.small{padding:4px 9px; font-size:12px; font-weight:500}
+  button:disabled{opacity:.4; cursor:not-allowed}
+  input[type=file]{display:none}
+
+  #status{
+    font-size:13px; padding:9px 12px; border-radius:8px; margin:0 0 16px;
+    display:none;
+  }
+  #status.ok{display:block; background:var(--green-bg); color:var(--green)}
+  #status.err{display:block; background:var(--red-bg); color:var(--red)}
+  #status.info{display:block; background:var(--blue-bg); color:var(--blue)}
+
+  .tabs{display:flex; gap:6px; margin-bottom:8px}
+  .tab{
+    flex:1; text-align:center; padding:9px 4px; border-radius:8px;
+    border:1px solid var(--border); background:var(--bg2); color:var(--text2);
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .tab.active{background:var(--blue); border-color:var(--blue); color:#fff}
+
+  #dia-editor{margin-top:18px}
+  .bloque{
+    background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin-bottom:12px;
+  }
+  .bloque-head{display:flex; align-items:center; gap:8px; margin-bottom:10px}
+  .bloque-num{
+    width:22px; height:22px; border-radius:50%; background:var(--bg3);
+    color:var(--text2); font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .bloque-head select, .bloque-head input[type=number]{
+    font:inherit; font-size:13px; background:var(--bg3); color:var(--text);
+    border:1px solid var(--border); border-radius:6px; padding:5px 8px;
+  }
+  .bloque-head .desc-lbl{font-size:12px; color:var(--text3)}
+  .bloque-head .spacer{flex:1}
+
+  .ejercicio{
+    display:grid; grid-template-columns:1fr 56px 56px 56px auto;
+    gap:6px; align-items:center; margin-bottom:6px;
+  }
+  .ejercicio input[type=text]{
+    font:inherit; font-size:13px; background:var(--bg3); color:var(--text);
+    border:1px solid var(--border); border-radius:6px; padding:6px 8px; width:100%;
+  }
+  .ejercicio input.reps{font-size:12px; text-align:center; padding:6px 4px}
+  .ejercicio .ej-actions{display:flex; gap:2px}
+  .rep-heads{
+    display:grid; grid-template-columns:1fr 56px 56px 56px auto;
+    gap:6px; margin-bottom:4px; font-size:10px; color:var(--text3);
+  }
+  .rep-heads span{text-align:center}
+
+  .bloque-foot{display:flex; justify-content:space-between; align-items:center; margin-top:10px}
+
+  #resumen{
+    margin-top:22px; padding:12px 14px; background:var(--bg2);
+    border:1px solid var(--border); border-radius:var(--radius);
+    font-size:12px; color:var(--text2);
+  }
+  #resumen b{color:var(--text)}
+
+  .empty-dia{
+    text-align:center; padding:30px 10px; color:var(--text3); font-size:13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Editor de Programa</h1>
+    <p class="sub">Entreno Boyle — edita fases, días y ejercicios sin tocar JSON a mano</p>
+  </header>
+
+  <div style="margin-bottom:14px">
+    <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Repositorio de GitHub Pages (usuario/repo, o solo el nombre si es shumb71)</label>
+    <input type="text" id="repo-input" placeholder="entreno-pro"
+      style="width:100%;max-width:400px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px"
+      oninput="guardarRepo(this.value)">
+  </div>
+
+  <div class="toolbar">
+    <button class="primary" onclick="cargarDesdeGitHub()">↓ Cargar desde GitHub</button>
+    <button onclick="document.getElementById('file-input').click()">📂 Abrir fichero local</button>
+    <input type="file" id="file-input" accept="application/json" onchange="cargarDesdeArchivo(event)">
+    <button class="ghost" onclick="if(confirm('¿Vaciar todo y empezar desde cero?')) nuevoProgramaVacio()">＋ Nuevo en blanco</button>
+    <span style="flex:1"></span>
+    <button class="primary" onclick="descargarJSON()">💾 Descargar programa.json</button>
+  </div>
+
+  <div id="status"></div>
+
+  <div class="tabs" id="tabs-fase"></div>
+  <div class="tabs" id="tabs-dia"></div>
+
+  <div id="dia-editor"></div>
+
+  <div id="resumen"></div>
+</div>
+
+<script>
+const FASES = ['F1','F2','F3','F4'];
+const DIAS = ['D1','D2','D3','D4'];
+const FASE_NOMBRE = {F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza-resistencia'};
+
+let programa = null;
+let faseActual = 'F1';
+let diaActual = 'D1';
+
+function nuevoProgramaVacio(){
+  programa = {version:1, generado:'', fases:{}};
+  FASES.forEach(f=>{
+    programa.fases[f] = {dias:{}};
+    DIAS.forEach(d=>{
+      programa.fases[f].dias[d] = {bloques:[]};
+    });
+  });
+  render();
+  mostrarStatus('info','Programa en blanco. Añade bloques y ejercicios desde cero, o carga uno existente.');
+}
+
+// Repo configurable: recordado en el propio navegador (localStorage), no en GitHub — cada
+// dispositivo/navegador donde abras este editor guarda su propio valor.
+function getRepoGuardado(){
+  return (localStorage.getItem('editorRepo')||'entreno-pro').trim().replace(/^\/+|\/+$/g,'');
+}
+function guardarRepo(val){
+  localStorage.setItem('editorRepo', val||'entreno-pro');
+}
+function repoUrlBase(){
+  return 'https://raw.githubusercontent.com/shumb71/'+getRepoGuardado()+'/main/';
+}
+
+async function cargarDesdeGitHub(){
+  mostrarStatus('info','Descargando programa.json de '+getRepoGuardado()+'…');
+  try{
+    const resp = await fetch(repoUrlBase()+'programa.json?t='+Date.now());
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data = await resp.json();
+    if(!validar(data)) return;
+    programa = data;
+    render();
+    mostrarStatus('ok','Cargado desde '+getRepoGuardado()+' correctamente.');
+  }catch(e){
+    mostrarStatus('err','No se pudo cargar desde '+getRepoGuardado()+': '+e.message+'. Comprueba el nombre del repo arriba, o prueba con "Abrir fichero local".');
+  }
+}
+
+function cargarDesdeArchivo(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!validar(data)) return;
+      programa = data;
+      render();
+      mostrarStatus('ok','Cargado desde '+file.name);
+    }catch(err){
+      mostrarStatus('err','El fichero no es un JSON válido: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+function validar(data){
+  if(!data || typeof data!=='object' || !data.fases){
+    mostrarStatus('err','Estructura inválida: falta "fases".');
+    return false;
+  }
+  for(const f of FASES){
+    if(!data.fases[f] || !data.fases[f].dias){
+      mostrarStatus('err','Estructura inválida: falta la fase '+f+'.');
+      return false;
+    }
+    for(const d of DIAS){
+      if(!data.fases[f].dias[d]){
+        // Se autocompleta vacío en vez de rechazar, para no bloquear ficheros parciales
+        data.fases[f].dias[d] = {bloques:[]};
+      }
+      if(!Array.isArray(data.fases[f].dias[d].bloques)) data.fases[f].dias[d].bloques = [];
+    }
+  }
+  return true;
+}
+
+function descargarJSON(){
+  if(!programa){ mostrarStatus('err','No hay nada que descargar todavía.'); return; }
+  const problemas = validarParaDescarga();
+  if(problemas.length){
+    if(!confirm('Hay '+problemas.length+' aviso(s):\n\n'+problemas.join('\n')+'\n\n¿Descargar igualmente?')) return;
+  }
+  programa.generado = new Date().toISOString().slice(0,10);
+  const blob = new Blob([JSON.stringify(programa, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'programa.json'; a.click();
+  URL.revokeObjectURL(url);
+  mostrarStatus('ok','programa.json descargado. Súbelo a tu repo (sustituyendo el actual) para que la app lo recoja.');
+}
+
+function validarParaDescarga(){
+  const avisos = [];
+  FASES.forEach(f=>{
+    DIAS.forEach(d=>{
+      const dia = programa.fases[f].dias[d];
+      if(!dia.bloques.length){ avisos.push(f+'.'+d+': sin bloques (día vacío)'); return; }
+      dia.bloques.forEach((b,bi)=>{
+        if(!b.ejercicios || !b.ejercicios.length) avisos.push(f+'.'+d+' bloque '+(bi+1)+': sin ejercicios');
+        (b.ejercicios||[]).forEach(e=>{
+          if(!e.nombre || !e.nombre.trim()) avisos.push(f+'.'+d+' bloque '+(bi+1)+': hay un ejercicio sin nombre');
+        });
+      });
+    });
+  });
+  return avisos;
+}
+
+function mostrarStatus(tipo, msg){
+  const el = document.getElementById('status');
+  el.className = tipo;
+  el.textContent = msg;
+}
+
+function render(){
+  renderTabsFase();
+  renderTabsDia();
+  renderDia();
+  renderResumen();
+}
+
+function renderTabsFase(){
+  const el = document.getElementById('tabs-fase');
+  el.innerHTML = FASES.map(f=>
+    '<div class="tab '+(f===faseActual?'active':'')+'" onclick="irAFase(\''+f+'\')">'+f+'</div>'
+  ).join('');
+}
+function renderTabsDia(){
+  const el = document.getElementById('tabs-dia');
+  el.innerHTML = DIAS.map(d=>
+    '<div class="tab '+(d===diaActual?'active':'')+'" onclick="irADia(\''+d+'\')">'+d+'</div>'
+  ).join('');
+}
+function irAFase(f){ faseActual=f; render(); }
+function irADia(d){ diaActual=d; render(); }
+
+function renderDia(){
+  const el = document.getElementById('dia-editor');
+  if(!programa){
+    el.innerHTML = '<div class="empty-dia">Carga un programa.json existente, o empieza uno en blanco, para empezar a editar.</div>';
+    return;
+  }
+  const dia = programa.fases[faseActual].dias[diaActual];
+  let html = '<p class="sub" style="margin-bottom:14px">'+faseActual+' · '+FASE_NOMBRE[faseActual]+' — '+diaActual+'</p>';
+
+  if(!dia.bloques.length){
+    html += '<div class="empty-dia">Este día no tiene bloques todavía.</div>';
+  } else {
+    dia.bloques.forEach((b, bi)=>{
+      html += renderBloque(b, bi, dia.bloques.length);
+    });
+  }
+  html += '<button class="ghost" style="width:100%;padding:10px" onclick="addBloque()">＋ Añadir bloque</button>';
+  el.innerHTML = html;
+}
+
+function renderBloque(b, bi, total){
+  let html = '<div class="bloque">';
+  html += '<div class="bloque-head">';
+  html += '<div class="bloque-num">'+(bi+1)+'</div>';
+  html += '<select onchange="setBloqueTipo('+bi+',this.value)">';
+  html += '<option value="par" '+(b.tipo==='par'?'selected':'')+'>Par</option>';
+  html += '<option value="triset" '+(b.tipo==='triset'?'selected':'')+'>Tri-set</option>';
+  html += '</select>';
+  html += '<span class="desc-lbl">descanso</span>';
+  html += '<input type="number" value="'+(b.descanso_seg||90)+'" min="0" step="15" style="width:60px" oninput="setBloqueDescanso('+bi+',this.value)"> <span class="desc-lbl">seg</span>';
+  html += '<span class="spacer"></span>';
+  html += '<button class="small ghost" '+(bi===0?'disabled':'')+' onclick="moverBloque('+bi+',-1)">↑</button>';
+  html += '<button class="small ghost" '+(bi===total-1?'disabled':'')+' onclick="moverBloque('+bi+',1)">↓</button>';
+  html += '<button class="small danger ghost" onclick="quitarBloque('+bi+')">✕</button>';
+  html += '</div>';
+
+  const ejs = b.ejercicios || [];
+  if(ejs.length){
+    html += '<div class="rep-heads"><span style="text-align:left">Ejercicio</span><span>Sem 1</span><span>Sem 2</span><span>Sem 3</span><span></span></div>';
+    ejs.forEach((e, ei)=>{
+      html += renderEjercicio(e, bi, ei, ejs.length);
+    });
+  }
+  html += '<div class="bloque-foot"><button class="small ghost" onclick="addEjercicio('+bi+')">＋ Añadir ejercicio</button></div>';
+  html += '</div>';
+  return html;
+}
+
+function repVal(e, semIdx){
+  const r = (e.reps||[]).find(x=>x.semana===semIdx+1);
+  return r ? (r.r!==undefined?r.r:'') : '';
+}
+
+function renderEjercicio(e, bi, ei, total){
+  let html = '<div class="ejercicio">';
+  html += '<input type="text" value="'+escapeAttr(e.nombre||'')+'" placeholder="Nombre del ejercicio" oninput="setEjNombre('+bi+','+ei+',this.value)">';
+  for(let s=0;s<3;s++){
+    html += '<input type="text" class="reps" value="'+escapeAttr(repVal(e,s))+'" placeholder="—" oninput="setEjReps('+bi+','+ei+','+s+',this.value)">';
+  }
+  html += '<div class="ej-actions">';
+  html += '<button class="small ghost" '+(ei===0?'disabled':'')+' onclick="moverEjercicio('+bi+','+ei+',-1)">↑</button>';
+  html += '<button class="small ghost" '+(ei===total-1?'disabled':'')+' onclick="moverEjercicio('+bi+','+ei+',1)">↓</button>';
+  html += '<button class="small danger ghost" onclick="quitarEjercicio('+bi+','+ei+')">✕</button>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function escapeAttr(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function diaObj(){ return programa.fases[faseActual].dias[diaActual]; }
+
+function addBloque(){
+  diaObj().bloques.push({tipo:'par', descanso_seg:90, ejercicios:[]});
+  render();
+}
+function quitarBloque(bi){
+  if(!confirm('¿Quitar este bloque entero y sus ejercicios?')) return;
+  diaObj().bloques.splice(bi,1);
+  render();
+}
+function moverBloque(bi, dir){
+  const arr = diaObj().bloques;
+  const j = bi+dir;
+  if(j<0||j>=arr.length) return;
+  [arr[bi],arr[j]] = [arr[j],arr[bi]];
+  render();
+}
+function setBloqueTipo(bi, val){ diaObj().bloques[bi].tipo = val; }
+function setBloqueDescanso(bi, val){ diaObj().bloques[bi].descanso_seg = parseInt(val,10)||90; }
+
+function addEjercicio(bi){
+  const b = diaObj().bloques[bi];
+  if(!b.ejercicios) b.ejercicios = [];
+  b.ejercicios.push({nombre:'', reps:[{semana:1,r:''},{semana:2,r:''},{semana:3,r:''}]});
+  render();
+}
+function quitarEjercicio(bi, ei){
+  diaObj().bloques[bi].ejercicios.splice(ei,1);
+  render();
+}
+function moverEjercicio(bi, ei, dir){
+  const arr = diaObj().bloques[bi].ejercicios;
+  const j = ei+dir;
+  if(j<0||j>=arr.length) return;
+  [arr[ei],arr[j]] = [arr[j],arr[ei]];
+  render();
+}
+function setEjNombre(bi, ei, val){
+  diaObj().bloques[bi].ejercicios[ei].nombre = val;
+  renderResumen();
+}
+function setEjReps(bi, ei, semIdx, val){
+  const e = diaObj().bloques[bi].ejercicios[ei];
+  if(!e.reps) e.reps = [{semana:1,r:''},{semana:2,r:''},{semana:3,r:''}];
+  let r = e.reps.find(x=>x.semana===semIdx+1);
+  if(!r){ r = {semana:semIdx+1, r:''}; e.reps.push(r); }
+  r.r = val;
+}
+
+function renderResumen(){
+  const el = document.getElementById('resumen');
+  if(!programa){ el.innerHTML=''; return; }
+  let totalEj = 0, totalBloques = 0;
+  FASES.forEach(f=>DIAS.forEach(d=>{
+    const dia = programa.fases[f].dias[d];
+    totalBloques += dia.bloques.length;
+    dia.bloques.forEach(b=> totalEj += (b.ejercicios||[]).length);
+  }));
+  const avisos = validarParaDescarga();
+  el.innerHTML = '<b>'+totalBloques+'</b> bloques · <b>'+totalEj+'</b> ejercicios en total, en las 4 fases'
+    + (avisos.length ? ' · <span style="color:var(--red)">'+avisos.length+' aviso(s) pendientes</span>' : ' · <span style="color:var(--green)">sin avisos</span>');
+}
+
+// Arranque: intenta cargar automáticamente desde GitHub; si falla, deja la pantalla vacía
+// lista para "Abrir fichero local" o "Nuevo en blanco".
+document.getElementById('repo-input').value = getRepoGuardado();
+cargarDesdeGitHub();
+</script>
+</body>
+</html>

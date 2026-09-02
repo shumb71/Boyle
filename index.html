@@ -572,7 +572,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=177', {scope: './'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_005', {scope: './'})
       .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
@@ -1226,6 +1226,26 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
 
     <div class="card">
+      <div class="card-lbl">🔄 Nuevo ciclo</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Vuelve a F1 · Semana 1 para empezar el programa desde cero. Tu historial de entrenos, pesos y series se conserva íntegro — no se borra nada, solo se abre un ciclo nuevo a partir de hoy.</div>
+      <div id="ciclos-completados-lista" style="margin-bottom:.6rem"></div>
+      <button class="bkbtn bkimp" onclick="iniciarNuevoCiclo()"><i class="ti ti-refresh"></i> Empezar nuevo ciclo</button>
+    </div>
+
+    <div class="card" style="border:.5px solid rgba(91,143,255,.3)">
+      <div class="card-lbl" style="color:var(--blue)">📋 Programa externo (experimental — vEXT_005)</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Si existen programa.json/ejercicios.json en el repo indicado abajo, sustituyen al programa y al catálogo de ejercicios "de fábrica". Garmin/Fitbit siguen siempre en shumb71.github.io/Boyle (repo estable, sin tocar).</div>
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Repo de GitHub Pages (usuario/repo, o solo el nombre si es shumb71)</label>
+      <input type="text" id="repo-programa-input" value="" placeholder="entreno-pro"
+        style="width:100%;padding:8px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:.6rem"
+        oninput="ST.repoPrograma=this.value;save();renderProgramaExtStatus();">
+      <div id="programa-ext-status" style="font-size:12px;color:var(--text2);margin-bottom:.6rem"></div>
+      <button class="bkbtn bkimp" onclick="fetchProgramaExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar programa desde GitHub</button>
+      <button class="bkbtn bkimp" onclick="fetchEjerciciosExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar catálogo de ejercicios</button>
+      <button class="bkbtn" onclick="abrirEditorPrograma()"><i class="ti ti-external-link"></i> 🛠 Abrir editor de programa</button>
+    </div>
+
+    <div class="card">
       <div class="card-lbl">Peligro</div>
       <div class="info-box iw"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Borrar todos los datos elimina series, pesos y progresion.</div>
       <button class="bkbtn bkdel" onclick="borrarDatos()"><i class="ti ti-trash" aria-hidden="true"></i> Borrar todos los datos</button>
@@ -1517,6 +1537,16 @@ const GRUPOS_DIA={
       {lbl:'PAR 2 — Empuje horizontal + Rodilla/movilidad',tipo:'par',descanso:90,n:2},
       {lbl:'TRI-SET — Core-misc + Core antirrotación + Carry',tipo:'triset',descanso:90,n:3}],
 };
+
+// GRUPOS_DIA_FASE [vEXT_001] — override de agrupación por FASE, editable desde programa.json.
+// Vacío por defecto: mientras no llegue un programa externo válido, TODO sigue usando
+// GRUPOS_DIA (fábrica, igual para las 4 fases, comportamiento actual sin cambios).
+var GRUPOS_DIA_FASE={};
+// Helper: agrupación a usar para una fase+día — externa si existe, si no la de fábrica.
+function getGruposDia(fase,dB){
+  if(GRUPOS_DIA_FASE[fase]&&GRUPOS_DIA_FASE[fase][dB]) return GRUPOS_DIA_FASE[fase][dB];
+  return GRUPOS_DIA[dB]||null;
+}
 
 // VARIANTES DE EJERCICIOS (sistema Boyle: baseline → progression → regression)
 const VARIANTES={
@@ -1857,44 +1887,14 @@ function getRpeObjetivo(fase){ return RPE_FASE[fase]||null; }
 
 const EJ_INFO={
   // --- Fichas añadidas v101 ---
-  "Front Plank":{tipo:"prog",tecnica:"Plancha frontal. Glúteos y abdomen apretados, pelvis en retroversión. Antiextensión pura. Progresa el tiempo cada semana."},
-  "Hard-style Front Plank":{tipo:"prog",tecnica:"Plancha de máxima tensión: aprieta puños, glúteos y cuádriceps al 100%. 10-20 s muy intensos."},
-  "Stability Ball Roll-out":{tipo:"prog",tecnica:"Rodillas en suelo, antebrazos en fitball. Rueda hacia delante sin arquear la lumbar. Antiextensión dinámica."},
-  "In-line Chop":{tipo:"prog",tecnica:"Medio arrodillado en línea, cable de alto a bajo. El core resiste la rotación (antirotación)."},
-  "In-line Lift":{tipo:"prog",tecnica:"Medio arrodillado en línea, cable de bajo a alto. Antirotación en patrón ascendente."},
-  "In-line Iso Hold Chop":{tipo:"prog",tecnica:"Como el chop pero manteniendo la posición final en isométrico. Máxima demanda de core."},
-  "In-line Iso Hold Lift":{tipo:"prog",tecnica:"Lift con sostén isométrico en la posición alta."},
-  "Dynamic Chop":{tipo:"prog",tecnica:"Chop con velocidad/potencia, fase 3-4. Transferencia de fuerza al patrón rotacional. Vigila el timing: toda la fuerza rotacional sale del giro de la columna torácica (pecho) y el empuje de cadera — la zona lumbar se mantiene rígida como un bloque, no rota ni compensa."},
-  "Dynamic Lift":{tipo:"prog",tecnica:"Lift dinámico de potencia. Mismo principio que el Dynamic Chop: rotación desde torácica + cadera, lumbar bloqueada como una sola pieza en todo el recorrido."},
   "Standing Chop":{tipo:"prog",tecnica:"Leñador (chop) de pie, diagonal de arriba a abajo. Igual que el Dynamic Chop: la rotación sale de la columna torácica y la cadera — la lumbar aguanta rígida, no rota."},
   "Standing Lift":{tipo:"prog",tecnica:"Levantamiento (lift) de pie, diagonal de abajo a arriba. Igual que el Dynamic Lift: rotación desde torácica + cadera, lumbar bloqueada como un bloque."},
-  "Half-kneeling push-pull":{tipo:"prog",tecnica:"Medio arrodillado: un brazo empuja y el otro tira a la vez. Antirotación máxima del core."},
-  "Dynamic push-pull":{tipo:"prog",tecnica:"De pie, empuje-tracción dinámico. Fase avanzada."},
-  "Half-kneeling antirotation hold":{tipo:"fijo",series:"3",reps:"20-25 s",tecnica:"Pallof hold medio arrodillado. Resistir la tracción del cable sin rotar. Respiración controlada."},
-  "Standing antirotation hold":{tipo:"fijo",series:"3",reps:"25 s",tecnica:"Pallof hold de pie. Antirotación con base inestable."},
-  "Ring Row":{tipo:"prog",tecnica:"Remo invertido en anillas. Cuerpo recto, escápulas juntas. Cuanto más horizontal, más difícil."},
-  "Ring Row + Med Ball Slam":{tipo:"prog",tecnica:"Complejo: serie de remo + slam de balón medicinal para potencia de tracción."},
-  "X-pull-down":{tipo:"prog",tecnica:"Jalón en X con cable o goma cruzada. Tracción vertical con activación dorsal."},
   "DB Row":{tipo:"prog",tecnica:"Remo con mancuerna a una mano, apoyo en banco. Tracción horizontal."},
-  "Chin-up + Med Ball Slam":{tipo:"prog",tecnica:"Complejo: dominadas + slam de balón. Fuerza-potencia de tracción."},
-  "Supine Floor Slide":{tipo:"prog",tecnica:"Tumbado, brazos deslizan por el suelo manteniendo lumbar pegada. Movilidad y estabilidad de hombro."},
-  "Spiderman pos. lat stretch":{tipo:"fijo",series:"2",reps:"5 respiraciones",tecnica:"Zancada profunda, mano interior al suelo, abre el pecho rotando. Movilidad de cadera y torácica."},
   "Half-kneeling Overhead Press":{tipo:"prog",tecnica:"Press de hombro medio arrodillado con KB/mancuerna. Estabilidad de core y core antiextensión."},
   "Push-up progression":{tipo:"prog",tecnica:"Flexión con progresión: inclinado → suelo → pies elevados → lastrado. Cuerpo en tabla."},
-  "Bench Press":{tipo:"prog",tecnica:"Press de banca. Escápulas retraídas, recorrido controlado."},
   "Bench Press + Med Ball":{tipo:"prog",tecnica:"Complejo: press + lanzamiento/press de balón en banco para potencia."},
-  "Dumbbell Incline Bench":{tipo:"prog",tecnica:"Press inclinado con mancuernas. Más énfasis en deltoides anterior y pecho superior."},
-  "Dumbbell Incline Bench + Med Ball":{tipo:"prog",tecnica:"Complejo de press inclinado + balón medicinal."},
-  "Trap Bar Deadlift + Hurdle Jump":{tipo:"prog",tecnica:"Complejo de potencia: peso muerto trap bar + saltos continuos de valla.",alerta:"⚠️ Rotura menisco externo: salto/impacto contraindicado. Sustituir por empuje de Trineo (sin salto) o el ejercicio sin el complejo de salto."},
-  "RFESS + Hurdle Hops":{tipo:"prog",tecnica:"Complejo: RFESS + saltos continuos de valla.",alerta:"⚠️ Rotura menisco externo: salto/impacto contraindicado. Sustituir por empuje de Trineo (sin salto) o el ejercicio sin el complejo de salto."},
-  "One-leg Squat":{tipo:"prog",tecnica:"Sentadilla a una pierna. Control de rodilla (sin valgo).",alerta:"⚠️ Rotura menisco externo / condropatía: evitar flexión profunda con carga. Sustituir por Step-up cajón bajo o Wall Sit."},
-  "Rear-foot-elevated Split Squat":{tipo:"prog",tecnica:"Pie trasero elevado. Bajada 3 s, rodilla delantera no supera el pie.",alerta:"⚠️ Rotura menisco externo: rango reducido, NO bajar rodilla al suelo. Si dolor → Split Squat sin elevación o Step-up cajón bajo."},
-  "Toe Touch Squat with medicine ball":{tipo:"prog",tecnica:"Sentadilla guiada tocando el balón. Patrón seguro de rodilla, bajo riesgo."},
   "Squat Holds":{tipo:"prog",tecnica:"Sostén isométrico en sentadilla. Tolerable en general; baja el rango si molesta la rodilla."},
   "Hang Clean (65-75%)":{tipo:"prog",tecnica:"Hang clean al 65-75%. SIEMPRE primero. Extensión completa de cadera, calidad sobre cantidad."},
-  "Half-kneeling Windmill":{tipo:"prog",tecnica:"Semi-arrodillado, KB o mancuerna en la mano del lado de la pierna adelantada, brazo extendido hacia el techo. Bisagra de cadera lateral manteniendo la vista en el peso y el brazo bloqueado. Antiflexión lateral + estabilidad de hombro."},
-  "Suitcase Carry":{tipo:"prog",tecnica:"Caminata con peso a un lado. Antiflexión lateral del core. Tronco recto."},
-  "Farmer Carry":{tipo:"prog",tecnica:"Caminata con peso en ambas manos. Agarre y core."},
   'Hang Clean':{tipo:'prog',tecnica:'SIEMPRE primero en la sesion. Desde encima de rodillas. Extension completa de cadera. 3-5 reps max — calidad sobre cantidad.'},
   'DB Snatch / KB Swing':{tipo:'prog',tecnica:'KB Swing: cadera atras y adelante explosivo. No es una sentadilla. Alternativa al Hang Clean si hay fatiga o tecnica no consolidada.'},
   'Trap Bar Deadlift':{tipo:'prog',tecnica:'Agarre neutro en hex bar. Cadera baja al inicio. Empujar el suelo. Espalda neutra durante todo el recorrido. PARA si la lumbar se redondea.',alerta:'⚠️ Condropatía femoral medial: vigilar que las rodillas NO colapsen en valgo durante el tirón. Generalmente bien tolerado.'},
@@ -1918,7 +1918,7 @@ const EJ_INFO={
   'Bench Press':{tipo:'prog',tecnica:'Press banca barra o mancuernas. Bajada 3 seg (tempo). Pies en el suelo. Alternativa: mancuernas para mayor rango.'},
   'Standing Overhead Press':{tipo:'prog',tecnica:'De pie, core activo. Mancuernas o barra. No arquear la lumbar. Alternativa sentado si hay movilidad limitada. Alternativas válidas: Half-kneeling Overhead Press (más estabilidad de core, apoyo de rodilla) o High Split Press (zancada alta, sin flexión profunda de rodilla).'},
   'High Split Press':{tipo:'prog',tecnica:'Press de hombro (barra o mancuernas) en zancada dividida alta: pie trasero apoyado solo de puntera, rodilla casi extendida — sin bajar como en una zancada profunda. Añade estabilidad de cadera y core al press sin la carga articular de una zancada baja, buena opción por la rodilla.'},
-  'One-leg Squat':{tipo:'prog',reps:'c/lado',tecnica:'Progresión del Split Squat. Solo cuando RFESS está consolidado. Cadera atrás y abajo, rodilla estable. Asistencia en progresión.'},
+  'One-leg Squat':{tipo:'prog',reps:'c/lado',tecnica:'Progresión del Split Squat. Solo cuando RFESS está consolidado. Cadera atrás y abajo, rodilla estable. Asistencia en progresión.',alerta:'⚠️ Rotura menisco externo / condropatía: evitar flexión profunda con carga. Sustituir por Step-up cajón bajo o Wall Sit.'},
   'Rear-foot-elevated Split Squat':{tipo:'prog',reps:'c/lado',tecnica:'Pie trasero elevado. Bajada 3 seg. No dejar que la rodilla delantera supere el pie en exceso. Core muy activo.',alerta:'⚠️ Condropatía femoral medial: vigilar rodilla en valgo. Si dolor → Split Squat sin elevación.'},
   'Ring Row':{tipo:'prog',tecnica:'TRX o anillas. Cuerpo recto como tabla. Cuanto más horizontal el cuerpo, más difícil. 3 series mínimo. Progresión: piés elevados.'},
   'Front Plank':{tipo:'fijo',series:'3',reps:'20-30s',tecnica:'Core rígido. No dejar caer las caderas. Respirar. Progresión: aumentar tiempo semanal.'},
@@ -1941,9 +1941,9 @@ const EJ_INFO={
   'Toe Touch Squat with medicine ball':{tipo:'fijo',series:'3',reps:'6',tecnica:'Toca punta del pie, balón medicinal por encima. Movilidad completa. Lento y controlado.'},
   'Half-kneeling antirotation hold':{tipo:'fijo',series:'3',reps:'20-25s',tecnica:'Half-kneeling, cable o goma lateral. Resistir la rotación. Core rígido. Sem 1: 20s → Sem 3: 25s.'},
   'Standing antirotation hold':{tipo:'fijo',series:'3',reps:'25s',tecnica:'De pie, cable lateral. Misma lógica que el half-kneeling pero de pie. Mayor exigencia estabilizadora.'},
-  'Trap Bar Deadlift + Hurdle Jump':{tipo:'prog',tecnica:'Complejo F3/F4: Trap Bar DL seguido inmediatamente de salto sobre valla. Potencia máxima.'},
+  'Trap Bar Deadlift + Hurdle Jump':{tipo:'prog',tecnica:'Complejo F3/F4: Trap Bar DL seguido inmediatamente de salto sobre valla. Potencia máxima.',alerta:'⚠️ Rotura menisco externo: salto/impacto contraindicado. Sustituir por empuje de Trineo (sin salto) o el ejercicio sin el complejo de salto.'},
   'Chin-up + Med Ball Slam':{tipo:'prog',tecnica:'Complejo F3/F4: Chin-up seguido de slam de balón medicinal 3×10. Potencia del tren superior.'},
-  'RFESS + Hurdle Hops':{tipo:'prog',reps:'c/lado',tecnica:'Complejo F3/F4: RFESS seguido de saltos continuos sobre vallas. Potencia unilateral.'},
+  'RFESS + Hurdle Hops':{tipo:'prog',reps:'c/lado',tecnica:'Complejo F3/F4: RFESS seguido de saltos continuos sobre vallas. Potencia unilateral.',alerta:'⚠️ Rotura menisco externo: salto/impacto contraindicado. Sustituir por empuje de Trineo (sin salto) o el ejercicio sin el complejo de salto.'},
   'Ring Row + Med Ball Slam':{tipo:'prog',tecnica:'Complejo F3/F4: Ring Row seguido de slam de balón medicinal.'},
   'Bench Press + Med Ball Bench':{tipo:'prog',tecnica:'Complejo F3/F4: Press banca seguido de lanzamiento de balón medicinal desde el pecho.'},
   'Dumbbell Incline Bench':{tipo:'prog',tecnica:'Press inclinado con mancuernas. 30-45 grados. Mayor rango que barra. Reduce el estrés en el hombro.'},
@@ -2697,7 +2697,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'entreno-pro'};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2730,6 +2730,8 @@ function getConfigFields(){
     actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
+    ciclosCompletados:ST.ciclosCompletados||[],
+    repoPrograma:ST.repoPrograma||'entreno-pro',
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
 }
@@ -2768,7 +2770,7 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal'];
+    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2888,7 +2890,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -2980,12 +2982,15 @@ function getEjs(ses){
   return ST.ejs&&ST.ejs[ses]?ST.ejs[ses]:EJS_DEF[ses]||[];
 }
 // [v101] Construye los bloques par/tri-set de la vista Hoy desde EJS_FASES (via getEjs),
-// agrupando segun GRUPOS_DIA. Robusto si la lista no es exactamente 2+2+3.
+// agrupando segun getGruposDia(fase,dia) [vEXT_001: externo si hay programa.json, si no fábrica].
+// Robusto si la lista no es exactamente 2+2+3.
 function getBloquesHoy(dB){
-  if(!dB||!GRUPOS_DIA[dB]) return null;
+  var fase=getFaseActual(ST.sem);
+  var grupos=getGruposDia(fase,dB);
+  if(!dB||!grupos) return null;
   var ejs=getEjs(dB)||[];
   if(!ejs.length) return null;
-  var grupos=GRUPOS_DIA[dB], bloques=[], idx=0;
+  var bloques=[], idx=0;
   for(var gi=0; gi<grupos.length; gi++){
     var g=grupos[gi];
     var last=(gi===grupos.length-1);
@@ -3659,7 +3664,7 @@ const renders={
       </div>`;
     }).join('');
   },
-  config(){ try{ renderAnclajeInfo(); }catch(e){} },
+  config(){ try{ renderAnclajeInfo(); }catch(e){} try{ renderProgramaExtStatus(); }catch(e){} try{ renderCiclosCompletados(); }catch(e){} },
 };
 
 // ══════════════════════════════════════
@@ -5890,8 +5895,9 @@ function _getEjListaCustom(){
 
 function _calcPosicionEnBloque(bloqueIdx){
   var dB=getDiaBoyle();
-  if(!dB||!GRUPOS_DIA[dB]) return -1;
-  var grupos=GRUPOS_DIA[dB];
+  var fase=getFaseActual(ST.sem);
+  var grupos=getGruposDia(fase,dB);
+  if(!dB||!grupos) return -1;
   var pos=0;
   for(var i=0;i<=bloqueIdx&&i<grupos.length;i++){
     if(i<bloqueIdx) pos+=grupos[i].n;
@@ -8151,7 +8157,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='v177';
+const APP_VERSION='vEXT_005';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8573,6 +8579,240 @@ async function fetchFitbitAuto(manual) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// PROGRAMA / EJERCICIOS EXTERNOS [vEXT_001] — experimental
+// ══════════════════════════════════════════════════════════
+// Idea: EJS_FASES/REPS_FASE/GRUPOS_DIA_FASE y EJ_INFO/VARIANTES/VAR_TIPO son objetos
+// declarados con let/var y se LEEN POR REFERENCIA en el resto del código (no se copian en
+// ningún sitio) — así que basta con MUTAR su contenido en memoria tras descargar un JSON
+// externo para que absolutamente todo el resto de la app (Entreno, Programa, Programa
+// completo, Excel...) se entere solo, sin tocar esos ~18 sitios uno a uno.
+//
+// Mientras no haya un fichero externo válido (o falle la descarga), todo sigue funcionando
+// exactamente igual que hoy — el programa/catálogo "de fábrica" (el que ya está en este
+// código) nunca se borra, solo se sustituye su CONTENIDO si llega algo que pasa la
+// validación. Caché local en ST (no sincronizada por Firestore — igual que ST.garminHist,
+// cada dispositivo la descarga por su cuenta) para tener el programa editado disponible al
+// instante en la siguiente apertura, sin esperar red.
+
+// Repo del que se descargan programa.json/ejercicios.json — EDITABLE desde Config
+// (ST.repoPrograma). Deliberadamente separado de Garmin/Fitbit, que siguen apuntando siempre
+// a shumb71.github.io/Boyle (el repo estable, no editable, que Jou mantiene como "seguridad").
+function getRepoPrograma(){ return (ST.repoPrograma||'entreno-pro').trim().replace(/^\/+|\/+$/g,''); }
+function abrirEditorPrograma(){
+  window.open('https://shumb71.github.io/'+getRepoPrograma()+'/editor.html', '_blank');
+}
+function getProgramaJsonUrl(){ return 'https://shumb71.github.io/'+getRepoPrograma()+'/programa.json'; }
+function getEjerciciosJsonUrl(){ return 'https://shumb71.github.io/'+getRepoPrograma()+'/ejercicios.json'; }
+
+// --- Validación defensiva: si algo no encaja, se ignora el fichero entero y se sigue
+// usando lo que ya hubiera (caché anterior o fábrica) — nunca a medias. ---
+function validarProgramaExterno(data){
+  if(!data||typeof data!=='object'||!data.fases) return false;
+  var fases=['F1','F2','F3','F4'];
+  for(var fi=0;fi<fases.length;fi++){
+    var f=data.fases[fases[fi]];
+    if(!f||!f.dias) return false;
+    var dias=['D1','D2','D3','D4'];
+    for(var di=0;di<dias.length;di++){
+      var d=f.dias[dias[di]];
+      if(!d||!Array.isArray(d.bloques)||!d.bloques.length) return false;
+      for(var bi=0;bi<d.bloques.length;bi++){
+        var b=d.bloques[bi];
+        if(!b||!Array.isArray(b.ejercicios)||!b.ejercicios.length) return false;
+        for(var ei=0;ei<b.ejercicios.length;ei++){
+          var ej=b.ejercicios[ei];
+          if(!ej||typeof ej.nombre!=='string'||!ej.nombre.trim()) return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+function validarEjerciciosExterno(data){
+  if(!data||typeof data!=='object'||!data.ejercicios) return false;
+  var claves=Object.keys(data.ejercicios);
+  if(!claves.length) return false;
+  // Comprobación mínima: cada entrada, si trae variantes, debe ser array de strings.
+  for(var i=0;i<claves.length;i++){
+    var e=data.ejercicios[claves[i]];
+    if(!e||typeof e!=='object') return false;
+    if(e.variantes!==undefined&&!Array.isArray(e.variantes)) return false;
+  }
+  return true;
+}
+
+// --- Adaptadores: mutan los objetos existentes EN SITIO (nunca los redeclaran) ---
+function aplicarProgramaExterno(data){
+  var nuevoEjs={}, nuevoReps={}, nuevoGrupos={};
+  ['F1','F2','F3','F4'].forEach(function(fase){
+    var fd=data.fases[fase];
+    nuevoEjs[fase]={}; nuevoReps[fase]={}; nuevoGrupos[fase]={};
+    ['D1','D2','D3','D4'].forEach(function(dia){
+      var dd=fd.dias[dia];
+      var listaEjs=[], repsDia={}, gruposDia=[];
+      (dd.bloques||[]).forEach(function(b){
+        var ejsBloque=(b.ejercicios||[]).map(function(e){return e.nombre;});
+        listaEjs=listaEjs.concat(ejsBloque);
+        (b.ejercicios||[]).forEach(function(e){
+          if(Array.isArray(e.reps)){
+            repsDia[e.nombre]=e.reps.map(function(r){return {s:r.semana,r:r.r};});
+          }
+        });
+        gruposDia.push({lbl:'',tipo:b.tipo||'par',descanso:b.descanso_seg||90,n:ejsBloque.length});
+      });
+      nuevoEjs[fase][dia]=listaEjs;
+      nuevoReps[fase][dia]=repsDia;
+      nuevoGrupos[fase][dia]=gruposDia;
+    });
+    // Mantener Descanso/Mov de fábrica tal cual (el JSON externo solo cubre D1-D4)
+    if(EJS_FASES[fase]){
+      nuevoEjs[fase].Descanso=EJS_FASES[fase].Descanso||[];
+      nuevoEjs[fase].Mov=EJS_FASES[fase].Mov||[];
+    }
+    nuevoReps[fase].base=(REPS_FASE[fase]&&REPS_FASE[fase].base)||{n:3,r:8};
+  });
+  Object.keys(EJS_FASES).forEach(function(k){delete EJS_FASES[k];});
+  Object.assign(EJS_FASES,nuevoEjs);
+  Object.keys(REPS_FASE).forEach(function(k){delete REPS_FASE[k];});
+  Object.assign(REPS_FASE,nuevoReps);
+  Object.keys(GRUPOS_DIA_FASE).forEach(function(k){delete GRUPOS_DIA_FASE[k];});
+  Object.assign(GRUPOS_DIA_FASE,nuevoGrupos);
+}
+function aplicarEjerciciosExterno(data){
+  Object.keys(data.ejercicios).forEach(function(nombre){
+    var e=data.ejercicios[nombre];
+    var info={tipo:e.tipo||'prog'};
+    if(e.tecnica) info.tecnica=e.tecnica;
+    if(e.alerta) info.alerta=e.alerta;
+    if(e.series) info.series=String(e.series);
+    if(e.reps) info.reps=String(e.reps);
+    EJ_INFO[nombre]=info;
+    if(Array.isArray(e.variantes)&&e.variantes.length){
+      VARIANTES[nombre]=e.variantes.slice();
+      if(e.variantes_tipo&&typeof e.variantes_tipo==='object'){
+        VAR_TIPO[nombre]=Object.assign({},e.variantes_tipo);
+      }
+    }
+  });
+}
+
+// Texto de estado del panel de Config: cuándo se actualizó cada fichero externo por última vez.
+// ══════════════════════════════════════
+// NUEVO CICLO — reinicia semana/fase a F1.S1 sin colisionar con datos anteriores
+// ══════════════════════════════════════
+// El programaInicio es el prefijo de TODAS las claves de ST.sets (programaInicio_sem_dia_ej).
+// Bajar ST.sem a 1 sin cambiar programaInicio haría que las nuevas series de "semana 1 del
+// ciclo nuevo" cayeran en la MISMA clave que la semana 1 original — mezclando datos de
+// ciclos distintos. Por eso, además de resetear la semana, se cambia programaInicio a HOY,
+// dando al ciclo nuevo un espacio de claves propio, sin tocar ni un byte del historial previo.
+function iniciarNuevoCiclo(){
+  var semAnterior=ST.sem||1;
+  var msg='¿Empezar un nuevo ciclo completo?\n\nVolverás a F1 · Semana 1. Tu historial de entrenos, pesos y series NO se borra — queda guardado como antes, solo empieza a contarse un ciclo nuevo a partir de hoy.';
+  if(!confirm(msg)) return;
+  var cicloTerminado={
+    programaInicio: ST.programaInicio||null,
+    fechaFin: hoyLocal(),
+    semanaFinal: semAnterior
+  };
+  if(!ST.ciclosCompletados) ST.ciclosCompletados=[];
+  ST.ciclosCompletados.push(cicloTerminado);
+  ST.sem=1;
+  ST.programaInicio=hoyLocal();
+  save();
+  try{ renders.hoy(); }catch(e){}
+  try{ renders.entreno(); }catch(e){}
+  try{ updateTopbarSem(); }catch(e){}
+  try{ renderProgramaExtStatus(); }catch(e){}
+  try{ renderCiclosCompletados(); }catch(e){}
+  var t=document.getElementById('fb-toast');
+  if(t){t.textContent='🔄 Nuevo ciclo iniciado — F1 · Semana 1';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+}
+function renderCiclosCompletados(){
+  var el=document.getElementById('ciclos-completados-lista');
+  if(!el) return;
+  var lista=ST.ciclosCompletados||[];
+  if(!lista.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3)">Ningún ciclo completado todavía.</div>';
+    return;
+  }
+  el.innerHTML=lista.slice().reverse().map(function(c,i){
+    var num=lista.length-i;
+    var inicio=c.programaInicio?new Date(c.programaInicio+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}):'—';
+    var fin=c.fechaFin?new Date(c.fechaFin+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'}):'—';
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border2);font-size:12px">'
+      +'<span style="color:var(--text2)">Ciclo '+num+' · '+inicio+' → '+fin+'</span>'
+      +'<span style="color:var(--text3)">hasta Semana '+c.semanaFinal+'</span></div>';
+  }).join('');
+}
+
+function renderProgramaExtStatus(){
+  var el=document.getElementById('programa-ext-status');
+  if(!el) return;
+  var inputEl=document.getElementById('repo-programa-input');
+  if(inputEl && document.activeElement!==inputEl) inputEl.value=ST.repoPrograma||'entreno-pro';
+  function fmt(iso){ return iso?new Date(iso).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'nunca'; }
+  el.innerHTML='Buscando en: <code style="font-size:11px">shumb71.github.io/'+getRepoPrograma()+'/</code>'
+    +'<br>Programa: '+(ST.programaExternoCache?'<span style="color:var(--green-text)">activo</span>':'<span style="color:var(--text3)">de fábrica</span>')+' · '+fmt(ST.programaExternoActualizado)
+    +'<br>Ejercicios: '+(ST.ejerciciosExternoCache?'<span style="color:var(--green-text)">activo</span>':'<span style="color:var(--text3)">de fábrica</span>')+' · '+fmt(ST.ejerciciosExternoActualizado);
+}
+
+// --- Descarga + caché local ---
+async function fetchProgramaExterno(manual){
+  try{
+    var resp=await fetch(getProgramaJsonUrl()+'?t='+Date.now());
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data=await resp.json();
+    if(!validarProgramaExterno(data)){ console.warn('programa.json: estructura inválida, ignorado'); return; }
+    aplicarProgramaExterno(data);
+    ST.programaExternoCache=data;
+    ST.programaExternoActualizado=new Date().toISOString();
+    save();
+    try{ renders.entreno(); }catch(e){}
+    try{ if(document.getElementById('s-ciclo').classList.contains('active')) renders.ciclo(); }catch(e){}
+    try{ if(document.getElementById('s-config').classList.contains('active')) renderProgramaExtStatus(); }catch(e){}
+    if(manual){
+      var t=document.getElementById('fb-toast');
+      if(t){t.textContent='✅ Programa externo actualizado';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+    }
+  }catch(e){
+    console.warn('fetchProgramaExterno error:',e);
+    if(manual) alert('No se pudo descargar programa.json: '+e.message);
+  }
+}
+async function fetchEjerciciosExterno(manual){
+  try{
+    var resp=await fetch(getEjerciciosJsonUrl()+'?t='+Date.now());
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data=await resp.json();
+    if(!validarEjerciciosExterno(data)){ console.warn('ejercicios.json: estructura inválida, ignorado'); return; }
+    aplicarEjerciciosExterno(data);
+    ST.ejerciciosExternoCache=data;
+    ST.ejerciciosExternoActualizado=new Date().toISOString();
+    save();
+    try{ if(document.getElementById('s-config').classList.contains('active')) renderProgramaExtStatus(); }catch(e){}
+    if(manual){
+      var t=document.getElementById('fb-toast');
+      if(t){t.textContent='✅ Catálogo de ejercicios actualizado';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+    }
+  }catch(e){
+    console.warn('fetchEjerciciosExterno error:',e);
+    if(manual) alert('No se pudo descargar ejercicios.json: '+e.message);
+  }
+}
+// Aplica la caché local (si existe y sigue siendo válida) YA, de forma síncrona, antes del
+// primer render — para que la app abra directamente con el programa editado, sin esperar red.
+function aplicarCacheProgramaExternoSiExiste(){
+  try{
+    if(ST.programaExternoCache&&validarProgramaExterno(ST.programaExternoCache)){
+      aplicarProgramaExterno(ST.programaExternoCache);
+    }
+    if(ST.ejerciciosExternoCache&&validarEjerciciosExterno(ST.ejerciciosExternoCache)){
+      aplicarEjerciciosExterno(ST.ejerciciosExternoCache);
+    }
+  }catch(e){ console.warn('aplicarCacheProgramaExternoSiExiste error:',e); }
+}
+
 // ══════════════════════════════════════
 // SETS PERMANENTES — FIREBASE SEPARADO
 // ══════════════════════════════════════
@@ -8737,6 +8977,8 @@ window.addEventListener('load', () => {
   setTimeout(fetchFitbitAuto, 4000); // 4s — justo después de Garmin, para que el merge respete prioridad
   setTimeout(function(){ exportarExcelDrive(true); }, 8000); // 8s — volcado inicial al Drive
   setTimeout(checkAutoBackupLocalDiario, 6000); // 6s — avisa si falta backup JSON local hoy (pide confirmación)
+  setTimeout(function(){ fetchProgramaExterno(false); }, 9000); // 9s — programa externo, en segundo plano
+  setTimeout(function(){ fetchEjerciciosExterno(false); }, 10000); // 10s — catálogo de ejercicios externo
 });
 
 function importarGarminHistorial(input){

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-04T15:56:20.174656+00:00",
+  "actualizado": "2026-09-04T20:26:10.812645+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -156,20 +156,16 @@
         }
       ],
       "pasos": 1622,
-      "distancia_km": 6.59,
+      "distancia_km": 3.29,
       "minutos_activos": 109,
       "fc_reposo": 50.0,
       "hrv": 44.8,
-      "spo2": 95,
-      "sueno_total_min": 45,
-      "sueno_profundo_min": 24,
-      "sueno_ligero_min": 22,
-      "sueno_rem_min": 0
+      "spo2": 95
     },
     "2026-08-29": {
       "calorias_dia": 2608.2,
       "actividadesFitbit": [],
-      "pasos": 8857,
+      "pasos": 4156,
       "distancia_km": 6.66,
       "minutos_activos": 16,
       "fc_reposo": 49.0,
@@ -219,7 +215,7 @@
     "2026-08-31": {
       "pasos": 23010,
       "distancia_km": 13.72,
-      "minutos_activos": 435,
+      "minutos_activos": 393,
       "calorias_dia": 3253.08,
       "actividadesFitbit": [
         {
@@ -297,11 +293,23 @@
       "sueno_rem_min": 96
     },
     "2026-09-04": {
-      "pasos": 6960,
-      "distancia_km": 3.48,
-      "minutos_activos": 271,
-      "calorias_dia": 2034.63,
-      "actividadesFitbit": [],
+      "pasos": 11322,
+      "distancia_km": 5.58,
+      "minutos_activos": 462,
+      "calorias_dia": 2828.78,
+      "actividadesFitbit": [
+        {
+          "id": "7092326754372521816",
+          "tipo": "SWIMMING",
+          "nombre": "Natación (piscina)",
+          "inicio": "2026-09-04T18:09:19Z",
+          "fin": "2026-09-04T18:32:37Z",
+          "duracion_min": 23,
+          "calorias": 140,
+          "fc_media": null,
+          "fc_max": null
+        }
+      ],
       "fc_reposo": 49.0,
       "hrv": 45.6,
       "spo2": 94.9,

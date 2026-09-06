@@ -2828,13 +2828,23 @@
     "2026-09-05": {
       "fecha": "2026-09-05",
       "pasos": null,
-      "calorias_dia": 1421.0,
+      "calorias_dia": 2099.0,
       "calorias_activas": 0.0,
       "distancia_km": 0.0,
       "minutos_activos": 0,
       "fc_reposo": null,
       "estres_medio": -1
+    },
+    "2026-09-06": {
+      "fecha": "2026-09-06",
+      "pasos": null,
+      "calorias_dia": null,
+      "calorias_activas": null,
+      "distancia_km": 0.0,
+      "minutos_activos": null,
+      "fc_reposo": null,
+      "estres_medio": null
     }
   },
-  "actualizado": "2026-09-05"
+  "actualizado": "2026-09-06"
 }

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-07T03:28:36.601078+00:00",
+  "actualizado": "2026-09-07T11:52:01.290424+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -202,15 +202,11 @@
           "fc_max": null
         }
       ],
-      "hrv": 44.4,
-      "sueno_total_min": 83,
-      "sueno_profundo_min": 0,
-      "sueno_ligero_min": 83,
-      "sueno_rem_min": 0
+      "hrv": 44.4
     },
     "2026-08-31": {
       "pasos": 1273,
-      "distancia_km": 12.0,
+      "distancia_km": 2.1,
       "minutos_activos": 88,
       "calorias_dia": 3253.08,
       "actividadesFitbit": [
@@ -249,7 +245,7 @@
           "fc_max": null
         }
       ],
-      "pasos": 23786,
+      "pasos": 14572,
       "distancia_km": 15.75,
       "minutos_activos": 212,
       "fc_reposo": 49.0,
@@ -277,7 +273,7 @@
     "2026-09-03": {
       "pasos": 15041,
       "distancia_km": 7.43,
-      "minutos_activos": 388,
+      "minutos_activos": 174,
       "calorias_dia": 2697.47,
       "fc_reposo": 49.0,
       "hrv": 45.8,
@@ -378,8 +374,30 @@
       "sueno_rem_min": 81
     },
     "2026-09-07": {
-      "calorias_dia": 398.88,
-      "actividadesFitbit": []
+      "calorias_dia": 1457.1,
+      "actividadesFitbit": [
+        {
+          "id": "2887952466368407376",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-09-07T09:41:47.600Z",
+          "fin": "2026-09-07T10:00:04.400Z",
+          "duracion_min": 18,
+          "calorias": 140,
+          "fc_media": 80,
+          "fc_max": null
+        }
+      ],
+      "pasos": 8304,
+      "distancia_km": 4.52,
+      "minutos_activos": 210,
+      "fc_reposo": 50.0,
+      "hrv": 39.35,
+      "spo2": 95,
+      "sueno_total_min": 410,
+      "sueno_profundo_min": 67,
+      "sueno_ligero_min": 238,
+      "sueno_rem_min": 105
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-07T21:14:25.265822+00:00",
+  "actualizado": "2026-09-08T03:34:17.682253+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -224,11 +224,7 @@
       ],
       "fc_reposo": 48.0,
       "hrv": 43.2,
-      "spo2": 95.9,
-      "sueno_total_min": 608,
-      "sueno_profundo_min": 98,
-      "sueno_ligero_min": 378,
-      "sueno_rem_min": 132
+      "spo2": 95.9
     },
     "2026-09-01": {
       "calorias_dia": 3009.73,
@@ -246,7 +242,7 @@
         }
       ],
       "pasos": 108,
-      "distancia_km": 15.69,
+      "distancia_km": 15.21,
       "minutos_activos": 212,
       "fc_reposo": 49.0,
       "hrv": 43.05,
@@ -257,7 +253,7 @@
       "sueno_rem_min": 48
     },
     "2026-09-02": {
-      "pasos": 9219,
+      "pasos": 9061,
       "distancia_km": 5.86,
       "minutos_activos": 131,
       "calorias_dia": 2711.92,
@@ -287,7 +283,7 @@
     "2026-09-04": {
       "pasos": 11637,
       "distancia_km": 5.82,
-      "minutos_activos": 474,
+      "minutos_activos": 473,
       "calorias_dia": 2975.51,
       "actividadesFitbit": [
         {
@@ -374,7 +370,7 @@
       "sueno_rem_min": 81
     },
     "2026-09-07": {
-      "calorias_dia": 3049.6,
+      "calorias_dia": 3144.41,
       "actividadesFitbit": [
         {
           "id": "6730127189507780248",
@@ -399,9 +395,9 @@
           "fc_max": null
         }
       ],
-      "pasos": 26903,
-      "distancia_km": 12.98,
-      "minutos_activos": 500,
+      "pasos": 27276,
+      "distancia_km": 13.22,
+      "minutos_activos": 516,
       "fc_reposo": 50.0,
       "hrv": 39.35,
       "spo2": 95,
@@ -409,6 +405,20 @@
       "sueno_profundo_min": 67,
       "sueno_ligero_min": 238,
       "sueno_rem_min": 105
+    },
+    "2026-09-08": {
+      "pasos": 31,
+      "distancia_km": 0.02,
+      "minutos_activos": 4,
+      "calorias_dia": 414.42,
+      "fc_reposo": 52.0,
+      "hrv": 41.1,
+      "spo2": 94.8,
+      "sueno_total_min": 246,
+      "sueno_profundo_min": 82,
+      "sueno_ligero_min": 114,
+      "sueno_rem_min": 50,
+      "actividadesFitbit": []
     }
   }
 }

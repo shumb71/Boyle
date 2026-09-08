@@ -2857,13 +2857,13 @@
     },
     "2026-09-08": {
       "fecha": "2026-09-08",
-      "pasos": 3599,
-      "calorias_dia": 1655.0,
-      "calorias_activas": 201.0,
-      "distancia_km": 2.99,
+      "pasos": 8262,
+      "calorias_dia": 2115.0,
+      "calorias_activas": 311.0,
+      "distancia_km": 6.83,
       "minutos_activos": 18,
-      "fc_reposo": 60,
-      "estres_medio": 36,
+      "fc_reposo": 57,
+      "estres_medio": 30,
       "actividades": [
         {
           "nombre": "Fuerza",

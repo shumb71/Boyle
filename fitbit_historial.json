@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-14T19:44:56.771518+00:00",
+  "actualizado": "2026-09-14T23:42:34.769414+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -396,7 +396,7 @@
     },
     "2026-09-08": {
       "pasos": 758,
-      "distancia_km": 11.73,
+      "distancia_km": 11.02,
       "minutos_activos": 10,
       "calorias_dia": 2962.74,
       "fc_reposo": 51.0,
@@ -459,7 +459,7 @@
           "fc_max": null
         }
       ],
-      "pasos": 18933,
+      "pasos": 17715,
       "distancia_km": 9.54,
       "minutos_activos": 250,
       "peso_kg": 87.2,
@@ -471,7 +471,7 @@
     "2026-09-10": {
       "pasos": 11364,
       "distancia_km": 3.96,
-      "minutos_activos": 199,
+      "minutos_activos": 194,
       "calorias_dia": 2393.04,
       "fc_reposo": 51.0,
       "hrv": 41,
@@ -551,13 +551,24 @@
       "sueno_rem_min": 144
     },
     "2026-09-14": {
-      "pasos": 21951,
-      "distancia_km": 8.49,
-      "minutos_activos": 362,
-      "calorias_dia": 2505.8,
+      "pasos": 22941,
+      "distancia_km": 9.2,
+      "minutos_activos": 419,
+      "calorias_dia": 2833.96,
       "fc_reposo": 51.0,
       "hrv": 46.95,
       "actividadesFitbit": [
+        {
+          "id": "7766789479377265112",
+          "tipo": "FREE_WEIGHTS",
+          "nombre": "Pesas",
+          "inicio": "2026-09-14T16:09:29Z",
+          "fin": "2026-09-14T16:35:53Z",
+          "duracion_min": 26,
+          "calorias": 111,
+          "fc_media": 108,
+          "fc_max": null
+        },
         {
           "id": "4022798316840407848",
           "tipo": "WALKING",

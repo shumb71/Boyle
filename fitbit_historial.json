@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-18T10:44:56.168263+00:00",
+  "actualizado": "2026-09-18T16:00:48.179046+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -485,7 +485,7 @@
     },
     "2026-09-11": {
       "pasos": 598,
-      "distancia_km": 3.79,
+      "distancia_km": 1.8,
       "minutos_activos": 142,
       "calorias_dia": 3385.36,
       "fc_reposo": 50.0,
@@ -522,7 +522,7 @@
       "sueno_rem_min": 59
     },
     "2026-09-12": {
-      "pasos": 7307,
+      "pasos": 5766,
       "distancia_km": 5.8,
       "minutos_activos": 48,
       "calorias_dia": 2936.48,
@@ -539,7 +539,7 @@
     "2026-09-13": {
       "pasos": 9661,
       "distancia_km": 5.1,
-      "minutos_activos": 95,
+      "minutos_activos": 9,
       "calorias_dia": 2324.49,
       "actividadesFitbit": [],
       "fc_reposo": 52.0,
@@ -658,11 +658,22 @@
       "sueno_rem_min": 82
     },
     "2026-09-18": {
-      "pasos": 23362,
-      "distancia_km": 6.21,
-      "minutos_activos": 238,
-      "calorias_dia": 1734.18,
+      "pasos": 24119,
+      "distancia_km": 6.72,
+      "minutos_activos": 278,
+      "calorias_dia": 2263.05,
       "actividadesFitbit": [
+        {
+          "id": "7246397539816267008",
+          "tipo": "FREE_WEIGHTS",
+          "nombre": "Pesas",
+          "inicio": "2026-09-18T10:04:36Z",
+          "fin": "2026-09-18T10:31:14Z",
+          "duracion_min": 27,
+          "calorias": 116,
+          "fc_media": 100,
+          "fc_max": null
+        },
         {
           "id": "4734998519471374248",
           "tipo": "STRENGTH_TRAINING",
@@ -688,11 +699,11 @@
       ],
       "fc_reposo": 50.0,
       "hrv": 47.7,
+      "peso_kg": 87.2,
       "sueno_total_min": 506,
       "sueno_profundo_min": 88,
       "sueno_ligero_min": 330,
-      "sueno_rem_min": 88,
-      "peso_kg": 87.2
+      "sueno_rem_min": 88
     }
   }
 }

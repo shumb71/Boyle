@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-18T03:43:42.656142+00:00",
+  "actualizado": "2026-09-18T10:44:56.168263+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -485,7 +485,7 @@
     },
     "2026-09-11": {
       "pasos": 598,
-      "distancia_km": 4.47,
+      "distancia_km": 3.79,
       "minutos_activos": 142,
       "calorias_dia": 3385.36,
       "fc_reposo": 50.0,
@@ -522,7 +522,7 @@
       "sueno_rem_min": 59
     },
     "2026-09-12": {
-      "pasos": 13583,
+      "pasos": 7307,
       "distancia_km": 5.8,
       "minutos_activos": 48,
       "calorias_dia": 2936.48,
@@ -539,7 +539,7 @@
     "2026-09-13": {
       "pasos": 9661,
       "distancia_km": 5.1,
-      "minutos_activos": 280,
+      "minutos_activos": 95,
       "calorias_dia": 2324.49,
       "actividadesFitbit": [],
       "fc_reposo": 52.0,
@@ -631,7 +631,7 @@
       "sueno_rem_min": 98
     },
     "2026-09-17": {
-      "pasos": 7004,
+      "pasos": 7264,
       "distancia_km": 3.57,
       "minutos_activos": 268,
       "calorias_dia": 2809.62,
@@ -658,11 +658,41 @@
       "sueno_rem_min": 82
     },
     "2026-09-18": {
-      "pasos": 12,
-      "distancia_km": 0.01,
-      "minutos_activos": 2,
-      "calorias_dia": 420.44,
-      "actividadesFitbit": []
+      "pasos": 23362,
+      "distancia_km": 6.21,
+      "minutos_activos": 238,
+      "calorias_dia": 1734.18,
+      "actividadesFitbit": [
+        {
+          "id": "4734998519471374248",
+          "tipo": "STRENGTH_TRAINING",
+          "nombre": "Movilidad Restaurativa: Cadera y Espalda Sana",
+          "inicio": "2026-09-18T09:54:01Z",
+          "fin": "2026-09-18T10:01:49Z",
+          "duracion_min": 8,
+          "calorias": 29,
+          "fc_media": 92,
+          "fc_max": null
+        },
+        {
+          "id": "8352039670133071864",
+          "tipo": "HIKING",
+          "nombre": "Senderismo",
+          "inicio": "2026-09-18T08:26:39Z",
+          "fin": "2026-09-18T09:36:47Z",
+          "duracion_min": 70,
+          "calorias": 630,
+          "fc_media": 115,
+          "fc_max": null
+        }
+      ],
+      "fc_reposo": 50.0,
+      "hrv": 47.7,
+      "sueno_total_min": 506,
+      "sueno_profundo_min": 88,
+      "sueno_ligero_min": 330,
+      "sueno_rem_min": 88,
+      "peso_kg": 87.2
     }
   }
 }

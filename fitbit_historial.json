@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-18T23:05:38.451199+00:00",
+  "actualizado": "2026-09-19T03:40:27.281920+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -704,6 +704,10 @@
       "sueno_profundo_min": 88,
       "sueno_ligero_min": 330,
       "sueno_rem_min": 88
+    },
+    "2026-09-19": {
+      "calorias_dia": 410.81,
+      "actividadesFitbit": []
     }
   }
 }

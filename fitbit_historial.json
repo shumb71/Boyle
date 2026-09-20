@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-20T10:51:26.232335+00:00",
+  "actualizado": "2026-09-20T15:38:48.632221+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -523,7 +523,7 @@
     },
     "2026-09-12": {
       "pasos": 3553,
-      "distancia_km": 1.97,
+      "distancia_km": 1.25,
       "minutos_activos": 48,
       "calorias_dia": 2936.48,
       "fc_reposo": 50.0,
@@ -551,9 +551,9 @@
       "sueno_rem_min": 144
     },
     "2026-09-14": {
-      "pasos": 23163,
+      "pasos": 16252,
       "distancia_km": 9.2,
-      "minutos_activos": 160,
+      "minutos_activos": 101,
       "calorias_dia": 2833.96,
       "fc_reposo": 51.0,
       "hrv": 46.95,
@@ -732,11 +732,23 @@
       "sueno_rem_min": 88
     },
     "2026-09-20": {
-      "calorias_dia": 1435.05,
-      "actividadesFitbit": [],
-      "pasos": 352,
-      "distancia_km": 0.21,
-      "minutos_activos": 59
+      "calorias_dia": 2001.75,
+      "actividadesFitbit": [
+        {
+          "id": "8737412066251890256",
+          "tipo": "WORKOUT",
+          "nombre": "Entrenamiento",
+          "inicio": "2026-09-20T10:05:31Z",
+          "fin": "2026-09-20T10:56:09Z",
+          "duracion_min": 51,
+          "calorias": 545,
+          "fc_media": 128,
+          "fc_max": null
+        }
+      ],
+      "pasos": 1608,
+      "distancia_km": 0.98,
+      "minutos_activos": 125
     }
   }
 }

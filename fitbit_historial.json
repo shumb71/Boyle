@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-24T16:42:05.139222+00:00",
+  "actualizado": "2026-09-24T21:15:52.708185+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -632,7 +632,7 @@
     },
     "2026-09-17": {
       "pasos": 275,
-      "distancia_km": 3.23,
+      "distancia_km": 1.41,
       "minutos_activos": 37,
       "calorias_dia": 2809.62,
       "fc_reposo": 50.0,
@@ -658,7 +658,7 @@
       "sueno_rem_min": 82
     },
     "2026-09-18": {
-      "pasos": 1838,
+      "pasos": 220,
       "distancia_km": 8.41,
       "minutos_activos": 24,
       "calorias_dia": 3032.38,
@@ -748,7 +748,7 @@
       ],
       "pasos": 5145,
       "distancia_km": 3.05,
-      "minutos_activos": 186,
+      "minutos_activos": 179,
       "fc_reposo": 51.0
     },
     "2026-09-21": {
@@ -820,10 +820,10 @@
       "sueno_rem_min": 12
     },
     "2026-09-24": {
-      "pasos": 23682,
-      "distancia_km": 8.3,
-      "minutos_activos": 304,
-      "calorias_dia": 2259.92,
+      "pasos": 26717,
+      "distancia_km": 9.88,
+      "minutos_activos": 396,
+      "calorias_dia": 2792.76,
       "fc_reposo": 51.0,
       "hrv": 55.9,
       "actividadesFitbit": [

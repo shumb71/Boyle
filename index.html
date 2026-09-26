@@ -185,7 +185,7 @@ function avisoSync(on){
 })();
 
 function aplicarRemoto(parsed){
-  var protegidos=['historialFechas','fechaSesiones','planDia','notaDia','circuitosHecho'];
+  var protegidos=['historialFechas','fechaSesiones','planDia','notaDia','circuitosSesiones'];
   ST=Object.assign({},ST,parsed);
   var conflictos=[];
   protegidos.forEach(function(k){
@@ -572,8 +572,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         }
       }
     }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=EXT_005', {scope: './'})
-      .then(function(reg){console.log('SW v102 registrado:', reg.scope);})
+    navigator.serviceWorker.register('./sw.js?v=EXT_008', {scope: './'})
+      .then(function(reg){console.log('SW EXT_008 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
 })();
@@ -1072,6 +1072,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- CALENDARIO -->
   <div class="screen" id="s-cal">
     <div class="ph"><h1>Calendario</h1><div id="fb-dot-cal" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
+    <!-- Buscador de sesiones/ejercicios -->
+    <div class="card" style="padding:.75rem 1rem">
+      <div class="card-lbl" style="margin-bottom:.5rem">🔍 Buscar sesión o ejercicio</div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="cal-search-input" placeholder="Ej: S5D3, D2, o nombre de ejercicio..."
+          style="flex:1;padding:9px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:14px;background:var(--bg);color:var(--text);outline:none"
+          onkeydown="if(event.key==='Enter')buscarEnCalendario()">
+        <button onclick="buscarEnCalendario()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:0 16px;font-size:14px;font-weight:700;cursor:pointer">Buscar</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:5px">S=semana del programa (1-12) · D=día Boyle (1-4) · F=fase, opcional</div>
+    </div>
+    <div class="card" id="cal-search-results" style="display:none"></div>
     <!-- Nav mes -->
     <div class="card" style="padding:.75rem 1rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1374,6 +1386,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 </div>
 
 <!-- MODAL CONFLICTOS SYNC -->
+<div class="mo" id="mo-circuitos-picker" onclick="closeMo(event,'mo-circuitos-picker')">
+  <div class="ms" style="max-height:85vh;overflow-y:auto">
+    <div class="mh"></div>
+    <div class="mt">🔄 Circuitos guardados</div>
+    <div class="ig"><input type="text" id="ci-buscador" oninput="filtrarPickerCircuitos()" placeholder="Buscar por nombre de circuito o ejercicio…" style="width:100%;padding:9px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--text)"></div>
+    <div id="ci-picker-list" style="margin-top:.5rem"></div>
+    <button type="button" onclick="abrirNuevoCircuito()" style="width:100%;margin-top:10px;padding:9px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">＋ Crear circuito nuevo</button>
+    <div class="br2">
+      <button class="bcan" onclick="document.getElementById('mo-circuitos-picker').classList.remove('open')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="mo" id="mo-circuito" onclick="closeMo(event,'mo-circuito')">
   <div class="ms" style="max-height:85vh;overflow-y:auto">
     <div class="mh"></div>
@@ -1383,26 +1408,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="ci-ejercicios-list"></div>
       <button type="button" onclick="anadirFilaEjCircuito()" style="width:100%;margin-top:6px;padding:7px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:12px;cursor:pointer">＋ Añadir ejercicio</button>
     </div>
-    <div style="display:flex;gap:8px">
-      <div class="ig" style="flex:1"><label>Rondas</label><input type="number" id="ci-rondas" min="1" max="20" value="3"></div>
-      <div class="ig" style="flex:1"><label>Descanso entre rondas (seg)</label><input type="number" id="ci-descanso" min="0" max="600" step="5" value="60"></div>
-    </div>
+    <div class="ig"><label>Rondas</label><input type="number" id="ci-rondas" min="1" max="20" value="3"></div>
     <div class="ig"><label>Nota (opcional)</label><input type="text" id="ci-nota" placeholder="Indicaciones, equipo, etc."></div>
-    <div class="ig"><label>Días</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px" id="ci-dias">
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D1" class="ci-dia-chk"> D1</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D2" class="ci-dia-chk"> D2</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D3" class="ci-dia-chk"> D3</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D4" class="ci-dia-chk"> D4</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="Descanso" class="ci-dia-chk"> Descanso</label>
-      </div>
-    </div>
     <div class="br2">
       <button class="bcan" onclick="document.getElementById('mo-circuito').classList.remove('open')">Cancelar</button>
-      <button class="bsav" onclick="guardarCircuito()">Guardar</button>
+      <button class="bsav" onclick="guardarCircuito()">Guardar y usar hoy</button>
     </div>
   </div>
 </div>
+
 
 <div class="mo" id="mo-add-finisher" onclick="closeMo(event,'mo-add-finisher')">
   <div class="ms">
@@ -2739,7 +2753,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'entreno-pro',circuitos:[],circuitosHecho:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'entreno-pro',circuitos:[],circuitosSesiones:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2774,7 +2788,7 @@ function getConfigFields(){
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
     ciclosCompletados:ST.ciclosCompletados||[],
     repoPrograma:ST.repoPrograma||'entreno-pro',
-    circuitos:ST.circuitos||[],circuitosHecho:ST.circuitosHecho||{},
+    circuitos:ST.circuitos||[],circuitosSesiones:ST.circuitosSesiones||{},
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
 }
@@ -2814,7 +2828,7 @@ function aplicarConfigRemoto(data){
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
     'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma',
-    'circuitos','circuitosHecho'];
+    'circuitos','circuitosSesiones'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2934,7 +2948,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosHecho)ST.circuitosHecho={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosSesiones)ST.circuitosSesiones={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -8105,110 +8119,223 @@ function renderFinisherBody(){
 
 
 // ── CIRCUITOS ────────────────────────────────────────────────────────────
-// ST.circuitos: [{id,nombre,ejercicios:[{nombre}],rondas,descanso,nota,dias:['D1'...'Descanso']}]
-// ST.circuitosHecho: {fecha:{circuitoId:[bool,bool,...]}} — progreso de rondas por fecha
-var _circuitoEditId=null;
+// ST.circuitos: biblioteca de plantillas reutilizables
+//   [{id,nombre,ejercicios:[{nombre,tipo:'reps'|'tiempo'|'distancia',valor,peso,descanso}],rondas,nota}]
+// ST.circuitosSesiones: uso real por fecha (independiente de la plantilla, con snapshot propio)
+//   {fecha:[{id,circuitoId,nombre,ejercicios:[...],rondas,nota,rondasHechas:[bool,...]}]}
+var _circuitoEditId=null;   // id de la plantilla que se está editando/creando (null = nueva)
+var _circuitoUsoId=null;    // id del uso-de-hoy que se está editando (null = uso nuevo)
 
-function _circuitoSlotHoy(){
-  var dB=getDiaBoyle();
-  return dB||'Descanso';
+function _tipoLabel(tipo){
+  return tipo==='tiempo'?'Segundos':tipo==='distancia'?'Metros':'Reps';
 }
 
-function _filaEjCircuitoHtml(valor){
-  var v=(valor||'').replace(/"/g,'&quot;');
-  return '<div class="ci-ej-row" style="display:flex;gap:6px;margin-bottom:6px">'
-    +'<input type="text" class="ci-ej-input" value="'+v+'" placeholder="Nombre del ejercicio" style="flex:1;padding:8px 10px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--text)">'
-    +'<button type="button" onclick="this.parentElement.remove()" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:0 10px;font-size:14px;cursor:pointer">✕</button>'
+function _filaEjCircuitoHtml(e){
+  e=e||{};
+  var nombre=(e.nombre||'').replace(/"/g,'&quot;');
+  var tipo=e.tipo||'reps';
+  var valor=e.valor!=null?e.valor:'';
+  var peso=e.peso!=null?e.peso:'';
+  var descanso=e.descanso!=null?e.descanso:30;
+  function opt(v,lbl){return '<option value="'+v+'"'+(tipo===v?' selected':'')+'>'+lbl+'</option>';}
+  return '<div class="ci-ej-row" style="border:.5px solid var(--border2);border-radius:var(--rs);padding:8px;margin-bottom:8px">'
+    +'<div style="display:flex;gap:6px;margin-bottom:6px">'
+    +'<input type="text" class="ci-ej-nombre" value="'+nombre+'" placeholder="Nombre del ejercicio" style="flex:1;padding:8px 10px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--text)">'
+    +'<button type="button" onclick="this.closest(\'.ci-ej-row\').remove()" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:0 10px;font-size:14px;cursor:pointer">✕</button>'
+    +'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<select class="ci-ej-tipo" onchange="this.closest(\'.ci-ej-row\').querySelector(\'.ci-ej-valor-lbl\').textContent=_tipoLabel(this.value)" style="flex:1;min-width:90px;padding:7px 8px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--text)">'
+    +opt('reps','Reps')+opt('tiempo','Tiempo (s)')+opt('distancia','Distancia (m)')
+    +'</select>'
+    +'<div style="flex:1;min-width:70px"><div class="ci-ej-valor-lbl" style="font-size:9px;color:var(--text3)">'+_tipoLabel(tipo)+'</div><input type="number" class="ci-ej-valor" value="'+valor+'" min="0" style="width:100%;padding:6px 8px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--text)"></div>'
+    +'<div style="flex:1;min-width:70px"><div style="font-size:9px;color:var(--text3)">Peso (kg)</div><input type="number" class="ci-ej-peso" value="'+peso+'" min="0" step="0.5" style="width:100%;padding:6px 8px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--text)"></div>'
+    +'<div style="flex:1;min-width:70px"><div style="font-size:9px;color:var(--text3)">Descanso (s)</div><input type="number" class="ci-ej-descanso" value="'+descanso+'" min="0" step="5" style="width:100%;padding:6px 8px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:12px;background:var(--bg);color:var(--text)"></div>'
+    +'</div>'
     +'</div>';
 }
 
-function anadirFilaEjCircuito(nombre){
+function anadirFilaEjCircuito(e){
   var cont=document.getElementById('ci-ejercicios-list');
   if(!cont) return;
-  cont.insertAdjacentHTML('beforeend',_filaEjCircuitoHtml(nombre||''));
+  cont.insertAdjacentHTML('beforeend',_filaEjCircuitoHtml(e||{}));
+}
+
+function _resetEditorCircuito(){
+  document.getElementById('ci-nombre').value='';
+  document.getElementById('ci-rondas').value=3;
+  document.getElementById('ci-nota').value='';
+  document.getElementById('ci-ejercicios-list').innerHTML='';
+}
+
+// Abre el buscador/biblioteca de circuitos guardados
+function abrirPickerCircuitos(){
+  document.getElementById('ci-buscador').value='';
+  renderPickerCircuitos('');
+  document.getElementById('mo-circuitos-picker').classList.add('open');
+  setTimeout(function(){document.getElementById('ci-buscador').focus();},200);
+}
+
+function filtrarPickerCircuitos(){
+  renderPickerCircuitos(document.getElementById('ci-buscador').value||'');
+}
+
+function renderPickerCircuitos(q){
+  var cont=document.getElementById('ci-picker-list');
+  if(!cont) return;
+  var qn=q.trim().toLowerCase();
+  var lista=(ST.circuitos||[]).filter(function(c){
+    if(!qn) return true;
+    if((c.nombre||'').toLowerCase().indexOf(qn)>=0) return true;
+    return (c.ejercicios||[]).some(function(e){return (e.nombre||'').toLowerCase().indexOf(qn)>=0;});
+  });
+  if(!lista.length){
+    cont.innerHTML='<div style="color:var(--text3);font-size:13px;padding:.5rem 0">No hay circuitos guardados que coincidan.</div>';
+    return;
+  }
+  cont.innerHTML=lista.map(function(c){
+    var ejsStr=(c.ejercicios||[]).map(function(e){return e.nombre;}).join(' · ');
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:.5rem 0;border-bottom:.5px solid var(--border)">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--text)">'+c.nombre+'</div>'
+      +'<div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ejsStr+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:4px;flex-shrink:0">'
+      +'<button onclick="usarCircuitoDeHoy(\''+c.id+'\')" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">Usar</button>'
+      +'<button onclick="eliminarCircuitoTemplate(\''+c.id+'\')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:6px 8px;font-size:12px;cursor:pointer">✕</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
 }
 
 function abrirNuevoCircuito(){
   _circuitoEditId=null;
+  _circuitoUsoId=null;
   document.getElementById('ci-titulo').textContent='🔄 Nuevo circuito';
-  document.getElementById('ci-nombre').value='';
-  document.getElementById('ci-rondas').value=3;
-  document.getElementById('ci-descanso').value=60;
-  document.getElementById('ci-nota').value='';
-  document.getElementById('ci-ejercicios-list').innerHTML='';
-  anadirFilaEjCircuito('');
-  anadirFilaEjCircuito('');
-  document.querySelectorAll('.ci-dia-chk').forEach(function(chk){ chk.checked=false; });
-  var slot=_circuitoSlotHoy();
-  var slotChk=document.querySelector('.ci-dia-chk[value="'+slot+'"]');
-  if(slotChk) slotChk.checked=true;
+  _resetEditorCircuito();
+  anadirFilaEjCircuito({});
+  anadirFilaEjCircuito({});
+  document.getElementById('mo-circuitos-picker').classList.remove('open');
   document.getElementById('mo-circuito').classList.add('open');
 }
 
-function abrirEditarCircuito(id){
+// Abre la plantilla guardada (biblioteca) para usarla/ajustarla hoy
+function usarCircuitoDeHoy(id){
   var c=(ST.circuitos||[]).find(function(x){return x.id===id;});
   if(!c) return;
   _circuitoEditId=id;
-  document.getElementById('ci-titulo').textContent='🔄 Editar circuito';
+  _circuitoUsoId=null;
+  document.getElementById('ci-titulo').textContent='🔄 '+c.nombre;
   document.getElementById('ci-nombre').value=c.nombre||'';
   document.getElementById('ci-rondas').value=c.rondas||3;
-  document.getElementById('ci-descanso').value=c.descanso!=null?c.descanso:60;
   document.getElementById('ci-nota').value=c.nota||'';
   document.getElementById('ci-ejercicios-list').innerHTML='';
-  (c.ejercicios||[]).forEach(function(e){ anadirFilaEjCircuito(e.nombre); });
-  if(!(c.ejercicios||[]).length) anadirFilaEjCircuito('');
-  document.querySelectorAll('.ci-dia-chk').forEach(function(chk){ chk.checked=(c.dias||[]).indexOf(chk.value)>=0; });
+  (c.ejercicios||[]).forEach(anadirFilaEjCircuito);
+  if(!(c.ejercicios||[]).length) anadirFilaEjCircuito({});
+  document.getElementById('mo-circuitos-picker').classList.remove('open');
+  document.getElementById('mo-circuito').classList.add('open');
+}
+
+// Edita el uso de hoy (un circuito ya añadido a la sesión de hoy)
+function abrirEditarUsoCircuito(usoId){
+  var fecha=hoyLocal();
+  var usos=(ST.circuitosSesiones&&ST.circuitosSesiones[fecha])||[];
+  var u=usos.find(function(x){return x.id===usoId;});
+  if(!u) return;
+  _circuitoEditId=u.circuitoId||null;
+  _circuitoUsoId=usoId;
+  document.getElementById('ci-titulo').textContent='🔄 '+u.nombre;
+  document.getElementById('ci-nombre').value=u.nombre||'';
+  document.getElementById('ci-rondas').value=u.rondas||3;
+  document.getElementById('ci-nota').value=u.nota||'';
+  document.getElementById('ci-ejercicios-list').innerHTML='';
+  (u.ejercicios||[]).forEach(anadirFilaEjCircuito);
+  if(!(u.ejercicios||[]).length) anadirFilaEjCircuito({});
   document.getElementById('mo-circuito').classList.add('open');
 }
 
 function guardarCircuito(){
   var nombre=document.getElementById('ci-nombre').value.trim();
   if(!nombre){alert('Escribe un nombre para el circuito');return;}
-  var ejercicios=Array.prototype.slice.call(document.querySelectorAll('.ci-ej-input'))
-    .map(function(inp){return inp.value.trim();}).filter(Boolean).map(function(n){return {nombre:n};});
+  var filas=Array.prototype.slice.call(document.querySelectorAll('#ci-ejercicios-list .ci-ej-row'));
+  var ejercicios=filas.map(function(row){
+    var n=row.querySelector('.ci-ej-nombre').value.trim();
+    if(!n) return null;
+    return {
+      nombre:n,
+      tipo:row.querySelector('.ci-ej-tipo').value||'reps',
+      valor:parseFloat(row.querySelector('.ci-ej-valor').value)||0,
+      peso:parseFloat(row.querySelector('.ci-ej-peso').value)||0,
+      descanso:parseInt(row.querySelector('.ci-ej-descanso').value,10)||0
+    };
+  }).filter(Boolean);
   if(!ejercicios.length){alert('Añade al menos un ejercicio');return;}
-  var dias=Array.prototype.slice.call(document.querySelectorAll('.ci-dia-chk:checked')).map(function(c){return c.value;});
-  if(!dias.length){alert('Selecciona al menos un día (D1-D4 o Descanso)');return;}
   var rondas=parseInt(document.getElementById('ci-rondas').value,10)||1;
-  var descanso=parseInt(document.getElementById('ci-descanso').value,10)||0;
   var nota=document.getElementById('ci-nota').value.trim();
+
+  // 1) Upsert de la plantilla en la biblioteca (ST.circuitos)
   if(!ST.circuitos) ST.circuitos=[];
-  if(_circuitoEditId){
-    var idx=ST.circuitos.findIndex(function(c){return c.id===_circuitoEditId;});
+  var circuitoId=_circuitoEditId;
+  if(circuitoId){
+    var idx=ST.circuitos.findIndex(function(c){return c.id===circuitoId;});
     if(idx>=0){
-      ST.circuitos[idx]=Object.assign({},ST.circuitos[idx],{nombre:nombre,ejercicios:ejercicios,rondas:rondas,descanso:descanso,nota:nota,dias:dias});
+      ST.circuitos[idx]=Object.assign({},ST.circuitos[idx],{nombre:nombre,ejercicios:ejercicios,rondas:rondas,nota:nota});
+    } else {
+      // Plantilla original ya no existe (se borró de la biblioteca) → crear de nuevo
+      circuitoId='circ_'+Date.now()+Math.random().toString(36).slice(2,7);
+      ST.circuitos.push({id:circuitoId,nombre:nombre,ejercicios:ejercicios,rondas:rondas,nota:nota});
     }
   } else {
-    ST.circuitos.push({id:'circ_'+Date.now()+Math.random().toString(36).slice(2,7),nombre:nombre,ejercicios:ejercicios,rondas:rondas,descanso:descanso,nota:nota,dias:dias});
+    circuitoId='circ_'+Date.now()+Math.random().toString(36).slice(2,7);
+    ST.circuitos.push({id:circuitoId,nombre:nombre,ejercicios:ejercicios,rondas:rondas,nota:nota});
   }
+
+  // 2) Upsert del uso de HOY (ST.circuitosSesiones)
+  var fecha=hoyLocal();
+  if(!ST.circuitosSesiones) ST.circuitosSesiones={};
+  if(!ST.circuitosSesiones[fecha]) ST.circuitosSesiones[fecha]=[];
+  var usos=ST.circuitosSesiones[fecha];
+  if(_circuitoUsoId){
+    var uidx=usos.findIndex(function(u){return u.id===_circuitoUsoId;});
+    if(uidx>=0){
+      var prevRondas=usos[uidx].rondasHechas||[];
+      var nuevaRondas=[];
+      for(var i=0;i<rondas;i++) nuevaRondas.push(!!prevRondas[i]);
+      usos[uidx]=Object.assign({},usos[uidx],{circuitoId:circuitoId,nombre:nombre,ejercicios:ejercicios,rondas:rondas,nota:nota,rondasHechas:nuevaRondas});
+    }
+  } else {
+    usos.push({id:'uso_'+Date.now()+Math.random().toString(36).slice(2,5),circuitoId:circuitoId,nombre:nombre,ejercicios:ejercicios,rondas:rondas,nota:nota,rondasHechas:new Array(rondas).fill(false)});
+  }
+
   save();
   document.getElementById('mo-circuito').classList.remove('open');
   renderCircuitosBody();
 }
 
-function eliminarCircuito(id){
-  if(!confirm('¿Eliminar este circuito?')) return;
+// Elimina la plantilla de la biblioteca (no afecta a usos ya registrados en días pasados,
+// que llevan su propio snapshot de datos)
+function eliminarCircuitoTemplate(id){
+  if(!confirm('¿Eliminar este circuito de la biblioteca? Los registros ya guardados en el calendario no se verán afectados.')) return;
   ST.circuitos=(ST.circuitos||[]).filter(function(c){return c.id!==id;});
+  save();
+  renderPickerCircuitos(document.getElementById('ci-buscador')?document.getElementById('ci-buscador').value:'');
+}
+
+// Quita el circuito de la sesión de HOY (la plantilla sigue en la biblioteca)
+function quitarUsoCircuitoHoy(usoId){
+  var fecha=hoyLocal();
+  if(!ST.circuitosSesiones||!ST.circuitosSesiones[fecha]) return;
+  ST.circuitosSesiones[fecha]=ST.circuitosSesiones[fecha].filter(function(u){return u.id!==usoId;});
   save();
   renderCircuitosBody();
 }
 
-// Marca/desmarca una ronda de un circuito para la fecha de hoy y actualiza el
-// flag de historial (para que el calendario pueda mostrar "Circuito").
-function toggleRondaCircuito(circuitoId, rondaIdx){
+function toggleRondaUso(usoId, rondaIdx){
   var fecha=hoyLocal();
-  if(!ST.circuitosHecho) ST.circuitosHecho={};
-  if(!ST.circuitosHecho[fecha]) ST.circuitosHecho[fecha]={};
-  var arr=ST.circuitosHecho[fecha][circuitoId]||[];
-  arr[rondaIdx]=!arr[rondaIdx];
-  ST.circuitosHecho[fecha][circuitoId]=arr;
-  // ¿queda alguna ronda marcada hoy, en cualquier circuito?
-  var hayAlguna=Object.keys(ST.circuitosHecho[fecha]).some(function(cid){
-    return (ST.circuitosHecho[fecha][cid]||[]).some(Boolean);
-  });
-  if(!ST.historialFechas) ST.historialFechas={};
-  if(!ST.historialFechas[fecha]) ST.historialFechas[fecha]={};
-  ST.historialFechas[fecha].circuito=hayAlguna;
+  var usos=(ST.circuitosSesiones&&ST.circuitosSesiones[fecha])||[];
+  var u=usos.find(function(x){return x.id===usoId;});
+  if(!u) return;
+  if(!u.rondasHechas) u.rondasHechas=[];
+  u.rondasHechas[rondaIdx]=!u.rondasHechas[rondaIdx];
   save();
   renderCircuitosBody();
 }
@@ -8216,18 +8343,16 @@ function toggleRondaCircuito(circuitoId, rondaIdx){
 function renderCircuitosBody(){
   var body=document.getElementById('circuitos-body');
   if(!body) return;
-  var slot=_circuitoSlotHoy();
-  var lista=(ST.circuitos||[]).filter(function(c){return (c.dias||[]).indexOf(slot)>=0;});
   var fecha=hoyLocal();
-  var progHoy=(ST.circuitosHecho&&ST.circuitosHecho[fecha])||{};
+  var usos=(ST.circuitosSesiones&&ST.circuitosSesiones[fecha])||[];
 
-  function renderRondas(c){
-    var arr=progHoy[c.id]||[];
-    var n=c.rondas||1;
+  function renderRondas(u){
+    var arr=u.rondasHechas||[];
+    var n=u.rondas||1;
     var html='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">';
     for(var i=0;i<n;i++){
       var hecha=!!arr[i];
-      html+='<span onclick="toggleRondaCircuito(\''+c.id+'\','+i+')" style="cursor:pointer;font-size:11px;font-weight:700;border-radius:12px;padding:3px 10px;background:'
+      html+='<span onclick="toggleRondaUso(\''+u.id+'\','+i+')" style="cursor:pointer;font-size:11px;font-weight:700;border-radius:12px;padding:3px 10px;background:'
         +(hecha?'var(--green-bg);color:var(--green-text)':'var(--bg3);color:var(--text2)')
         +'">'+(hecha?'✓ ':'')+'R'+(i+1)+'</span>';
     }
@@ -8235,31 +8360,35 @@ function renderCircuitosBody(){
     return html;
   }
 
-  function renderCircuito(c){
-    var ejsStr=(c.ejercicios||[]).map(function(e){return e.nombre;}).join(' · ');
+  function renderEjercicioLinea(e){
+    var val=e.tipo==='tiempo'?(e.valor||0)+'s':e.tipo==='distancia'?(e.valor||0)+'m':(e.valor||0)+' reps';
+    var pesoStr=e.peso?(e.peso+'kg × '):'';
+    return '<div style="font-size:11px;color:var(--text2);padding:1px 0">'+e.nombre+': '+pesoStr+val+' · descanso '+(e.descanso||0)+'s</div>';
+  }
+
+  function renderUso(u){
     return '<div style="padding:.6rem 0;border-bottom:.5px solid var(--border)">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
       +'<div style="flex:1">'
-      +'<div style="font-size:13px;font-weight:700;color:var(--text)">'+c.nombre+'</div>'
-      +'<div style="font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4">'+ejsStr+'</div>'
-      +(c.nota?'<div style="font-size:11px;color:var(--text3);margin-top:2px;font-style:italic">'+c.nota+'</div>':'')
-      +'<div style="font-size:11px;color:var(--text3);margin-top:3px">Descanso entre rondas: '+(c.descanso||0)+'s</div>'
-      +renderRondas(c)
+      +'<div style="font-size:13px;font-weight:700;color:var(--text)">'+u.nombre+'</div>'
+      +(u.ejercicios||[]).map(renderEjercicioLinea).join('')
+      +(u.nota?'<div style="font-size:11px;color:var(--text3);margin-top:2px;font-style:italic">'+u.nota+'</div>':'')
+      +renderRondas(u)
       +'</div>'
       +'<div style="display:flex;gap:4px;flex-shrink:0">'
-      +'<button onclick="abrirEditarCircuito(\''+c.id+'\')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);padding:4px 8px;font-size:11px;cursor:pointer">✎</button>'
-      +'<button onclick="eliminarCircuito(\''+c.id+'\')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:4px 8px;font-size:11px;cursor:pointer">✕</button>'
+      +'<button onclick="abrirEditarUsoCircuito(\''+u.id+'\')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);padding:4px 8px;font-size:11px;cursor:pointer">✎</button>'
+      +'<button onclick="quitarUsoCircuitoHoy(\''+u.id+'\')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:4px 8px;font-size:11px;cursor:pointer">✕</button>'
       +'</div>'
       +'</div>'
       +'</div>';
   }
 
-  var contenido=lista.length
-    ? lista.map(renderCircuito).join('')
-    : '<div style="color:var(--text3);font-size:13px;padding:.3rem 0">No hay circuitos asignados a este día.</div>';
+  var contenido=usos.length
+    ? usos.map(renderUso).join('')
+    : '<div style="color:var(--text3);font-size:13px;padding:.3rem 0">No has añadido ningún circuito hoy.</div>';
 
   var addBtn='<div style="margin-top:.75rem">'
-    +'<button onclick="abrirNuevoCircuito()" style="width:100%;padding:9px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer">＋ Añadir circuito</button>'
+    +'<button onclick="abrirPickerCircuitos()" style="width:100%;padding:9px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer">＋ Añadir circuito</button>'
     +'</div>';
 
   body.innerHTML=contenido+addBtn;
@@ -8365,7 +8494,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_006';
+const APP_VERSION='vEXT_008';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9236,6 +9365,130 @@ function calFechaKey(y,m,d){
   return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
 }
 
+// ── BUSCADOR DE CALENDARIO ───────────────────────────────────────────────
+// Códigos tipo "S5D3" (semana 5, día Boyle D3), "F2" (fase), o texto libre = nombre de ejercicio
+function parseCodigoSesion(q){
+  var s=(q||'').trim().toUpperCase();
+  var mF=s.match(/F([1-4])/);
+  var mS=s.match(/S(\d{1,2})/);
+  var mD=s.match(/D([1-4])/);
+  if(!mF&&!mS&&!mD) return null;
+  var out={};
+  if(mF) out.fase='F'+mF[1];
+  if(mS) out.sem=parseInt(mS[1],10);
+  if(mD) out.dia='D'+mD[1];
+  return out;
+}
+
+function buscarEnCalendario(){
+  var q=(document.getElementById('cal-search-input')||{}).value||'';
+  q=q.trim();
+  var resEl=document.getElementById('cal-search-results');
+  if(!resEl) return;
+  if(!q){ resEl.style.display='none'; resEl.innerHTML=''; return; }
+
+  var codigo=parseCodigoSesion(q);
+  var hist=ST.historialFechas||{};
+  var fechas=Object.keys(hist).sort();
+  var resultados=[];
+  var esCodigo = codigo && (codigo.sem!==undefined || codigo.dia || codigo.fase);
+
+  if(esCodigo){
+    fechas.forEach(function(f){
+      var h=hist[f];
+      if(!h||!h.completado) return;
+      if(codigo.sem!==undefined && h.semana!==codigo.sem) return;
+      if(codigo.dia && h.diaBoyleReal!==codigo.dia) return;
+      if(codigo.fase && h.fase!==codigo.fase) return;
+      resultados.push({fecha:f, h:h, tipo:'sesion'});
+    });
+  } else {
+    var qLower=q.toLowerCase();
+    fechas.forEach(function(f){
+      var h=hist[f];
+      if(!h||!h.completado) return;
+      var ejs=(h.ejerciciosRealizados||[]).filter(function(e){
+        return e.ej && e.ej.toLowerCase().indexOf(qLower)>=0;
+      });
+      if(ejs.length) resultados.push({fecha:f, h:h, tipo:'ejercicio', ejs:ejs});
+    });
+    // Fallback: sesiones antiguas sin historialFechas, buscar directamente en ST.sets
+    var fechaSesiones=ST.fechaSesiones||{};
+    var yaVistas={}; resultados.forEach(function(r){yaVistas[r.fecha]=true;});
+    Object.keys(ST.sets||{}).forEach(function(k){
+      var p=parseSetKey(k);
+      if(!p||p.esFinisher) return;
+      var numDia=String(p.dia), ej=p.ej;
+      if(ej.toLowerCase().indexOf(qLower)<0) return;
+      var fecha=Object.keys(fechaSesiones).find(function(ff){return String(fechaSesiones[ff])===numDia;});
+      if(!fecha || yaVistas[fecha]) return;
+      var sets=(ST.sets[k]||[]).filter(Boolean);
+      if(!sets.length) return;
+      resultados.push({fecha:fecha, h:hist[fecha]||{}, tipo:'ejercicio', ejs:[{ej:ej,sets:sets}]});
+      yaVistas[fecha]=true;
+    });
+    // También circuitos guardados por fecha, si el nombre coincide
+    var circSesiones=ST.circuitosSesiones||{};
+    Object.keys(circSesiones).forEach(function(f){
+      if(yaVistas[f]) return;
+      var usos=(circSesiones[f]||[]).filter(function(u){return (u.nombre||'').toLowerCase().indexOf(qLower)>=0;});
+      if(usos.length){
+        resultados.push({fecha:f, h:hist[f]||{}, tipo:'circuito', circuitos:usos});
+        yaVistas[f]=true;
+      }
+    });
+    resultados.sort(function(a,b){return a.fecha<b.fecha?-1:(a.fecha>b.fecha?1:0);});
+  }
+
+  resEl.style.display='block';
+  if(!resultados.length){
+    resEl.innerHTML='<div class="empty">Sin resultados para "'+q.replace(/</g,'&lt;')+'"</div>'
+      +'<button onclick="cerrarBusquedaCalendario()" style="width:100%;padding:9px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:.5rem">Cerrar</button>';
+    return;
+  }
+  var html='<div class="card-lbl">Resultados ('+resultados.length+')</div>';
+  resultados.slice().reverse().forEach(function(r){
+    var h=r.h||{};
+    var nomBoyle=h.diaBoyleReal?(BOYLE_DIAS[h.diaBoyleReal]?BOYLE_DIAS[h.diaBoyleReal].n:h.diaBoyleReal):'—';
+    var fechaSafe=r.fecha.replace(/'/g,"\\'");
+    html+='<div onclick="irAFechaDesdeBusqueda(\''+fechaSafe+'\')" style="padding:.6rem 0;border-bottom:.5px solid var(--border);cursor:pointer">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">';
+    html+='<span style="font-size:13px;font-weight:700;color:var(--text)">'+r.fecha+'</span>';
+    html+='<span style="font-size:11px;background:var(--blue-bg);color:var(--blue-text);border-radius:20px;padding:2px 8px;white-space:nowrap">'+(h.fase||'—')+' Sem '+(h.semana!==undefined?h.semana:'—')+' · '+nomBoyle+'</span>';
+    html+='</div>';
+    if(r.tipo==='ejercicio' && r.ejs){
+      r.ejs.forEach(function(e){
+        var sets=e.sets||[];
+        var setsStr=sets.map(function(s){return s.p+'kg×'+s.r+' R'+s.rpe;}).join(' · ');
+        html+='<div style="font-size:12px;color:var(--text2);margin-top:3px"><strong>'+e.ej+'</strong>: '+setsStr+'</div>';
+      });
+    } else if(r.tipo==='circuito' && r.circuitos){
+      r.circuitos.forEach(function(u){
+        var rondasHechas=(u.rondasHechas||[]).filter(Boolean).length;
+        html+='<div style="font-size:12px;color:var(--text2);margin-top:3px">🔄 <strong>'+u.nombre+'</strong>: '+rondasHechas+'/'+(u.rondas||0)+' rondas</div>';
+      });
+    }
+    html+='</div>';
+  });
+  html+='<button onclick="cerrarBusquedaCalendario()" style="width:100%;padding:9px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:.5rem">Cerrar resultados</button>';
+  resEl.innerHTML=html;
+}
+
+function cerrarBusquedaCalendario(){
+  var resEl=document.getElementById('cal-search-results');
+  if(resEl){resEl.style.display='none'; resEl.innerHTML='';}
+  var inp=document.getElementById('cal-search-input');
+  if(inp) inp.value='';
+}
+
+function irAFechaDesdeBusqueda(fecha){
+  cerrarBusquedaCalendario();
+  var d=new Date(fecha+'T00:00:00');
+  calYear=d.getFullYear(); calMonth=d.getMonth();
+  renders.cal();
+  setTimeout(function(){ calSelDia(fecha); }, 50);
+}
+
 // Obtener entrenos del día (desde ST.sets, claves d{n}_ejercicio)
 // Mapeamos dia numérico a fecha real si hay garminHist, si no usamos índice relativo
 function calGetEntrenosDia(fecha){
@@ -9507,13 +9760,11 @@ function calSelDia(fecha){
   }
   var circuitoEl=document.getElementById('cal-det-circuito');
   if(circuitoEl){
-    var circuitoProg=ST.circuitosHecho&&ST.circuitosHecho[fecha];
-    var idsHechos=circuitoProg?Object.keys(circuitoProg).filter(function(cid){return (circuitoProg[cid]||[]).some(Boolean);}):[];
-    if(idsHechos.length){
-      var nombresCircuito=idsHechos.map(function(cid){
-        var c=(ST.circuitos||[]).find(function(x){return x.id===cid;});
-        var rondasHechas=(circuitoProg[cid]||[]).filter(Boolean).length;
-        return (c?c.nombre:'Circuito')+' ('+rondasHechas+' rondas)';
+    var usosDia=(ST.circuitosSesiones&&ST.circuitosSesiones[fecha])||[];
+    if(usosDia.length){
+      var nombresCircuito=usosDia.map(function(u){
+        var rondasHechas=(u.rondasHechas||[]).filter(Boolean).length;
+        return u.nombre+' ('+rondasHechas+'/'+(u.rondas||0)+' rondas)';
       });
       circuitoEl.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;background:var(--blue-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
         +'<span style="font-size:12px;font-weight:700;color:var(--blue-text)">🔄 Circuito — '+nombresCircuito.join(', ')+'</span>'
@@ -9642,10 +9893,9 @@ renders.cal=function(){
       var boxLbl=boxeoDia.length>1?boxeoDia.length+'x':(boxeoDia[0].bloque==='LIBRE'?'Libre':boxeoDia[0].bloque);
       dots+=`<div style="font-size:8px;font-weight:700;color:var(--red-text);background:var(--red-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🥊${boxLbl}</div>`;
     }
-    // Circuito registrado ese día → badge propio
-    var circuitoDia=ST.circuitosHecho&&ST.circuitosHecho[fecha];
-    var tieneCircuitoHecho=circuitoDia&&Object.keys(circuitoDia).some(function(cid){return (circuitoDia[cid]||[]).some(Boolean);});
-    if(tieneCircuitoHecho){
+    // Circuito registrado ese día → badge propio (basta con haberlo añadido, no hace falta completar rondas)
+    var circuitosDia=(ST.circuitosSesiones&&ST.circuitosSesiones[fecha])||[];
+    if(circuitosDia.length){
       dots+=`<div style="font-size:8px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🔄Circuito</div>`;
     }
     // Color fondo

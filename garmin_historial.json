@@ -3212,7 +3212,12 @@
       "distancia_km": 0.0,
       "minutos_activos": 0,
       "fc_reposo": 41,
-      "estres_medio": 10
+      "estres_medio": 10,
+      "sueno_total_min": 428,
+      "sueno_profundo_min": 117,
+      "sueno_ligero_min": 237,
+      "sueno_rem_min": 74,
+      "sueno_puntuacion": 80
     }
   },
   "actualizado": "2026-09-26"

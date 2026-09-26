@@ -185,7 +185,7 @@ function avisoSync(on){
 })();
 
 function aplicarRemoto(parsed){
-  var protegidos=['historialFechas','fechaSesiones','planDia','notaDia'];
+  var protegidos=['historialFechas','fechaSesiones','planDia','notaDia','circuitosHecho'];
   ST=Object.assign({},ST,parsed);
   var conflictos=[];
   protegidos.forEach(function(k){
@@ -743,6 +743,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="finisher-body" style="display:none;margin-top:.75rem"></div>
     </div>
 
+    <!-- CIRCUITOS -->
+    <div class="card" id="e-circuitos-card">
+      <div onclick="toggleSection('circuitos')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="card-lbl" style="margin-bottom:0;color:var(--blue)">🔄 Circuitos</div>
+        </div>
+        <i class="ti ti-chevron-down" id="circuitos-icon" style="color:var(--text3);transition:transform .2s"></i>
+      </div>
+      <div id="circuitos-body" style="display:none;margin-top:.75rem"></div>
+    </div>
+
     <!-- ENFRIAMIENTO EXPANDIBLE -->
     <div class="card" id="e-enf-card">
       <div onclick="toggleSection('enf')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
@@ -1085,6 +1096,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="cal-det-titulo" class="card-lbl" style="font-size:15px;font-weight:700;margin-bottom:.5rem"></div>
       <div id="cal-det-garmin"></div>
       <div id="cal-det-entreno"></div>
+      <div id="cal-det-circuito"></div>
       <div id="cal-det-nutricion"></div>
       <div id="cal-det-boxeo"></div>
       <div style="margin-top:.75rem">
@@ -1362,6 +1374,36 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 </div>
 
 <!-- MODAL CONFLICTOS SYNC -->
+<div class="mo" id="mo-circuito" onclick="closeMo(event,'mo-circuito')">
+  <div class="ms" style="max-height:85vh;overflow-y:auto">
+    <div class="mh"></div>
+    <div class="mt" id="ci-titulo">🔄 Circuito</div>
+    <div class="ig"><label>Nombre</label><input type="text" id="ci-nombre" placeholder="Ej. Circuito HIIT tren superior"></div>
+    <div class="ig"><label>Ejercicios</label>
+      <div id="ci-ejercicios-list"></div>
+      <button type="button" onclick="anadirFilaEjCircuito()" style="width:100%;margin-top:6px;padding:7px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:12px;cursor:pointer">＋ Añadir ejercicio</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="ig" style="flex:1"><label>Rondas</label><input type="number" id="ci-rondas" min="1" max="20" value="3"></div>
+      <div class="ig" style="flex:1"><label>Descanso entre rondas (seg)</label><input type="number" id="ci-descanso" min="0" max="600" step="5" value="60"></div>
+    </div>
+    <div class="ig"><label>Nota (opcional)</label><input type="text" id="ci-nota" placeholder="Indicaciones, equipo, etc."></div>
+    <div class="ig"><label>Días</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px" id="ci-dias">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D1" class="ci-dia-chk"> D1</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D2" class="ci-dia-chk"> D2</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D3" class="ci-dia-chk"> D3</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="D4" class="ci-dia-chk"> D4</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" value="Descanso" class="ci-dia-chk"> Descanso</label>
+      </div>
+    </div>
+    <div class="br2">
+      <button class="bcan" onclick="document.getElementById('mo-circuito').classList.remove('open')">Cancelar</button>
+      <button class="bsav" onclick="guardarCircuito()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="mo" id="mo-add-finisher" onclick="closeMo(event,'mo-add-finisher')">
   <div class="ms">
     <div class="mh"></div>
@@ -2697,7 +2739,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'entreno-pro'};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'entreno-pro',circuitos:[],circuitosHecho:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2732,6 +2774,7 @@ function getConfigFields(){
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
     ciclosCompletados:ST.ciclosCompletados||[],
     repoPrograma:ST.repoPrograma||'entreno-pro',
+    circuitos:ST.circuitos||[],circuitosHecho:ST.circuitosHecho||{},
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
 }
@@ -2770,7 +2813,8 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma'];
+    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma',
+    'circuitos','circuitosHecho'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
@@ -2890,7 +2934,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosHecho)ST.circuitosHecho={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3380,6 +3424,7 @@ const renders={
     restoreTimer();
     try{renderDiaPicker();}catch(e){}
     try{cargarNotaDia();}catch(e){}
+    try{renderCircuitosBody();}catch(e){}
     const c=CICLO[(ST.dia-1)%12];
     const pr=PROG[(ST.sem-1)%12];
     document.getElementById('e-sem').textContent='Semana '+ST.sem+(pr.d?' — Descarga':'');
@@ -6875,7 +6920,7 @@ function getEjImgs(ej){
 // CALENTAMIENTO / ENFRIAMIENTO EXPANDIBLES
 // ══════════════════════════════════════
 function toggleSection(id){
-  var bodyMap={warmup:'warmup-body',enf:'e-enf',finisher:'finisher-body'};
+  var bodyMap={warmup:'warmup-body',enf:'e-enf',finisher:'finisher-body',circuitos:'circuitos-body'};
   var body=document.getElementById(bodyMap[id]||id);
   var icon=document.getElementById(id+'-icon');
   if(!body) return;
@@ -6886,6 +6931,7 @@ function toggleSection(id){
     if(id==='warmup') renderWarmupBody();
     else if(id==='enf') renderEnfBody();
     else if(id==='finisher') renderFinisherBody();
+    else if(id==='circuitos') renderCircuitosBody();
   }
 }
 
@@ -8058,6 +8104,168 @@ function renderFinisherBody(){
 }
 
 
+// ── CIRCUITOS ────────────────────────────────────────────────────────────
+// ST.circuitos: [{id,nombre,ejercicios:[{nombre}],rondas,descanso,nota,dias:['D1'...'Descanso']}]
+// ST.circuitosHecho: {fecha:{circuitoId:[bool,bool,...]}} — progreso de rondas por fecha
+var _circuitoEditId=null;
+
+function _circuitoSlotHoy(){
+  var dB=getDiaBoyle();
+  return dB||'Descanso';
+}
+
+function _filaEjCircuitoHtml(valor){
+  var v=(valor||'').replace(/"/g,'&quot;');
+  return '<div class="ci-ej-row" style="display:flex;gap:6px;margin-bottom:6px">'
+    +'<input type="text" class="ci-ej-input" value="'+v+'" placeholder="Nombre del ejercicio" style="flex:1;padding:8px 10px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:13px;background:var(--bg);color:var(--text)">'
+    +'<button type="button" onclick="this.parentElement.remove()" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:0 10px;font-size:14px;cursor:pointer">✕</button>'
+    +'</div>';
+}
+
+function anadirFilaEjCircuito(nombre){
+  var cont=document.getElementById('ci-ejercicios-list');
+  if(!cont) return;
+  cont.insertAdjacentHTML('beforeend',_filaEjCircuitoHtml(nombre||''));
+}
+
+function abrirNuevoCircuito(){
+  _circuitoEditId=null;
+  document.getElementById('ci-titulo').textContent='🔄 Nuevo circuito';
+  document.getElementById('ci-nombre').value='';
+  document.getElementById('ci-rondas').value=3;
+  document.getElementById('ci-descanso').value=60;
+  document.getElementById('ci-nota').value='';
+  document.getElementById('ci-ejercicios-list').innerHTML='';
+  anadirFilaEjCircuito('');
+  anadirFilaEjCircuito('');
+  document.querySelectorAll('.ci-dia-chk').forEach(function(chk){ chk.checked=false; });
+  var slot=_circuitoSlotHoy();
+  var slotChk=document.querySelector('.ci-dia-chk[value="'+slot+'"]');
+  if(slotChk) slotChk.checked=true;
+  document.getElementById('mo-circuito').classList.add('open');
+}
+
+function abrirEditarCircuito(id){
+  var c=(ST.circuitos||[]).find(function(x){return x.id===id;});
+  if(!c) return;
+  _circuitoEditId=id;
+  document.getElementById('ci-titulo').textContent='🔄 Editar circuito';
+  document.getElementById('ci-nombre').value=c.nombre||'';
+  document.getElementById('ci-rondas').value=c.rondas||3;
+  document.getElementById('ci-descanso').value=c.descanso!=null?c.descanso:60;
+  document.getElementById('ci-nota').value=c.nota||'';
+  document.getElementById('ci-ejercicios-list').innerHTML='';
+  (c.ejercicios||[]).forEach(function(e){ anadirFilaEjCircuito(e.nombre); });
+  if(!(c.ejercicios||[]).length) anadirFilaEjCircuito('');
+  document.querySelectorAll('.ci-dia-chk').forEach(function(chk){ chk.checked=(c.dias||[]).indexOf(chk.value)>=0; });
+  document.getElementById('mo-circuito').classList.add('open');
+}
+
+function guardarCircuito(){
+  var nombre=document.getElementById('ci-nombre').value.trim();
+  if(!nombre){alert('Escribe un nombre para el circuito');return;}
+  var ejercicios=Array.prototype.slice.call(document.querySelectorAll('.ci-ej-input'))
+    .map(function(inp){return inp.value.trim();}).filter(Boolean).map(function(n){return {nombre:n};});
+  if(!ejercicios.length){alert('Añade al menos un ejercicio');return;}
+  var dias=Array.prototype.slice.call(document.querySelectorAll('.ci-dia-chk:checked')).map(function(c){return c.value;});
+  if(!dias.length){alert('Selecciona al menos un día (D1-D4 o Descanso)');return;}
+  var rondas=parseInt(document.getElementById('ci-rondas').value,10)||1;
+  var descanso=parseInt(document.getElementById('ci-descanso').value,10)||0;
+  var nota=document.getElementById('ci-nota').value.trim();
+  if(!ST.circuitos) ST.circuitos=[];
+  if(_circuitoEditId){
+    var idx=ST.circuitos.findIndex(function(c){return c.id===_circuitoEditId;});
+    if(idx>=0){
+      ST.circuitos[idx]=Object.assign({},ST.circuitos[idx],{nombre:nombre,ejercicios:ejercicios,rondas:rondas,descanso:descanso,nota:nota,dias:dias});
+    }
+  } else {
+    ST.circuitos.push({id:'circ_'+Date.now()+Math.random().toString(36).slice(2,7),nombre:nombre,ejercicios:ejercicios,rondas:rondas,descanso:descanso,nota:nota,dias:dias});
+  }
+  save();
+  document.getElementById('mo-circuito').classList.remove('open');
+  renderCircuitosBody();
+}
+
+function eliminarCircuito(id){
+  if(!confirm('¿Eliminar este circuito?')) return;
+  ST.circuitos=(ST.circuitos||[]).filter(function(c){return c.id!==id;});
+  save();
+  renderCircuitosBody();
+}
+
+// Marca/desmarca una ronda de un circuito para la fecha de hoy y actualiza el
+// flag de historial (para que el calendario pueda mostrar "Circuito").
+function toggleRondaCircuito(circuitoId, rondaIdx){
+  var fecha=hoyLocal();
+  if(!ST.circuitosHecho) ST.circuitosHecho={};
+  if(!ST.circuitosHecho[fecha]) ST.circuitosHecho[fecha]={};
+  var arr=ST.circuitosHecho[fecha][circuitoId]||[];
+  arr[rondaIdx]=!arr[rondaIdx];
+  ST.circuitosHecho[fecha][circuitoId]=arr;
+  // ¿queda alguna ronda marcada hoy, en cualquier circuito?
+  var hayAlguna=Object.keys(ST.circuitosHecho[fecha]).some(function(cid){
+    return (ST.circuitosHecho[fecha][cid]||[]).some(Boolean);
+  });
+  if(!ST.historialFechas) ST.historialFechas={};
+  if(!ST.historialFechas[fecha]) ST.historialFechas[fecha]={};
+  ST.historialFechas[fecha].circuito=hayAlguna;
+  save();
+  renderCircuitosBody();
+}
+
+function renderCircuitosBody(){
+  var body=document.getElementById('circuitos-body');
+  if(!body) return;
+  var slot=_circuitoSlotHoy();
+  var lista=(ST.circuitos||[]).filter(function(c){return (c.dias||[]).indexOf(slot)>=0;});
+  var fecha=hoyLocal();
+  var progHoy=(ST.circuitosHecho&&ST.circuitosHecho[fecha])||{};
+
+  function renderRondas(c){
+    var arr=progHoy[c.id]||[];
+    var n=c.rondas||1;
+    var html='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">';
+    for(var i=0;i<n;i++){
+      var hecha=!!arr[i];
+      html+='<span onclick="toggleRondaCircuito(\''+c.id+'\','+i+')" style="cursor:pointer;font-size:11px;font-weight:700;border-radius:12px;padding:3px 10px;background:'
+        +(hecha?'var(--green-bg);color:var(--green-text)':'var(--bg3);color:var(--text2)')
+        +'">'+(hecha?'✓ ':'')+'R'+(i+1)+'</span>';
+    }
+    html+='</div>';
+    return html;
+  }
+
+  function renderCircuito(c){
+    var ejsStr=(c.ejercicios||[]).map(function(e){return e.nombre;}).join(' · ');
+    return '<div style="padding:.6rem 0;border-bottom:.5px solid var(--border)">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
+      +'<div style="flex:1">'
+      +'<div style="font-size:13px;font-weight:700;color:var(--text)">'+c.nombre+'</div>'
+      +'<div style="font-size:12px;color:var(--text2);margin-top:2px;line-height:1.4">'+ejsStr+'</div>'
+      +(c.nota?'<div style="font-size:11px;color:var(--text3);margin-top:2px;font-style:italic">'+c.nota+'</div>':'')
+      +'<div style="font-size:11px;color:var(--text3);margin-top:3px">Descanso entre rondas: '+(c.descanso||0)+'s</div>'
+      +renderRondas(c)
+      +'</div>'
+      +'<div style="display:flex;gap:4px;flex-shrink:0">'
+      +'<button onclick="abrirEditarCircuito(\''+c.id+'\')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);padding:4px 8px;font-size:11px;cursor:pointer">✎</button>'
+      +'<button onclick="eliminarCircuito(\''+c.id+'\')" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);padding:4px 8px;font-size:11px;cursor:pointer">✕</button>'
+      +'</div>'
+      +'</div>'
+      +'</div>';
+  }
+
+  var contenido=lista.length
+    ? lista.map(renderCircuito).join('')
+    : '<div style="color:var(--text3);font-size:13px;padding:.3rem 0">No hay circuitos asignados a este día.</div>';
+
+  var addBtn='<div style="margin-top:.75rem">'
+    +'<button onclick="abrirNuevoCircuito()" style="width:100%;padding:9px;border:.5px dashed var(--border2);background:transparent;color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer">＋ Añadir circuito</button>'
+    +'</div>';
+
+  body.innerHTML=contenido+addBtn;
+}
+
+
 function abrirNuevoEj(){
   document.getElementById('nuevo-ej-nombre').value='';
   document.getElementById('nuevo-ej-tecnica').value='';
@@ -8157,7 +8365,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_005';
+const APP_VERSION='vEXT_006';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9297,6 +9505,23 @@ function calSelDia(fecha){
       ? '<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin:.75rem 0 .3rem">🍽 NUTRICIÓN</div>'+renderResumenNutricionHTML(resumenNutDia)
       : '';
   }
+  var circuitoEl=document.getElementById('cal-det-circuito');
+  if(circuitoEl){
+    var circuitoProg=ST.circuitosHecho&&ST.circuitosHecho[fecha];
+    var idsHechos=circuitoProg?Object.keys(circuitoProg).filter(function(cid){return (circuitoProg[cid]||[]).some(Boolean);}):[];
+    if(idsHechos.length){
+      var nombresCircuito=idsHechos.map(function(cid){
+        var c=(ST.circuitos||[]).find(function(x){return x.id===cid;});
+        var rondasHechas=(circuitoProg[cid]||[]).filter(Boolean).length;
+        return (c?c.nombre:'Circuito')+' ('+rondasHechas+' rondas)';
+      });
+      circuitoEl.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;background:var(--blue-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:6px">'
+        +'<span style="font-size:12px;font-weight:700;color:var(--blue-text)">🔄 Circuito — '+nombresCircuito.join(', ')+'</span>'
+        +'</div>';
+    } else {
+      circuitoEl.innerHTML='';
+    }
+  }
   var boxeoEl=document.getElementById('cal-det-boxeo');
   if(boxeoEl){
     var boxeoDiaDet=getBoxeoSesionesFecha(fecha);
@@ -9416,6 +9641,12 @@ renders.cal=function(){
     if(boxeoDia.length){
       var boxLbl=boxeoDia.length>1?boxeoDia.length+'x':(boxeoDia[0].bloque==='LIBRE'?'Libre':boxeoDia[0].bloque);
       dots+=`<div style="font-size:8px;font-weight:700;color:var(--red-text);background:var(--red-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🥊${boxLbl}</div>`;
+    }
+    // Circuito registrado ese día → badge propio
+    var circuitoDia=ST.circuitosHecho&&ST.circuitosHecho[fecha];
+    var tieneCircuitoHecho=circuitoDia&&Object.keys(circuitoDia).some(function(cid){return (circuitoDia[cid]||[]).some(Boolean);});
+    if(tieneCircuitoHecho){
+      dots+=`<div style="font-size:8px;font-weight:700;color:var(--blue-text);background:var(--blue-bg);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">🔄Circuito</div>`;
     }
     // Color fondo
     let bg=esHoy?'var(--bg3)':'var(--bg2)';

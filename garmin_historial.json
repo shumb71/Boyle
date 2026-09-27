@@ -3221,13 +3221,13 @@
     },
     "2026-09-27": {
       "fecha": "2026-09-27",
-      "pasos": 5626,
-      "calorias_dia": 1509.0,
-      "calorias_activas": 445.0,
-      "distancia_km": 4.66,
+      "pasos": 8606,
+      "calorias_dia": 2115.0,
+      "calorias_activas": 530.0,
+      "distancia_km": 7.12,
       "minutos_activos": 27,
       "fc_reposo": 54,
-      "estres_medio": 43,
+      "estres_medio": 39,
       "actividades": [
         {
           "nombre": "Fuerza",

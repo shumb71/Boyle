@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-29T12:20:30.887909+00:00",
+  "actualizado": "2026-09-29T19:50:58.149486+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -806,7 +806,7 @@
     },
     "2026-09-23": {
       "pasos": 683,
-      "distancia_km": 4.66,
+      "distancia_km": 0.13,
       "minutos_activos": 43,
       "calorias_dia": 2517.12,
       "fc_reposo": 52.0,
@@ -820,7 +820,7 @@
       "sueno_rem_min": 12
     },
     "2026-09-24": {
-      "pasos": 26042,
+      "pasos": 3149,
       "distancia_km": 9.88,
       "minutos_activos": 115,
       "calorias_dia": 2846.25,
@@ -849,7 +849,7 @@
     "2026-09-25": {
       "pasos": 17238,
       "distancia_km": 9.98,
-      "minutos_activos": 366,
+      "minutos_activos": 248,
       "calorias_dia": 2805.65,
       "fc_reposo": 50.0,
       "hrv": 52.5,
@@ -916,13 +916,25 @@
       "sueno_rem_min": 73
     },
     "2026-09-29": {
-      "pasos": 3400,
-      "distancia_km": 1.82,
-      "minutos_activos": 150,
-      "calorias_dia": 1464.57,
+      "pasos": 32312,
+      "distancia_km": 18.43,
+      "minutos_activos": 447,
+      "calorias_dia": 2964.43,
       "fc_reposo": 49.0,
       "hrv": 48.6,
-      "actividadesFitbit": [],
+      "actividadesFitbit": [
+        {
+          "id": "1607763943823139880",
+          "tipo": "HIKING",
+          "nombre": "Senderismo",
+          "inicio": "2026-09-29T17:00:17Z",
+          "fin": "2026-09-29T18:12:23Z",
+          "duracion_min": 72,
+          "calorias": 669,
+          "fc_media": 110,
+          "fc_max": null
+        }
+      ],
       "spo2": 94.6,
       "sueno_total_min": 450,
       "sueno_profundo_min": 111,

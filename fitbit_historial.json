@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-30T17:44:40.130252+00:00",
+  "actualizado": "2026-09-30T21:58:35.254386+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -847,8 +847,8 @@
       "sueno_rem_min": 72
     },
     "2026-09-25": {
-      "pasos": 6334,
-      "distancia_km": 9.98,
+      "pasos": 1504,
+      "distancia_km": 7.87,
       "minutos_activos": 19,
       "calorias_dia": 2805.65,
       "fc_reposo": 50.0,
@@ -864,7 +864,7 @@
     "2026-09-26": {
       "pasos": 14163,
       "distancia_km": 8.39,
-      "minutos_activos": 216,
+      "minutos_activos": 177,
       "calorias_dia": 2474.35,
       "fc_reposo": 50.0,
       "hrv": 43.1,
@@ -936,17 +936,17 @@
         }
       ],
       "spo2": 94.6,
+      "peso_kg": 86.9,
       "sueno_total_min": 450,
       "sueno_profundo_min": 111,
       "sueno_ligero_min": 253,
-      "sueno_rem_min": 86,
-      "peso_kg": 86.9
+      "sueno_rem_min": 86
     },
     "2026-09-30": {
-      "pasos": 7927,
-      "distancia_km": 4.76,
-      "minutos_activos": 265,
-      "calorias_dia": 2343.4,
+      "pasos": 11199,
+      "distancia_km": 6.67,
+      "minutos_activos": 348,
+      "calorias_dia": 2855.89,
       "actividadesFitbit": [
         {
           "id": "6727009191261419912",
@@ -963,11 +963,11 @@
       "fc_reposo": 49.0,
       "hrv": 49.6,
       "spo2": 94.7,
+      "peso_kg": 86.9,
       "sueno_total_min": 320,
       "sueno_profundo_min": 72,
       "sueno_ligero_min": 184,
-      "sueno_rem_min": 64,
-      "peso_kg": 86.9
+      "sueno_rem_min": 64
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-09-30T09:25:04.338604+00:00",
+  "actualizado": "2026-09-30T17:44:40.130252+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -847,7 +847,7 @@
       "sueno_rem_min": 72
     },
     "2026-09-25": {
-      "pasos": 13473,
+      "pasos": 6334,
       "distancia_km": 9.98,
       "minutos_activos": 19,
       "calorias_dia": 2805.65,
@@ -864,7 +864,7 @@
     "2026-09-26": {
       "pasos": 14163,
       "distancia_km": 8.39,
-      "minutos_activos": 356,
+      "minutos_activos": 216,
       "calorias_dia": 2474.35,
       "fc_reposo": 50.0,
       "hrv": 43.1,
@@ -916,8 +916,8 @@
       "sueno_rem_min": 73
     },
     "2026-09-29": {
-      "pasos": 34508,
-      "distancia_km": 19.48,
+      "pasos": 36091,
+      "distancia_km": 20.51,
       "minutos_activos": 523,
       "calorias_dia": 3282.59,
       "fc_reposo": 49.0,
@@ -939,20 +939,35 @@
       "sueno_total_min": 450,
       "sueno_profundo_min": 111,
       "sueno_ligero_min": 253,
-      "sueno_rem_min": 86
+      "sueno_rem_min": 86,
+      "peso_kg": 86.9
     },
     "2026-09-30": {
-      "pasos": 2683,
-      "distancia_km": 1.55,
-      "minutos_activos": 109,
-      "calorias_dia": 1090.14,
-      "actividadesFitbit": [],
+      "pasos": 7927,
+      "distancia_km": 4.76,
+      "minutos_activos": 265,
+      "calorias_dia": 2343.4,
+      "actividadesFitbit": [
+        {
+          "id": "6727009191261419912",
+          "tipo": "FREE_WEIGHTS",
+          "nombre": "Pesas",
+          "inicio": "2026-09-30T15:59:28Z",
+          "fin": "2026-09-30T16:28:46Z",
+          "duracion_min": 29,
+          "calorias": 219,
+          "fc_media": 128,
+          "fc_max": null
+        }
+      ],
       "fc_reposo": 49.0,
-      "hrv": 45.3,
-      "sueno_total_min": 213,
-      "sueno_profundo_min": 51,
-      "sueno_ligero_min": 127,
-      "sueno_rem_min": 35
+      "hrv": 49.6,
+      "spo2": 94.7,
+      "sueno_total_min": 320,
+      "sueno_profundo_min": 72,
+      "sueno_ligero_min": 184,
+      "sueno_rem_min": 64,
+      "peso_kg": 86.9
     }
   }
 }

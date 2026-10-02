@@ -3297,13 +3297,13 @@
     },
     "2026-09-30": {
       "fecha": "2026-09-30",
-      "pasos": 3773,
-      "calorias_dia": 2027.0,
-      "calorias_activas": 396.0,
-      "distancia_km": 3.11,
+      "pasos": 4265,
+      "calorias_dia": 2501.0,
+      "calorias_activas": 402.0,
+      "distancia_km": 3.51,
       "minutos_activos": 29,
-      "fc_reposo": 50,
-      "estres_medio": 20,
+      "fc_reposo": 48,
+      "estres_medio": 22,
       "actividades": [
         {
           "nombre": "Fuerza",
@@ -3326,22 +3326,40 @@
     "2026-10-01": {
       "fecha": "2026-10-01",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-10-02": {
       "fecha": "2026-10-02",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 2273,
+      "calorias_dia": 1508.0,
+      "calorias_activas": 364.0,
+      "distancia_km": 1.92,
+      "minutos_activos": 42,
+      "fc_reposo": 54,
+      "estres_medio": 83,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 85,
+          "calorias": 478.0,
+          "fc_media": 106.0,
+          "fc_max": 148.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 85,
+        "calorias": 478.0,
+        "fc_media": 106.0,
+        "fc_max": 148.0
+      }
     }
   },
   "actualizado": "2026-10-02"

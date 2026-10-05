@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_010</title>
+<title>Entreno Boyle vEXT_011</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -557,8 +557,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   // --- SERVICE WORKER v2: kill switch + registro nuevo ─────────────────
   (async function(){
     if(!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./sw.js?v=EXT_010', {scope: './'})
-      .then(function(reg){console.log('SW EXT_010 registrado:', reg.scope);})
+    navigator.serviceWorker.register('./sw.js?v=EXT_011', {scope: './'})
+      .then(function(reg){console.log('SW EXT_011 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
 })();
@@ -1482,7 +1482,7 @@ const SES_NOM={
 
 // ESTRUCTURA DEL PROGRAMA (para la pantalla Programa/consulta)
 const BOYLE_FASES=[
-  {id:'F1', n:'Fase 1 — Acumulacion',        desc:'3x8. Tempo 3/1/1. Volumen alto — construir base y aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
+  {id:'F1', n:'Fase 1 — Acumulacion',        desc:'3x8. Volumen alto — construir base y aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
   {id:'F2', n:'Fase 2 — Intensificacion',    desc:'Series de 3 (olimpicos/press/traccion) y de 5 (tren inferior) al 70-80%. Menos volumen, mas carga.', sems:'Sem 4-6',  color:'var(--orange)'},
   {id:'F3', n:'Fase 3 — Fuerza + Complejos I', desc:'Vuelve el volumen. Complejos fuerza+potencia (deadlift+salto, press+medball).', sems:'Sem 7-9',  color:'var(--green)'},
   {id:'F4', n:'Fase 4 — Fuerza + Complejos II', desc:'Igual que fase 3 (tablas 11.4 y 11.5 del libro). Pliometria se mantiene en nivel F3 por precaucion con la rodilla.', sems:'Sem 10-12',color:'var(--red-text)'},
@@ -1495,12 +1495,12 @@ const BOYLE_FASES=[
 const BOYLE_DIAS={
   D1:{
     n:'Dia 1', tipo:'Linear', color:'var(--blue)',
-    desc:'Explosive/Olympic lift · Core antirotacion (CHOP) · Press horizontal · Press vertical. Dias 1 y 3 son lineales.',
+    desc:'Explosivo (cargada) · Core antiextension · Cadera dominante (peso muerto barra hexagonal) · Traccion vertical · Rodilla unilateral · Traccion horizontal · Antirrotacion. Dias 1 y 3 son lineales.',
     calentamiento:'LINEAR: Foam roll → Static stretch → Mobility/Activation → Warm-up lineal → Linear Plyos → Chest Pass + Sprint',
     pares:[
       {lbl:'PAR 1 — Explosivo + Core Antirotacion (CHOP)',tipo:'par',
        ejs:['Hang Clean','In-line Chop'],
-       descanso:90,nota:'Explosivo primero. El CHOP usa el descanso del SNC. Tempo 3/1/1 en fases de volumen.'},
+       descanso:90,nota:'Explosivo primero. El CHOP usa el descanso del SNC.'},
       {lbl:'PAR 2 — Press Horizontal + Estiramiento Superior',tipo:'par',
        ejs:['Press banca (Bench Press)','Upper Stretch (lat/pecho)'],
        descanso:120,nota:'Bench Press: barra o mancuernas. El estiramiento superior ocupa el descanso.'},
@@ -1508,11 +1508,11 @@ const BOYLE_DIAS={
        ejs:['Press hombro KB (half-kneeling)','Slide Board Lunge / Ham ISO'],
        descanso:90,nota:'Press vertical: half-kneeling KB. Rehab de cadera y trabajo especial al final.'},
     ],
-    notas:'Dias 1 y 3: 10 segundos cronometrados en los ejercicios explosivos. Trineo opcional como finalizador.',
+    notas:'Explosivo primero. Unilateral antes que bilateral dentro del mismo bloque.',
   },
   D2:{
     n:'Dia 2', tipo:'Multidireccional', color:'var(--orange)',
-    desc:'Hip dominante bilateral (Hex Bar) · Core antilateral · Rodilla unilateral · Traccion. Dias 2 y 4 son multidireccionales.',
+    desc:'Empuje horizontal (press de banca) · Empuje vertical · Flexiones · Antirrotacion · Transporte de maleta. Sin explosivo. Dias 2 y 4 son multidireccionales.',
     calentamiento:'MULTI-DIRECTION: Foam roll → Static stretch → Mobility/Activation → Warm-up multidireccional → Lateral Plyos → Rotary/Overhead Medball',
     pares:[
       {lbl:'PAR 1 — Hip Dominante Bilateral (Hex Bar) + Core Antilateral + Traccion Vertical',tipo:'triset',
@@ -1525,16 +1525,16 @@ const BOYLE_DIAS={
        ejs:['Slide Board Lunge / Ham ISO','Ab Wheel / Body Saw'],
        descanso:90,nota:'Slide Board Lunge o Ham ISO segun nivel. Core antiextension al final.'},
     ],
-    notas:'Traccion vertical va con el Par 1 segun la biblia. DB Row unilateral preferido en Par 2.',
+    notas:'Dias de empuje: banca, press por encima de la cabeza, flexiones y transporte de maleta (tablas 11.2-11.5).',
   },
   D3:{
     n:'Dia 3', tipo:'Linear', color:'var(--blue)',
-    desc:'Explosive · Core antirotacion (LIFT) · Press Horizontal variante · Push-up. Espejo del Dia 1.',
+    desc:'Explosivo (cargada) · Core antiextension · Rodilla unilateral (sentadilla bulgara) · Traccion · Cadera unilateral (peso muerto a una pierna) · Antirrotacion. Espejo del Dia 1.',
     calentamiento:'LINEAR: Foam roll → Static stretch → Mobility/Activation → Warm-up lineal → Linear Plyos → Chest Pass + Sprint',
     pares:[
       {lbl:'PAR 1 — Explosivo + Core Antirotacion (LIFT)',tipo:'par',
        ejs:['Hang Clean / DB Snatch','In-line Lift'],
-       descanso:90,nota:'El CHOP del D1 se convierte en LIFT en D3 para equilibrar patron de core. Tempo 3/1/1 en fases de volumen.'},
+       descanso:90,nota:'El CHOP del D1 se convierte en LIFT en D3 para equilibrar patron de core.'},
       {lbl:'PAR 2 — Press Horizontal Variante + Estiramiento Superior',tipo:'par',
        ejs:['Incline Bench / Close Grip Bench','Upper Stretch (lat/pecho)'],
        descanso:120,nota:'Variante de press: incline o close grip. Unilateral antes bilateral si hay ambos.'},
@@ -1542,11 +1542,11 @@ const BOYLE_DIAS={
        ejs:['Push-up variante (TRX/lastrada)','Rotary Work / Specialty Rehab'],
        descanso:90,nota:'Push-up progression como alternativa al press. Trabajo rotatorio o rehab especifico al final.'},
     ],
-    notas:'Front Squat se puede introducir en D3 cuando el patron esta consolidado. 10 seg cronometrado en explosivos.',
+    notas:'Explosivo primero. Unilateral antes que bilateral dentro del mismo bloque.',
   },
   D4:{
     n:'Dia 4', tipo:'Multidireccional', color:'var(--orange)',
-    desc:'Rodilla unilateral · Core antilateral · Hip dominante unilateral · Traccion vertical. El dia mas exigente.',
+    desc:'Empuje inclinado (press con mancuernas) · Flexiones · Sentadilla con balon · Levantamiento turco / windmill · Antirrotacion · Paseo del granjero.',
     calentamiento:'MULTI-DIRECTION: Foam roll → Static stretch → Mobility/Activation → Warm-up multidireccional → Lateral Plyos → Rotary/Overhead Medball',
     pares:[
       {lbl:'PAR 1 — Rodilla Dominante Unilateral + Core Antilateral',tipo:'par',
@@ -1554,12 +1554,12 @@ const BOYLE_DIAS={
        descanso:90,nota:'Maxima exigencia unilateral. RFESS = Bulgarian Split Squat. Core antilateral en el descanso.'},
       {lbl:'PAR 2 — Hip Dominante Unilateral + Traccion Vertical',tipo:'par',
        ejs:['Single-leg RDL (Straight-leg DL)','Chin-up / Pull-up'],
-       descanso:120,nota:'SLDL primero (unilateral de cadera). Chin-up: al llegar a 10 reps anadir lastre +10 kg.'},
+       descanso:120,nota:'SLDL primero (unilateral de cadera). Chin-up: al llegar a 10 reps, cinturon de inmersion de 11 kg (libro).'},
       {lbl:'PAR 3 — Hip Dominante Slide Board + Core Antiextension',tipo:'par',
        ejs:['Slide Board Lunge / Ham ISO','AB Wheel / Valslide Rollout'],
        descanso:90,nota:'Slide board o Ham ISO segun disponibilidad. Ab Wheel o Valslide al final.'},
     ],
-    notas:'Dia mas exigente del ciclo. Pliometricos opcionales: max 25 contactos totales si hay frescura.',
+    notas:'Pliometricos: maximo 25 contactos al dia (libro).',
   },
 };
 
@@ -1945,7 +1945,7 @@ const EJ_INFO={
   'Single-leg Squat':{tipo:'prog',reps:'c/lado',tecnica:'Progresion avanzada. Solo cuando el RFESS esta consolidado. Cadera atras y abajo. Rodilla estable.'},
   'Single-leg RDL (Straight-leg DL)':{tipo:'prog',reps:'c/lado',tecnica:'Cadera atras, pierna de apoyo ligeramente doblada. Espalda recta. Lleva el pie libre hacia atras — no hacia abajo.'},
   'Slide Board Lunge / Ham ISO':{tipo:'prog',reps:'c/lado',tecnica:'Slide lunge: pie sobre disco o valslide. Control excentrico de 3-4 seg. Ham ISO: flexion isometrica en TRX o maquina.'},
-  'Chin-up / Pull-up':{tipo:'prog',tecnica:'Baseline: chin-up agarre supino. Cuando llegues a 10 reps limpias, anade lastre (+10kg). Progresion: neutro → pull-up → sternum chin-up.'},
+  'Chin-up / Pull-up':{tipo:'prog',tecnica:'Baseline: chin-up agarre supino. Cuando llegues a 10 reps limpias, anade cinturon de inmersion de 11 kg. Progresion: neutro → pull-up → sternum chin-up.'},
   'DB Row / TRX Row':{tipo:'prog',reps:'c/lado',tecnica:'No torcer el tronco. Codo cerca del cuerpo. En TRX el cuerpo mas horizontal = mas dificil. 3 sets minimo en todos los dias.'},
   'Press banca (Bench Press)':{tipo:'prog',tecnica:'Mancuernas para mayor rango. Pies en el suelo. Bajada 3 seg (tempo). No arquear la lumbar. Alternativa: flexiones lastradas.'},
   'Incline Bench / Close Grip Bench':{tipo:'prog',tecnica:'Incline: 30-45 grados. Close grip: manos a anchura de hombros. Ambos reducen estres en el hombro vs press plano con agarre ancho.'},
@@ -2628,9 +2628,12 @@ const CAL={
   ],
 };
 const PROG=[
-  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:3,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:3,r:8,p:70,pa:'2 min'},
-  {s:5,n:3,r:8,p:72,pa:'2 min'},{s:6,n:3,r:8,p:74,pa:'2-3 min'},{s:7,n:4,r:6,p:78,pa:'3 min'},{s:8,n:4,r:6,p:80,pa:'3-4 min'},
-  {s:9,n:3,r:6,p:75,pa:'3-4 min'},{s:10,n:4,r:5,p:80,pa:'4 min'},{s:11,n:4,r:5,p:82,pa:'4-5 min'},{s:12,n:4,r:5,p:82,pa:'4-5 min'},
+  // Orientativo (solo cabecera/fallback): las series y reps reales salen de REPS_FASE (tablas 11.2-11.5 del libro).
+  // El libro solo da rango de intensidad en F2 (70-80%); en el resto p:null. Las pausas no vienen del libro.
+  {s:1,n:3,r:8,p:null,pa:'90 seg'},{s:2,n:3,r:8,p:null,pa:'90 seg'},{s:3,n:3,r:8,p:null,pa:'2 min'},
+  {s:4,n:3,r:5,p:'70-80',pa:'2 min'},{s:5,n:3,r:5,p:'70-80',pa:'2 min'},{s:6,n:3,r:5,p:'70-80',pa:'2-3 min'},
+  {s:7,n:3,r:5,p:null,pa:'3 min'},{s:8,n:3,r:5,p:null,pa:'3 min'},{s:9,n:3,r:5,p:null,pa:'3 min'},
+  {s:10,n:3,r:5,p:null,pa:'3-4 min'},{s:11,n:3,r:5,p:null,pa:'3-4 min'},{s:12,n:3,r:5,p:null,pa:'3-4 min'},
 ];
 const COMIDAS={
   Manana:[{h:'06:15',n:'Desayuno pre-turno',d:'Avena 60g + proteina 30g + leche + platano',k:510,p:42,hc:65,g:7},{h:'10:00',n:'Media manana',d:'Yogur griego 0% 200g + nueces 15g + manzana',k:300,p:22,hc:25,g:9},{h:'14:30',n:'Pre-entreno',d:'Arroz 80g + pollo 160g + verduras + AOVE',k:530,p:42,hc:62,g:9},{h:'18:30',n:'Post-entreno',d:'Proteina 35g + platano + leche 200ml',k:380,p:40,hc:38,g:4},{h:'21:00',n:'Cena ligera',d:'Salmon o merluza 180g + ensalada + 2 huevos',k:420,p:48,hc:12,g:18}],
@@ -3715,7 +3718,7 @@ function renderBoyleContenido(){
   // Info de fase
   var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'};
   var faseDesc={
-    F1:'3 series × 8 reps (olímpicos × 5). Tempo 3/1/1. Volumen alto, cargas moderadas: construir base.',
+    F1:'3 series × 8 reps (olímpicos × 5). Volumen alto, cargas moderadas: construir base.',
     F2:'3-5 series de 3 (press, chin-ups, olímpicos) y de 5 (tren inferior), al 70-80%. Menos volumen, más carga.',
     F3:'Vuelve el volumen. Complejos de fuerza + potencia (peso muerto + salto de vallas, press + balón medicinal).',
     F4:'Igual que F3 (tablas 11.4 y 11.5 del libro): complejos de fuerza + potencia. Transición a la pretemporada. Pliometría en nivel F3 por precaución con la rodilla.',
@@ -4538,8 +4541,8 @@ function verDiaBoyle(d){
   var semEnFase=getSemEnFase(ST.sem);
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
-  var faseNoms={F1:'F1 — 3x8 · 60-68%',F2:'F2 — 3-5x3-5 · 70-80%',F3:'F3 — Complejos I · 75-80%',F4:'F4 — Complejos II · 80-82%'};
-  var faseTempo={F1:' · Tempo 3/1/1',F2:'',F3:' · Tempo 3/1/1',F4:''};
+  var faseNoms={F1:'F1 — 3x8',F2:'F2 — 3-5x3-5 · 70-80%',F3:'F3 — Complejos I',F4:'F4 — Complejos II'};
+  var faseTempo={F1:'',F2:'',F3:'',F4:''};
   // Ejercicios de EJS_FASES para esta fase y dia
   var ejsFase=(EJS_FASES[fase]&&EJS_FASES[fase][d])||[];
 
@@ -4555,8 +4558,17 @@ function verDiaBoyle(d){
   html+='<div style="font-size:12px;color:var(--text2);margin-top:.4rem;line-height:1.5">'+dia.desc+'</div></div>';
   // Calentamiento
   html+='<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.6rem;line-height:1.5">🔥 <strong>Cal:</strong> '+dia.calentamiento+'</div>';
-  // Pares
-  dia.pares.forEach(function(par,pi){
+  // Bloques: se construyen desde la agrupación real (GRUPOS_DIA) y los ejercicios reales de la fase
+  var pares=[];
+  (function(){
+    var grupos=getGruposDia(fase,d)||[], ix=0;
+    grupos.forEach(function(g){
+      var sl=ejsFase.slice(ix,ix+g.n); ix+=g.n;
+      if(sl.length) pares.push({lbl:g.lbl,tipo:g.tipo,ejs:sl,nota:'Descanso orientativo: '+(g.descanso||90)+' s (el libro no fija tiempos).'});
+    });
+    if(!pares.length) pares=dia.pares;
+  })();
+  pares.forEach(function(par,pi){
     var esBloqueTriset=par.tipo==='triset';
     var colorPar=esBloqueTriset?'var(--blue-text)':'var(--green-text)';
     var bgPar=esBloqueTriset?'var(--blue-bg)':'var(--green-bg)';
@@ -4567,7 +4579,7 @@ function verDiaBoyle(d){
     par.ejs.forEach(function(ejBase,ei){
       // Ejercicio real de EJS_FASES (por posicion flat)
       var idx=0;
-      for(var pp=0;pp<pi;pp++) idx+=dia.pares[pp].ejs.length;
+      for(var pp=0;pp<pi;pp++) idx+=pares[pp].ejs.length;
       idx+=ei;
       var ejReal=ejsFase[idx]||ejBase;
       var info=EJ_INFO[ejReal]||EJ_INFO[ejBase]||{};
@@ -4623,9 +4635,9 @@ function renderCicloBoyle(){
   var progEl=document.getElementById('c-prog');
   if(progEl) progEl.innerHTML=
     '<div class="prow"><span class="plbl">Series x Reps</span><span class="pval">'+pr.n+' x '+pr.r+'</span></div>'+
-    '<div class="prow"><span class="plbl">Intensidad</span><span class="pval">'+pr.p+'% del maximo</span></div>'+
-    '<div class="prow"><span class="plbl">Pausa entre series</span><span class="pval">'+pr.pa+'</span></div>'+
-    '<div class="prow"><span class="plbl">Excentrico (bajada)</span><span class="pval">'+(pr.s<=4?'3 seg':'4 seg')+'</span></div>';
+    '<div class="prow"><span class="plbl">Intensidad</span><span class="pval">'+(pr.p?pr.p+'% del maximo':'no fijada en el libro')+'</span></div>'+
+    '<div class="prow"><span class="plbl">Pausa entre series (orientativa)</span><span class="pval">'+pr.pa+'</span></div>'+
+    '<div style="font-size:10px;color:var(--text3);margin-top:.4rem;line-height:1.4">El libro solo fija series y reps por fase y el rango 70-80% en F2. Pausas y descansos son orientativos.</div>';
   var semlbl=document.getElementById('c-semlbl');
   if(semlbl) semlbl.textContent='Sem '+ST.sem;
   var dialbl=document.getElementById('c-dialbl');
@@ -5152,10 +5164,10 @@ function abrirCambiarDiaEnCiclo(numDia){
   var list=document.getElementById('mo-cd-list');
   var actual=getDiaBoyleVal(numDia)||CICLO[(numDia-1)%12].b;
   var opciones=[
-    {k:'D1',n:'Dia 1 — Explosivo + Hip dom bilateral'},
-    {k:'D2',n:'Dia 2 — Hip dom + Rodilla unilateral'},
-    {k:'D3',n:'Dia 3 — Explosivo + Press + Unilateral'},
-    {k:'D4',n:'Dia 4 — Unilateral max + Traccion'},
+    {k:'D1',n:'Dia 1 — Explosivo + Cadera/Rodilla + Traccion'},
+    {k:'D2',n:'Dia 2 — Empuje (banca, press vertical, flexiones)'},
+    {k:'D3',n:'Dia 3 — Explosivo + Unilateral + Traccion'},
+    {k:'D4',n:'Dia 4 — Empuje inclinado + Core'},
     {k:'',n:'Descanso / Movilidad'},
   ];
   if(list) list.innerHTML=opciones.map(function(o){
@@ -6386,14 +6398,14 @@ function renderFaseBanner(){
   var semEnFase=getSemEnFase(ST.sem);
   // Nombres y datos EXACTOS del Excel boyle24.xlsx
   var faseNoms={
-    F1:'F1 — Acumulación · 3×8 · 60-68%',
+    F1:'F1 — Acumulación · 3×8',
     F2:'F2 — Intensificación · 3-5×3-5 · 70-80%',
-    F3:'F3 — Fuerza + Complejos I · 75-80%',
-    F4:'F4 — Fuerza + Complejos II · 80-82%'
+    F3:'F3 — Fuerza + Complejos I',
+    F4:'F4 — Fuerza + Complejos II'
   };
   var faseReps={F1:'3×8',F2:'3-5×3-5',F3:'3-5×5',F4:'3-5×5'};
-  var fasePct={F1:'60-68%',F2:'70-80%',F3:'75-80%',F4:'80-82%'};
-  var faseTempo={F1:'Tempo 3/1/1',F2:'',F3:'Tempo 3/1/1',F4:''};
+  var fasePct={F1:'',F2:'70-80%',F3:'',F4:''};
+  var faseTempo={F1:'',F2:'',F3:'',F4:''};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
@@ -6410,7 +6422,7 @@ function renderFaseBanner(){
   var base=REPS_FASE[fase]&&REPS_FASE[fase].base;
   if(lblReps){
     lblReps.style.color=faseTexts[fase]||'var(--blue-text)';
-    lblReps.textContent=(base?base.n+'×'+base.r:faseReps[fase]||'3×8')+' · '+(fasePct[fase]||'');
+    lblReps.textContent=(base?base.n+'×'+base.r:faseReps[fase]||'3×8')+(fasePct[fase]?' · '+fasePct[fase]:'');
   }
 }
 
@@ -8581,7 +8593,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_010';
+const APP_VERSION='vEXT_011';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

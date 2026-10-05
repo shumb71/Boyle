@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle v129</title>
+<title>Entreno Boyle vEXT_009</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -557,23 +557,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   // --- SERVICE WORKER v2: kill switch + registro nuevo ─────────────────
   (async function(){
     if(!('serviceWorker' in navigator)) return;
-    try{
-      var regs=await navigator.serviceWorker.getRegistrations();
-      var cacheKeys=await caches.keys();
-      var tieneViejaSW=regs.some(function(r){return r.active&&!r.active.scriptURL.includes('v=102');});
-      var tieneViejaCache=cacheKeys.some(function(k){return !k.startsWith('boyle-v2');});
-      if(tieneViejaSW||tieneViejaCache){
-        console.log('[v114] Limpiando SW y caches anteriores...');
-        await Promise.all(regs.map(function(r){return r.unregister();}));
-        await Promise.all(cacheKeys.map(function(k){return caches.delete(k);}));
-        if(!sessionStorage.getItem('v116-clean')){
-          sessionStorage.setItem('v116-clean','1');
-          window.location.reload(); return;
-        }
-      }
-    }catch(e){console.warn('[v114] SW cleanup error',e);}
-    navigator.serviceWorker.register('./sw.js?v=EXT_008', {scope: './'})
-      .then(function(reg){console.log('SW EXT_008 registrado:', reg.scope);})
+    navigator.serviceWorker.register('./sw.js?v=EXT_009', {scope: './'})
+      .then(function(reg){console.log('SW EXT_009 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
 })();
@@ -1257,15 +1242,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     </div>
 
     <div class="card" style="border:.5px solid rgba(91,143,255,.3)">
-      <div class="card-lbl" style="color:var(--blue)">📋 Programa externo (experimental — vEXT_005)</div>
-      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Si existen programa.json/ejercicios.json en el repo indicado abajo, sustituyen al programa y al catálogo de ejercicios "de fábrica". Garmin/Fitbit siguen siempre en shumb71.github.io/Boyle (repo estable, sin tocar).</div>
+      <div class="card-lbl" style="color:var(--blue)">📋 Programa externo (experimental)</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Si existen programa.json/ejercicios.json/protocolos.json en el repo indicado abajo, sustituyen al programa y al catálogo de ejercicios "de fábrica". Garmin/Fitbit siguen siempre en shumb71.github.io/Boyle (repo estable, sin tocar).</div>
       <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Repo de GitHub Pages (usuario/repo, o solo el nombre si es shumb71)</label>
-      <input type="text" id="repo-programa-input" value="" placeholder="entreno-pro"
+      <input type="text" id="repo-programa-input" value="" placeholder="Boyle"
         style="width:100%;padding:8px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px;margin-bottom:.6rem"
         oninput="ST.repoPrograma=this.value;save();renderProgramaExtStatus();">
       <div id="programa-ext-status" style="font-size:12px;color:var(--text2);margin-bottom:.6rem"></div>
       <button class="bkbtn bkimp" onclick="fetchProgramaExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar programa desde GitHub</button>
       <button class="bkbtn bkimp" onclick="fetchEjerciciosExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar catálogo de ejercicios</button>
+      <button class="bkbtn bkimp" onclick="fetchProtocolosExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar protocolos (calentamiento/enfriamiento)</button>
       <button class="bkbtn" onclick="abrirEditorPrograma()"><i class="ti ti-external-link"></i> 🛠 Abrir editor de programa</button>
     </div>
 
@@ -2753,7 +2739,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'entreno-pro',circuitos:[],circuitosSesiones:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'Boyle',protocoloDia:{},enfCheck:{},enfCustom:{},enfRemoved:{},protocolosExtCache:null,protocolosExtActualizado:null,circuitos:[],circuitosSesiones:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -2774,7 +2760,7 @@ function getConfigFields(){
     ejs:ST.ejs||{},ejsCustom:ST.ejsCustom||{},ejsImgs:ST.ejsImgs||{},
     variantes:ST.variantes||{},variantesCustom:ST.variantesCustom||{},
     variantesEliminadas:ST.variantesEliminadas||{},
-    warmupCustom:ST.warmupCustom||{},warmupRemoved:ST.warmupRemoved||{},
+    warmupCustom:ST.warmupCustom||{},warmupRemoved:ST.warmupRemoved||{},enfCustom:ST.enfCustom||{},enfRemoved:ST.enfRemoved||{},protocoloDia:ST.protocoloDia||{},
     restTimes:ST.restTimes||{},nutTipo:ST.nutTipo||'auto',nut:ST.nut||{},
     sesionCustom:ST.sesionCustom||{},diaBoyle:ST.diaBoyle||{},
     eval:ST.eval||[],planDia:ST.planDia||{},notaDia:ST.notaDia||{},
@@ -2782,12 +2768,12 @@ function getConfigFields(){
     notasGenerales:ST.notasGenerales||[],
     alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},nutricionComidaAlimentos:ST.nutricionComidaAlimentos||{},
     boxeoBloque:ST.boxeoBloque||'B1',boxeoChecklist:ST.boxeoChecklist||{},boxeoSesiones:ST.boxeoSesiones||[],boxeoLibreItems:ST.boxeoLibreItems||[],
-    espacioReducido:!!ST.espacioReducido,githubToken:ST.githubToken||'',
+    espacioReducido:!!ST.espacioReducido,
     actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
     ciclosCompletados:ST.ciclosCompletados||[],
-    repoPrograma:ST.repoPrograma||'entreno-pro',
+    repoPrograma:ST.repoPrograma||'Boyle',
     circuitos:ST.circuitos||[],circuitosSesiones:ST.circuitosSesiones||{},
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
@@ -2823,11 +2809,11 @@ function saveSesionV2(fecha){
 function aplicarConfigRemoto(data){
   var campos=['dia','sem','cicloAnclaje','programaInicio','sliders','ejs','ejsCustom',
     'ejsImgs','variantes','variantesCustom','diaBoyle','sesionCustom','restTimes',
-    'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','eval',
+    'nutTipo','nut','planDia','notaDia','warmupCustom','warmupRemoved','enfCustom','enfRemoved','protocoloDia','eval',
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','githubToken','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma',
+    'espacioReducido','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma',
     'circuitos','circuitosSesiones'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
@@ -2948,7 +2934,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosSesiones)ST.circuitosSesiones={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.protocoloDia)ST.protocoloDia={};if(!ST.enfCheck)ST.enfCheck={};if(!ST.enfCustom)ST.enfCustom={};if(!ST.enfRemoved)ST.enfRemoved={};if(!ST.repoPrograma||ST.repoPrograma==='entreno-pro')ST.repoPrograma='Boyle';if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosSesiones)ST.circuitosSesiones={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3305,57 +3291,6 @@ function toggleCal(bodyId){
       </div>`).join('');
     body.style.display='block';
   }
-}
-
-function renderEnf(sesKey,elId,cardId){
-  const enf=ENF[sesKey]||[];
-  const card=document.getElementById(cardId);
-  const el=document.getElementById(elId);
-  if(!enf.length){card.style.display='none';return;}
-  card.style.display='block';
-  // Calcular tiempo total
-  const totalMin=enf.reduce((a,e)=>{const m=parseFloat(e.tm);return a+(isNaN(m)?0:m);},0);
-  const btnId=elId+'-btn';
-  const bodyId=elId+'-body';
-  // Renderizar como colapsable (igual que calentamiento)
-  const cardLbl=card.querySelector('.card-lbl');
-  if(cardLbl){
-    // Reemplazar header con versión toggle
-    const headerDiv=cardLbl.parentElement;
-    // Solo añadir botón si no existe ya
-    if(!document.getElementById(btnId)){
-      const wrapper=document.createElement('div');
-      wrapper.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem';
-      const lbl=document.createElement('div');
-      lbl.className='card-lbl';
-      lbl.style.marginBottom='0';
-      lbl.style.color='var(--green)';
-      lbl.innerHTML='🧘 Enfriamiento';
-      const btn=document.createElement('button');
-      btn.id=btnId;
-      btn.style.cssText='border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer';
-      btn.textContent='Ver protocolo ('+(totalMin>0?totalMin+' min':'')+')'
-      btn.onclick=function(){toggleEnf(bodyId,btnId);};
-      wrapper.appendChild(lbl);
-      wrapper.appendChild(btn);
-      // Vaciar card y reconstruir
-      card.innerHTML='';
-      card.appendChild(wrapper);
-      const body=document.createElement('div');
-      body.id=bodyId;
-      body.style.display='none';
-      card.appendChild(body);
-    }
-  }
-  const body=document.getElementById(bodyId)||el;
-  body.innerHTML=enf.map((e,i)=>`
-    <div style="padding:.6rem 0;border-bottom:${i<enf.length-1?'.5px solid var(--border)':'none'}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <span style="font-size:14px;font-weight:600;color:var(--text);flex:1">${e.n}</span>
-        <span style="font-size:11px;color:var(--green);font-weight:700;white-space:nowrap">${e.tm}</span>
-      </div>
-      <div style="font-size:12px;color:var(--text2);margin-top:3px;line-height:1.4">${e.t}</div>
-    </div>`).join('');
 }
 
 function toggleEnf(bodyId,btnId){
@@ -5214,6 +5149,7 @@ function abrirCambiarDiaEnCiclo(numDia){
   // Inicializar semana temporal con la semana actual
   _cdSemTemp = ST.sem||1;
   cdSemRender();
+  protoLlenarModal(numDia);
   var list=document.getElementById('mo-cd-list');
   var actual=getDiaBoyleVal(numDia)||CICLO[(numDia-1)%12].b;
   var opciones=[
@@ -7119,23 +7055,6 @@ function calcularAlertaRecuperacion(){
   el.innerHTML=html;
 }
 
-function wuGetData(){
-  var checkKey='wu_d'+ST.dia;
-  if(!ST.warmupCheck) ST.warmupCheck={};
-  if(!ST.warmupRemoved) ST.warmupRemoved={};
-  if(!ST.warmupCustom) ST.warmupCustom={};
-  return {checkKey:checkKey,
-    checks:ST.warmupCheck[checkKey]||{},
-    removed:ST.warmupRemoved[checkKey]||[],
-    custom:ST.warmupCustom[checkKey]||[]};
-}
-
-var warmupFaseOpen={};
-function toggleWarmupFase(checkKey,fi){
-  var k=checkKey+'_f'+fi;
-  warmupFaseOpen[k]=!warmupFaseOpen[k];
-  renderWarmupBody();
-}
 // EXPLICACIONES — explicaciones largas "cómo se hace" por nombre exacto de ejercicio.
 // Si no hay entrada aquí, se usa la descripción corta ('d') que ya trae cada ejercicio.
 const EXPLICACIONES={
@@ -7230,17 +7149,7 @@ const EXPLICACIONES={
   'Medicine ball — Shuffle side toss':'Con un desplazamiento lateral (shuffle) previo, rota el tronco y lanza el balón medicinal contra la pared al llegar, combinando desplazamiento con potencia rotacional.'
 };
 function getExplicacion(nombre,fallback){
-  return EXPLICACIONES[nombre]||fallback||'';
-}
-var warmupExplOpen={};
-function toggleWarmupExpl(checkKey,key){
-  var k=checkKey+'_'+key;
-  warmupExplOpen[k]=!warmupExplOpen[k];
-  renderWarmupBody();
-}
-function toggleEspacioReducido(){
-  ST.espacioReducido=!ST.espacioReducido;
-  save(); renderWarmupBody();
+  return protDescMap()[nombre]||EXPLICACIONES[nombre]||fallback||'';
 }
 // Notas de sustitucion para espacio reducido — regla por palabras clave en el nombre del ejercicio.
 function notaEspacioReducido(nombre){
@@ -7255,175 +7164,354 @@ function notaEspacioReducido(nombre){
   return null;
 }
 
-function renderWarmupBody(){
-  var dB=getDiaBoyle();
-  var body=document.getElementById("warmup-body");
-  if(!body||!dB) return;
-  var fase=getFaseActual(ST.sem);
-  var isLinear=dB==='D1'||dB==='D3';
-  var cal=dB==='Descanso'?(CAL_BOYLE.Descanso||[]):((CAL_BOYLE_FASES[fase]||CAL_BOYLE_FASES.F1)[isLinear?'linear':'lateral']||[]);
-  var d=wuGetData();
-  var checkKey=d.checkKey, checks=d.checks, removed=d.removed, custom=d.custom;
+// ══════════════════════════════════════════════════════════
+// PROTOCOLOS DE CALENTAMIENTO / ENFRIAMIENTO POR DÍA [vEXT_009]
+// ══════════════════════════════════════════════════════════
+// protocolos.json (repo de GitHub Pages, ver Config) trae tus protocolos propios con SUS
+// descripciones. En Programa eliges, por día del ciclo, cuál usar (o Automático = el de Boyle
+// de siempre). Si el fichero no existe o es inválido, todo sigue con los protocolos de fábrica.
+// Marcas, quitados y añadidos se guardan por FECHA y por NOMBRE de ejercicio (no por posición).
+function getProtocolosJsonUrl(){ return 'https://shumb71.github.io/'+getRepoPrograma()+'/protocolos.json'; }
 
-  var totalItems=0,doneItems=0;
-  cal.forEach(function(fase,fi){ fase.items.forEach(function(item,ii){ var k='f'+fi+'_i'+ii; if(removed.indexOf(k)<0){ totalItems++; if(checks[k]) doneItems++; } }); });
-  custom.forEach(function(c){ totalItems++; if(checks[c.id]) doneItems++; });
+function validarProtocolosExterno(d){
+  if(!d||typeof d!=='object'||!Array.isArray(d.protocolos)) return false;
+  var ids={};
+  for(var i=0;i<d.protocolos.length;i++){
+    var p=d.protocolos[i];
+    if(!p||typeof p.id!=='string'||!p.id.trim()||ids[p.id]) return false;
+    if(['auto','ninguno','mob'].indexOf(p.id)>=0) return false;
+    ids[p.id]=1;
+    if(p.tipo!=='calentamiento'&&p.tipo!=='enfriamiento') return false;
+    if(typeof p.nombre!=='string'||!p.nombre.trim()) return false;
+    if(!Array.isArray(p.ejercicios)||!p.ejercicios.length) return false;
+    for(var j=0;j<p.ejercicios.length;j++){
+      var e=p.ejercicios[j];
+      if(!e||typeof e.n!=='string'||!e.n.trim()) return false;
+    }
+  }
+  if(d.descripciones!==undefined&&(!d.descripciones||typeof d.descripciones!=='object'||Array.isArray(d.descripciones))) return false;
+  return true;
+}
 
-  var pct=totalItems>0?Math.round(doneItems/totalItems*100):0;
-  var isLinear=dB==='D1'||dB==='D3';
-  var tipoDia=isLinear?'⚡ LINEAR — Chest Pass + Sprint Lineal':'🔄 MULTI-DIRECTION — Rotatory / Overhead Med Ball';
-  var colorTipo=isLinear?'var(--blue)':'var(--orange)';
-  var bgTipo=isLinear?'var(--blue-bg)':'var(--orange-bg,#faeeda)';
+var _protDesc=null;
+function protDescMap(){
+  if(_protDesc) return _protDesc;
+  _protDesc={};
+  var c=ST.protocolosExtCache;
+  if(c&&validarProtocolosExterno(c)){
+    c.protocolos.forEach(function(p){ p.ejercicios.forEach(function(e){ if(e.d) _protDesc[e.n]=e.d; }); });
+    if(c.descripciones) Object.keys(c.descripciones).forEach(function(n){
+      if(typeof c.descripciones[n]==='string'&&c.descripciones[n]) _protDesc[n]=c.descripciones[n];
+    });
+  }
+  return _protDesc;
+}
+
+async function fetchProtocolosExterno(manual){
+  try{
+    var resp=await fetch(getProtocolosJsonUrl()+'?t='+Date.now());
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data=await resp.json();
+    if(!validarProtocolosExterno(data)){
+      console.warn('protocolos.json: estructura inválida, ignorado');
+      if(manual) alert('protocolos.json tiene una estructura no válida; se sigue usando lo anterior.');
+      return;
+    }
+    ST.protocolosExtCache=data;
+    ST.protocolosExtActualizado=new Date().toISOString();
+    _protDesc=null;
+    save();
+    try{ renders.entreno(); }catch(e){}
+    try{ if(document.getElementById('s-config').classList.contains('active')) renderProgramaExtStatus(); }catch(e){}
+    if(manual){
+      var t=document.getElementById('fb-toast');
+      if(t){t.textContent='✅ Protocolos actualizados';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+    }
+  }catch(e){
+    console.warn('fetchProtocolosExterno error:',e);
+    if(manual) alert('No se pudo descargar protocolos.json: '+e.message);
+  }
+}
+
+function getProtocolosExt(tipoLargo){
+  var c=ST.protocolosExtCache;
+  if(!c||!validarProtocolosExterno(c)) return [];
+  return c.protocolos.filter(function(p){return p.tipo===tipoLargo;});
+}
+
+var PROTO_CFG={
+  cal:{pref:'wu2',chk:'warmupCheck',rem:'warmupRemoved',cus:'warmupCustom',body:'warmup-body',cardId:'e-warmup-card',titulo:'🔥 Calentamiento',color:'var(--orange)',addId:'wu-add-input',largo:'calentamiento'},
+  enf:{pref:'enf',chk:'enfCheck',rem:'enfRemoved',cus:'enfCustom',body:'e-enf',cardId:'e-enf-card',titulo:'🧘 Enfriamiento',color:'var(--green)',addId:'enf-add-input',largo:'enfriamiento'}
+};
+
+function protoEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function protoElegido(tipo,numDia){
+  var pd=ST.protocoloDia&&ST.protocoloDia[numDia||ST.dia];
+  return (pd&&pd[tipo])||'auto';
+}
+function protoOpciones(tipo){
+  var o=[{k:'auto',n:'Automático (el de Boyle)'}];
+  getProtocolosExt(PROTO_CFG[tipo].largo).forEach(function(p){ o.push({k:p.id,n:p.nombre}); });
+  o.push({k:'mob',n:'Daily Mobility'});
+  o.push({k:'ninguno',n:'Ninguno'});
+  return o;
+}
+function protoSelectHtml(tipo,numDia,onchange,idAttr){
+  var cur=protoElegido(tipo,numDia);
+  var ops=protoOpciones(tipo);
+  if(!ops.some(function(o){return o.k===cur;})) ops.push({k:cur,n:'(no disponible) '+cur});
+  return '<select'+(idAttr?' id="'+idAttr+'"':'')+' onchange="'+onchange+'" style="flex:1;min-width:0;padding:7px 8px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px">'
+    +ops.map(function(o){return '<option value="'+protoEsc(o.k)+'"'+(o.k===cur?' selected':'')+'>'+protoEsc(o.n)+'</option>';}).join('')
+    +'</select>';
+}
+
+// Devuelve {fases:[{fase,tiempo,items:[{n,d,t,key}]}], etiqueta, k}
+function protoResolver(tipo,dB){
+  var k=protoElegido(tipo);
+  var fases=[],etiqueta='Automático';
+  if(k==='ninguno'){ etiqueta='Ninguno'; }
+  else if(k==='mob'){
+    etiqueta='Daily Mobility';
+    fases=DAILY_MOB.map(function(z){return {fase:z.zona,tiempo:z.tiempo,items:z.items};});
+  } else {
+    var p=null;
+    if(k!=='auto'){
+      p=getProtocolosExt(PROTO_CFG[tipo].largo).filter(function(x){return x.id===k;})[0]||null;
+      if(!p) k='auto';
+    }
+    if(p){
+      etiqueta=p.nombre;
+      fases=[{fase:p.nombre,tiempo:p.tiempo||'',items:p.ejercicios.map(function(e){return {n:e.n,d:e.d||'',t:e.t||''};})}];
+    } else if(tipo==='cal'){
+      var fase=getFaseActual(ST.sem);
+      var isLinear=dB==='D1'||dB==='D3';
+      var cal=dB==='Descanso'?(CAL_BOYLE.Descanso||[]):((CAL_BOYLE_FASES[fase]||CAL_BOYLE_FASES.F1)[isLinear?'linear':'lateral']||[]);
+      fases=cal.map(function(f){return {fase:f.fase,tiempo:f.tiempo,items:f.items};});
+    } else {
+      var enf=ENF[dB]||ENF.Mov||[];
+      var totalMin=enf.reduce(function(a,e){var m=parseFloat(e.tm);return a+(isNaN(m)?0:m);},0);
+      if(enf.length) fases=[{fase:'Enfriamiento',tiempo:totalMin>0?totalMin+' min':'',items:enf.map(function(e){return {n:e.n,d:e.t,t:e.tm};})}];
+    }
+  }
+  var cnt={};
+  fases=fases.map(function(f){
+    return {fase:f.fase,tiempo:f.tiempo||'',items:f.items.map(function(it){
+      var b='n:'+it.n; cnt[b]=(cnt[b]||0)+1;
+      return {n:it.n,d:it.d||'',t:it.t||'',key:cnt[b]>1?b+'#'+cnt[b]:b};
+    })};
+  });
+  return {fases:fases,etiqueta:etiqueta,k:k};
+}
+
+function protoStore(tipo){
+  var c=PROTO_CFG[tipo];
+  ['chk','rem','cus'].forEach(function(x){ if(!ST[c[x]]) ST[c[x]]={}; });
+  var sk=c.pref+'_'+(esHoyActual()?hoyLocal():'d'+ST.dia);
+  return {c:c,sk:sk,checks:ST[c.chk][sk]||{},removed:ST[c.rem][sk]||[],custom:ST[c.cus][sk]||[]};
+}
+function protoContar(tipo){
+  var r=protoResolver(tipo,getDiaBoyle()||'Descanso');
+  var s=protoStore(tipo);
+  var total=0,done=0;
+  r.fases.forEach(function(f){ f.items.forEach(function(it){ if(s.removed.indexOf(it.key)<0){ total++; if(s.checks[it.key]) done++; } }); });
+  s.custom.forEach(function(x){ total++; if(s.checks[x.id]) done++; });
+  return {total:total,done:done,r:r,s:s};
+}
+// Borra marcas/quitados/añadidos de fechas con más de 45 días (las claves por fecha crecen sin parar)
+function protoPodar(){
+  try{
+    var lim=new Date(); lim.setDate(lim.getDate()-45);
+    var limStr=lim.getFullYear()+'-'+('0'+(lim.getMonth()+1)).slice(-2)+'-'+('0'+lim.getDate()).slice(-2);
+    ['warmupCheck','warmupRemoved','warmupCustom','enfCheck','enfRemoved','enfCustom'].forEach(function(n){
+      var o=ST[n]; if(!o) return;
+      Object.keys(o).forEach(function(k){
+        var m=k.match(/_(\d{4}-\d{2}-\d{2})$/);
+        if(m&&m[1]<limStr) delete o[k];
+      });
+    });
+  }catch(e){}
+}
+
+var protoFaseOpen={}, protoExplOpen={};
+function protoToggleFase(tipo,fi,cur){ var s=protoStore(tipo); protoFaseOpen[tipo+s.sk+'_f'+fi]=!cur; renderProtoSeccion(tipo); }
+function protoExpl(tipo,key){ var s=protoStore(tipo); var k=tipo+s.sk+key; protoExplOpen[k]=!protoExplOpen[k]; renderProtoSeccion(tipo); }
+function toggleEspacioReducido(){ ST.espacioReducido=!ST.espacioReducido; save(); renderProtoSeccion('cal'); }
+
+function renderProtoSeccion(tipo){
+  var c=PROTO_CFG[tipo];
+  var body=document.getElementById(c.body);
+  if(!body) return;
+  var dB=getDiaBoyle()||'Descanso';
+  var n=protoContar(tipo);
+  var r=n.r, s=n.s, checks=s.checks, removed=s.removed, custom=s.custom;
+  var pct=n.total>0?Math.round(n.done/n.total*100):0;
+  var col=c.color;
+  var T="'"+tipo+"'";
+
+  var banner, colorTipo=col, bgTipo='var(--bg3)';
+  if(tipo==='cal'&&r.k==='auto'&&dB!=='Descanso'){
+    var isLinear=dB==='D1'||dB==='D3';
+    banner=isLinear?'⚡ LINEAR — Chest Pass + Sprint Lineal':'🔄 MULTI-DIRECTION — Rotatory / Overhead Med Ball';
+    colorTipo=isLinear?'var(--blue)':'var(--orange)';
+    bgTipo=isLinear?'var(--blue-bg)':'var(--orange-bg,#faeeda)';
+  } else banner=protoEsc(r.etiqueta);
 
   var out=[];
-  out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+tipoDia+'</span><span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+doneItems+'/'+totalItems+'</span></div>');
+  out.push('<div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem"><span style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap">Protocolo · día '+ST.dia+'</span>'
+    +protoSelectHtml(tipo,ST.dia,'protoSet('+T+',this.value)')+'</div>');
+  out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+banner+'</span><span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+n.done+'/'+n.total+'</span></div>');
   out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.6rem;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div></div>');
-  out.push('<div onclick="toggleEspacioReducido()" style="display:flex;align-items:center;justify-content:space-between;background:'+(ST.espacioReducido?'var(--green-bg)':'var(--bg3)')+';border-radius:var(--rs);padding:.45rem .7rem;margin-bottom:.75rem;cursor:pointer">'
-    +'<span style="font-size:12px;font-weight:600;color:'+(ST.espacioReducido?'var(--green-text)':'var(--text2)')+'">🏠 Espacio reducido</span>'
-    +'<span style="font-size:11px;font-weight:700;color:'+(ST.espacioReducido?'var(--green-text)':'var(--text3)')+'">'+(ST.espacioReducido?'ON':'OFF')+'</span></div>');
+  if(tipo==='cal'){
+    out.push('<div onclick="toggleEspacioReducido()" style="display:flex;align-items:center;justify-content:space-between;background:'+(ST.espacioReducido?'var(--green-bg)':'var(--bg3)')+';border-radius:var(--rs);padding:.45rem .7rem;margin-bottom:.75rem;cursor:pointer">'
+      +'<span style="font-size:12px;font-weight:600;color:'+(ST.espacioReducido?'var(--green-text)':'var(--text2)')+'">🏠 Espacio reducido</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+(ST.espacioReducido?'var(--green-text)':'var(--text3)')+'">'+(ST.espacioReducido?'ON':'OFF')+'</span></div>');
+  }
 
-  function itemRow(key,n,desc,t,imgName){
-    var isDone=checks[key]||false;
-    var ejImgs=imgName?getEjImgs(imgName):[];
-    var isExplOpen=!!warmupExplOpen[checkKey+'_'+key];
-    var explText=getExplicacion(n,desc);
+  function itemRow(key,nom,desc,t){
+    var isDone=!!checks[key];
+    var isExplOpen=!!protoExplOpen[tipo+s.sk+key];
+    var explText=getExplicacion(nom,desc);
+    var ejImgs=getEjImgs(nom);
+    var k=protoEsc(key);
     var h='<div style="padding:.45rem 0;border-bottom:.5px solid var(--border)"><div style="display:flex;align-items:flex-start;gap:10px">';
-    h+='<div onclick="toggleWarmupCheck(\''+checkKey+'\',\''+key+'\')" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">'+(isDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')+'</div>';
+    h+='<div data-k="'+k+'" onclick="protoTick('+T+',this.dataset.k)" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;border-radius:50%;background:'+(isDone?'var(--green-bg)':'var(--bg3)')+';border:.5px solid '+(isDone?'rgba(99,153,34,.4)':'var(--border2)')+';display:flex;align-items:center;justify-content:center;cursor:pointer">'+(isDone?'<i class="ti ti-check" style="font-size:12px;color:var(--green-text)"></i>':'')+'</div>';
     if(ejImgs.length) h+='<img src="'+ejImgs[0]+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display=\'none\'">';
     h+='<div style="flex:1">';
-    h+='<div onclick="toggleWarmupExpl(\''+checkKey+'\',\''+key+'\')" style="cursor:pointer;display:flex;align-items:center;gap:5px">';
-    h+='<span style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+n+'</span>';
+    h+='<div data-k="'+k+'" onclick="protoExpl('+T+',this.dataset.k)" style="cursor:pointer;display:flex;align-items:center;gap:5px">';
+    h+='<span style="font-size:13px;font-weight:600;color:'+(isDone?'var(--text3)':'var(--text)')+';'+(isDone?'text-decoration:line-through;':'')+'">'+protoEsc(nom)+'</span>';
     h+='<i class="ti ti-chevron-'+(isExplOpen?'down':'right')+'" style="font-size:12px;color:var(--text3);flex-shrink:0"></i>';
     h+='</div>';
-    if(isExplOpen) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:4px;background:var(--bg3);border-radius:6px;padding:.4rem .55rem">'+(explText||'Sin descripción todavía.')+'</div>';
-    if(t) h+='<span style="font-size:10px;background:var(--bg3);color:var(--orange);border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+t+'</span>';
-    if(ST.espacioReducido){
-      var nota=notaEspacioReducido(n);
+    if(isExplOpen) h+='<div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:4px;background:var(--bg3);border-radius:6px;padding:.4rem .55rem">'+protoEsc(explText||'Sin descripción todavía.')+'</div>';
+    if(t) h+='<span style="font-size:10px;background:var(--bg3);color:'+col+';border-radius:10px;padding:1px 7px;margin-top:3px;display:inline-block">'+protoEsc(t)+'</span>';
+    if(tipo==='cal'&&ST.espacioReducido){
+      var nota=notaEspacioReducido(nom);
       if(nota) h+='<div style="font-size:11px;color:var(--green-text);background:var(--green-bg);border-radius:6px;padding:.3rem .5rem;margin-top:4px">🏠 '+nota+'</div>';
     }
-    h+='<div style="margin-top:3px">'+rdRefsBtnHtml(n)+'</div>';
+    h+='<div style="margin-top:3px">'+rdRefsBtnHtml(nom)+'</div>';
     h+='</div>';
-    h+='<button onclick="removeWarmupItem(\''+checkKey+'\',\''+key+'\')" title="Quitar" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1;flex-shrink:0"><i class="ti ti-x"></i></button>';
+    h+='<button data-k="'+k+'" onclick="protoQuitar('+T+',this.dataset.k)" title="Quitar" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:14px;line-height:1;flex-shrink:0"><i class="ti ti-x"></i></button>';
     h+='</div></div>';
     return h;
   }
 
-  var firstFase=true;
-  cal.forEach(function(fase,fi){
-    var visibles=fase.items.map(function(item,ii){return {item:item,key:'f'+fi+'_i'+ii};}).filter(function(o){return removed.indexOf(o.key)<0;});
+  var first=true;
+  var unico=r.fases.length===1;
+  r.fases.forEach(function(f,fi){
+    var visibles=f.items.filter(function(it){return removed.indexOf(it.key)<0;});
     if(!visibles.length) return;
-    if(!firstFase) out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
-    firstFase=false;
-    var faseKey=checkKey+'_f'+fi;
-    var isOpen=!!warmupFaseOpen[faseKey];
-    var faseDone=visibles.filter(function(o){return checks[o.key];}).length;
-    out.push('<div style="margin-bottom:.4rem">'
-      +'<div onclick="toggleWarmupFase(\''+checkKey+'\','+fi+')" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;cursor:pointer;padding:.15rem 0">'
-      +'<div style="display:flex;align-items:center;gap:6px"><i class="ti ti-chevron-'+(isOpen?'down':'right')+'" style="font-size:14px;color:var(--text3)"></i><span style="font-size:12px;font-weight:700;color:var(--orange)">'+fase.fase+'</span></div>'
-      +'<span style="font-size:11px;color:var(--text3)">'+faseDone+'/'+visibles.length+' · '+fase.tiempo+'</span></div>');
-    if(isOpen){
-      visibles.forEach(function(o){ out.push(itemRow(o.key,o.item.n,o.item.d,o.item.t,o.item.n)); });
+    if(!first) out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
+    first=false;
+    var fk=tipo+s.sk+'_f'+fi;
+    var isOpen=protoFaseOpen[fk]!==undefined?protoFaseOpen[fk]:unico;
+    var faseDone=visibles.filter(function(it){return checks[it.key];}).length;
+    out.push('<div style="margin-bottom:.4rem">');
+    if(!unico){
+      out.push('<div onclick="protoToggleFase('+T+','+fi+','+(isOpen?'true':'false')+')" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;cursor:pointer;padding:.15rem 0">'
+        +'<div style="display:flex;align-items:center;gap:6px"><i class="ti ti-chevron-'+(isOpen?'down':'right')+'" style="font-size:14px;color:var(--text3)"></i><span style="font-size:12px;font-weight:700;color:'+col+'">'+protoEsc(f.fase)+'</span></div>'
+        +'<span style="font-size:11px;color:var(--text3)">'+faseDone+'/'+visibles.length+(f.tiempo?' · '+protoEsc(f.tiempo):'')+'</span></div>');
     }
+    if(isOpen) visibles.forEach(function(it){ out.push(itemRow(it.key,it.n,it.d,it.t)); });
     out.push('</div>');
   });
 
   if(custom.length){
     out.push('<div style="height:.5px;background:var(--border);margin:.6rem 0"></div>');
     out.push('<div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:.35rem">➕ Añadidos</div>');
-    custom.forEach(function(c){ out.push(itemRow(c.id,c.txt,'','','')); });
+    custom.forEach(function(x){ out.push(itemRow(x.id,x.txt,'','')); });
+  }
+  if(n.total===0&&!custom.length){
+    out.push('<div style="color:var(--text3);font-size:13px;padding:.3rem 0">Sin ejercicios para este día. Puedes añadir los tuyos abajo.</div>');
   }
 
-  out.push('<div style="display:flex;gap:6px;margin-top:.7rem"><input id="wu-add-input" type="text" placeholder="Añadir ejercicio…" style="flex:1;padding:8px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px" onkeydown="if(event.key===\'Enter\')addWarmupItem()"><button onclick="addWarmupItem()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:0 14px;font-size:18px;cursor:pointer">+</button></div>');
-
-  out.push('<div style="display:flex;gap:6px;margin-top:.6rem"><button onclick="resetWarmup(\''+checkKey+'\')" style="flex:1;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">↺ Resetear marcas</button>');
-  if(removed.length) out.push('<button onclick="restaurarWarmupProtocolo(\''+checkKey+'\')" style="flex:1;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">Restaurar protocolo</button>');
+  out.push('<div style="display:flex;gap:6px;margin-top:.7rem"><input id="'+c.addId+'" type="text" placeholder="Añadir ejercicio…" style="flex:1;padding:8px 10px;border-radius:var(--rs);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:13px" onkeydown="if(event.key===\'Enter\')protoAnadir('+T+')"><button onclick="protoAnadir('+T+')" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:0 14px;font-size:18px;cursor:pointer">+</button></div>');
+  out.push('<div style="display:flex;gap:6px;margin-top:.6rem"><button onclick="protoReset('+T+')" style="flex:1;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">↺ Resetear marcas</button>');
+  if(removed.length) out.push('<button onclick="protoRestaurar('+T+')" style="flex:1;padding:8px;border:none;background:var(--bg3);color:var(--text3);border-radius:var(--rs);font-size:12px;cursor:pointer">Restaurar protocolo</button>');
   out.push('</div>');
-
   body.innerHTML=out.join('');
 }
 
-function toggleWarmupCheck(checkKey,itemKey){
-  if(!ST.warmupCheck) ST.warmupCheck={};
-  if(!ST.warmupCheck[checkKey]) ST.warmupCheck[checkKey]={};
-  ST.warmupCheck[checkKey][itemKey]=!ST.warmupCheck[checkKey][itemKey];
-  save();
-  renderWarmupBody();
-  // Actualizar badge del card header
-  actualizarWarmupBadge();
+function protoTick(tipo,key){
+  var s=protoStore(tipo), c=s.c;
+  if(!ST[c.chk][s.sk]) ST[c.chk][s.sk]={};
+  ST[c.chk][s.sk][key]=!ST[c.chk][s.sk][key];
+  save(); renderProtoSeccion(tipo); actualizarWarmupBadge();
 }
-
-function resetWarmup(checkKey){
-  if(!ST.warmupCheck) ST.warmupCheck={};
-  ST.warmupCheck[checkKey]={};
-  save();
-  renderWarmupBody();
-  actualizarWarmupBadge();
+function protoReset(tipo){
+  var s=protoStore(tipo);
+  ST[s.c.chk][s.sk]={};
+  save(); renderProtoSeccion(tipo); actualizarWarmupBadge();
 }
-
-function addWarmupItem(){
-  var inp=document.getElementById('wu-add-input'); if(!inp) return;
+function protoAnadir(tipo){
+  var s=protoStore(tipo), c=s.c;
+  var inp=document.getElementById(c.addId); if(!inp) return;
   var txt=inp.value.trim(); if(!txt) return;
-  var checkKey='wu_d'+ST.dia;
-  if(!ST.warmupCustom) ST.warmupCustom={};
-  if(!ST.warmupCustom[checkKey]) ST.warmupCustom[checkKey]=[];
-  ST.warmupCustom[checkKey].push({id:'c'+Date.now(),txt:txt});
-  save(); renderWarmupBody(); actualizarWarmupBadge();
+  if(!ST[c.cus][s.sk]) ST[c.cus][s.sk]=[];
+  ST[c.cus][s.sk].push({id:'c'+Date.now(),txt:txt});
+  save(); renderProtoSeccion(tipo); actualizarWarmupBadge();
 }
-
-function removeWarmupItem(checkKey,key){
-  if(!ST.warmupRemoved) ST.warmupRemoved={};
-  if(!ST.warmupCustom) ST.warmupCustom={};
-  var arr=ST.warmupCustom[checkKey]||[];
-  var idx=arr.findIndex(function(c){return c.id===key;});
-  if(idx>=0){ arr.splice(idx,1); }
-  else { if(!ST.warmupRemoved[checkKey]) ST.warmupRemoved[checkKey]=[]; if(ST.warmupRemoved[checkKey].indexOf(key)<0) ST.warmupRemoved[checkKey].push(key); }
-  if(ST.warmupCheck&&ST.warmupCheck[checkKey]) delete ST.warmupCheck[checkKey][key];
-  save(); renderWarmupBody(); actualizarWarmupBadge();
+function protoQuitar(tipo,key){
+  var s=protoStore(tipo), c=s.c;
+  var arr=ST[c.cus][s.sk]||[];
+  var idx=arr.findIndex(function(x){return x.id===key;});
+  if(idx>=0) arr.splice(idx,1);
+  else {
+    if(!ST[c.rem][s.sk]) ST[c.rem][s.sk]=[];
+    if(ST[c.rem][s.sk].indexOf(key)<0) ST[c.rem][s.sk].push(key);
+  }
+  if(ST[c.chk][s.sk]) delete ST[c.chk][s.sk][key];
+  save(); renderProtoSeccion(tipo); actualizarWarmupBadge();
 }
-
-function restaurarWarmupProtocolo(checkKey){
-  if(ST.warmupRemoved) ST.warmupRemoved[checkKey]=[];
-  save(); renderWarmupBody(); actualizarWarmupBadge();
+function protoRestaurar(tipo){
+  var s=protoStore(tipo);
+  ST[s.c.rem][s.sk]=[];
+  save(); renderProtoSeccion(tipo); actualizarWarmupBadge();
 }
-
+// Cambia el protocolo elegido para un día del ciclo (numDia opcional: por defecto el día mostrado)
+function protoSet(tipo,val,numDia){
+  var d=numDia||ST.dia;
+  if(!ST.protocoloDia) ST.protocoloDia={};
+  var cur=Object.assign({},ST.protocoloDia[d]||{});
+  if(val==='auto') delete cur[tipo]; else cur[tipo]=val;
+  if(Object.keys(cur).length) ST.protocoloDia[d]=cur; else delete ST.protocoloDia[d];
+  save();
+  try{ renders.entreno(); }catch(e){}
+}
+function protoSetModal(tipo,val){ protoSet(tipo,val,_cdNumDiaProto); }
+var _cdNumDiaProto=1;
+function protoLlenarModal(numDia){
+  _cdNumDiaProto=numDia;
+  var box=document.getElementById('mo-cd-proto');
+  if(!box) return;
+  box.innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:.45rem"><span style="font-size:12px;font-weight:600;color:var(--orange);width:104px;flex-shrink:0">🔥 Calentamiento</span>'+protoSelectHtml('cal',numDia,"protoSetModal('cal',this.value)")+'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;color:var(--green);width:104px;flex-shrink:0">🧘 Enfriamiento</span>'+protoSelectHtml('enf',numDia,"protoSetModal('enf',this.value)")+'</div>';
+}
 
 function actualizarWarmupBadge(){
-  var dB=getDiaBoyle();
-  if(!dB) return;
-  var fase=getFaseActual(ST.sem);
-  var isLinear=dB==='D1'||dB==='D3';
-  var cal=dB==='Descanso'?(CAL_BOYLE.Descanso||[]):((CAL_BOYLE_FASES[fase]||CAL_BOYLE_FASES.F1)[isLinear?'linear':'lateral']||[]);
-  if(!cal||!cal.length) return;
-  var checkKey='wu_d'+ST.dia;
-  var checks=(ST.warmupCheck&&ST.warmupCheck[checkKey])||{};
-  var removed=(ST.warmupRemoved&&ST.warmupRemoved[checkKey])||[];
-  var custom=(ST.warmupCustom&&ST.warmupCustom[checkKey])||[];
-  var total=0,done=0;
-  cal.forEach(function(f,fi){ f.items.forEach(function(it,ii){ var k='f'+fi+'_i'+ii; if(removed.indexOf(k)<0){ total++; if(checks[k]) done++; } }); });
-  custom.forEach(function(c){ total++; if(checks[c.id]) done++; });
-  var lbl=document.querySelector('#e-warmup-card .card-lbl');
-  if(lbl){
-    lbl.innerHTML='🔥 Calentamiento'+(total>0?' <span style="font-size:10px;background:'+(done===total?'var(--green-bg)':'var(--bg3)')+';color:'+(done===total?'var(--green-text)':'var(--text2)')+';border-radius:10px;padding:1px 7px;font-weight:700">'+done+'/'+total+'</span>':'');
-  }
-}
-
-function renderEnfBody(){
-  var dB=getDiaBoyle();
-  var body=document.getElementById("e-enf");
-  if(!body) return;
-  var enf=ENF[dB||"Mov"]||ENF["Mov"]||[];
-  if(!enf.length){body.innerHTML="<div style=\"color:var(--text3);font-size:13px\">Sin enfriamiento definido.</div>";return;}
-  var out=[];
-  enf.forEach(function(item){
-    out.push("<div style=\"padding:.4rem 0;border-bottom:.5px solid var(--border)\">");
-    out.push("<div style=\"display:flex;align-items:center;justify-content:space-between\">");
-    out.push("<span style=\"font-size:13px;font-weight:600;color:var(--text)\">"+item.n+"</span>");
-    out.push("<span style=\"font-size:11px;color:var(--text3)\">"+item.t+"</span>");
-    out.push("</div></div>");
+  ['cal','enf'].forEach(function(tipo){
+    var c=PROTO_CFG[tipo];
+    var lbl=document.querySelector('#'+c.cardId+' .card-lbl');
+    if(!lbl) return;
+    var n=protoContar(tipo);
+    lbl.innerHTML=c.titulo+(n.total>0?' <span style="font-size:10px;background:'+(n.done===n.total?'var(--green-bg)':'var(--bg3)')+';color:'+(n.done===n.total?'var(--green-text)':'var(--text2)')+';border-radius:10px;padding:1px 7px;font-weight:700">'+n.done+'/'+n.total+'</span>':'');
   });
-  body.innerHTML=out.join("");
 }
-
+function refrescarProtocolosAbiertos(){
+  ['cal','enf'].forEach(function(tipo){
+    var b=document.getElementById(PROTO_CFG[tipo].body);
+    if(b&&b.style.display==='block') renderProtoSeccion(tipo);
+  });
+}
+function renderWarmupBody(){ renderProtoSeccion('cal'); }
+function renderEnfBody(){ renderProtoSeccion('enf'); }
+// Compatibilidad: renders.entreno() sigue llamando a renderEnf(...)
+function renderEnf(){
+  var card=document.getElementById('e-enf-card');
+  if(card) card.style.display='block';
+  refrescarProtocolosAbiertos();
+  actualizarWarmupBadge();
+}
 
 // ══════════════════════════════════════
 // BASE DE DATOS DE EJERCICIOS
@@ -8494,7 +8582,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_008';
+const APP_VERSION='vEXT_009';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -8935,7 +9023,7 @@ async function fetchFitbitAuto(manual) {
 // Repo del que se descargan programa.json/ejercicios.json — EDITABLE desde Config
 // (ST.repoPrograma). Deliberadamente separado de Garmin/Fitbit, que siguen apuntando siempre
 // a shumb71.github.io/Boyle (el repo estable, no editable, que Jou mantiene como "seguridad").
-function getRepoPrograma(){ return (ST.repoPrograma||'entreno-pro').trim().replace(/^\/+|\/+$/g,''); }
+function getRepoPrograma(){ var r=(ST.repoPrograma||'').trim().replace(/^\/+|\/+$/g,''); return (!r||r==='entreno-pro')?'Boyle':r; }
 function abrirEditorPrograma(){
   window.open('https://shumb71.github.io/'+getRepoPrograma()+'/editor.html', '_blank');
 }
@@ -9087,11 +9175,12 @@ function renderProgramaExtStatus(){
   var el=document.getElementById('programa-ext-status');
   if(!el) return;
   var inputEl=document.getElementById('repo-programa-input');
-  if(inputEl && document.activeElement!==inputEl) inputEl.value=ST.repoPrograma||'entreno-pro';
+  if(inputEl && document.activeElement!==inputEl) inputEl.value=getRepoPrograma();
   function fmt(iso){ return iso?new Date(iso).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'nunca'; }
   el.innerHTML='Buscando en: <code style="font-size:11px">shumb71.github.io/'+getRepoPrograma()+'/</code>'
     +'<br>Programa: '+(ST.programaExternoCache?'<span style="color:var(--green-text)">activo</span>':'<span style="color:var(--text3)">de fábrica</span>')+' · '+fmt(ST.programaExternoActualizado)
-    +'<br>Ejercicios: '+(ST.ejerciciosExternoCache?'<span style="color:var(--green-text)">activo</span>':'<span style="color:var(--text3)">de fábrica</span>')+' · '+fmt(ST.ejerciciosExternoActualizado);
+    +'<br>Ejercicios: '+(ST.ejerciciosExternoCache?'<span style="color:var(--green-text)">activo</span>':'<span style="color:var(--text3)">de fábrica</span>')+' · '+fmt(ST.ejerciciosExternoActualizado)
+    +'<br>Protocolos: '+(ST.protocolosExtCache?'<span style="color:var(--green-text)">activo</span>':'<span style="color:var(--text3)">de fábrica</span>')+' · '+fmt(ST.protocolosExtActualizado);
 }
 
 // --- Descarga + caché local ---
@@ -9316,6 +9405,7 @@ window.addEventListener('load', () => {
   setTimeout(checkAutoBackupLocalDiario, 6000); // 6s — avisa si falta backup JSON local hoy (pide confirmación)
   setTimeout(function(){ fetchProgramaExterno(false); }, 9000); // 9s — programa externo, en segundo plano
   setTimeout(function(){ fetchEjerciciosExterno(false); }, 10000); // 10s — catálogo de ejercicios externo
+  setTimeout(function(){ fetchProtocolosExterno(false); }, 11000); // 11s — protocolos de calentamiento/enfriamiento
 });
 
 function importarGarminHistorial(input){
@@ -10191,6 +10281,8 @@ mAllChk.addEventListener('change',function(){
 
 
 
+aplicarCacheProgramaExternoSiExiste(); // caché del programa/ejercicios externos, antes del primer render
+protoPodar();
 autoAplicarAnclaje();
 renders.hoy();
 updateTopbarSem();
@@ -10384,9 +10476,7 @@ function startTimer(){
   ST.timerActivo=true;
   save();
   document.getElementById('timer-start-btn').style.display='none';
-  document.getElementById('timer-pause-btn').style.display='block';
-  document.getElementById('timer-resume-btn').style.display='none';
-  document.getElementById('timer-reset-row').style.display='none';
+  document.getElementById('timer-stop-btn').style.display='block';
   document.getElementById('timer-resumen').style.display='none';
   document.getElementById('timer-dot').style.display='inline-block';
   var card=document.getElementById('e-finalizar-card');
@@ -10694,7 +10784,7 @@ checkBackupReminder();
 
 <!-- MODAL CAMBIAR DIA BOYLE -->
 <div class="mo" id="mo-resumen-sesion" onclick="closeMo(event,'mo-resumen-sesion')">
-  <div class="mo-box" style="max-height:85vh;overflow-y:auto">
+  <div class="ms" style="max-height:85vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
       <div style="font-size:17px;font-weight:700;color:var(--text)">✅ Sesión completada</div>
       <button onclick="document.getElementById('mo-resumen-sesion').classList.remove('open')" style="border:none;background:var(--bg3);color:var(--text2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px">✕</button>
@@ -10746,6 +10836,10 @@ checkBackupReminder();
       </div>
     </div>
     <div id="mo-cd-list"></div>
+    <div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem .75rem;margin-top:.75rem">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Calentamiento y enfriamiento de este día</div>
+      <div id="mo-cd-proto"></div>
+    </div>
     <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.75rem" onclick="document.getElementById('mo-cambiardia').classList.remove('open')">Cancelar</button>
   </div>
 </div>

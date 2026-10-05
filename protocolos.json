@@ -1,0 +1,27 @@
+{
+  "protocolos": [
+    {
+      "id": "cal-ejemplo",
+      "tipo": "calentamiento",
+      "nombre": "Calentamiento ejemplo",
+      "tiempo": "8 min",
+      "ejercicios": [
+        { "n": "Círculos de cadera", "d": "ESCRIBE AQUÍ TU DESCRIPCIÓN", "t": "1 min" },
+        { "n": "Bear crawl", "d": "ESCRIBE AQUÍ TU DESCRIPCIÓN", "t": "2 x 10 m" }
+      ]
+    },
+    {
+      "id": "enf-ejemplo",
+      "tipo": "enfriamiento",
+      "nombre": "Enfriamiento ejemplo",
+      "tiempo": "6 min",
+      "ejercicios": [
+        { "n": "Respiración 4-6", "d": "ESCRIBE AQUÍ TU DESCRIPCIÓN", "t": "3 min" },
+        { "n": "Postura del niño", "d": "ESCRIBE AQUÍ TU DESCRIPCIÓN", "t": "1 min" }
+      ]
+    }
+  ],
+  "descripciones": {
+    "Foam roll gluteo y rotadores de cadera": "Opcional: aquí puedes reescribir la descripción de cualquier ejercicio de fábrica por su nombre exacto."
+  }
+}

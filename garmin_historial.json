@@ -3335,13 +3335,13 @@
     },
     "2026-10-02": {
       "fecha": "2026-10-02",
-      "pasos": 2273,
-      "calorias_dia": 1508.0,
-      "calorias_activas": 364.0,
-      "distancia_km": 1.92,
+      "pasos": 3029,
+      "calorias_dia": 2485.0,
+      "calorias_activas": 386.0,
+      "distancia_km": 2.54,
       "minutos_activos": 42,
-      "fc_reposo": 54,
-      "estres_medio": 83,
+      "fc_reposo": 53,
+      "estres_medio": 44,
       "actividades": [
         {
           "nombre": "Fuerza",
@@ -3364,32 +3364,50 @@
     "2026-10-03": {
       "fecha": "2026-10-03",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-10-04": {
       "fecha": "2026-10-04",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
+      "pasos": 21,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
+      "distancia_km": 0.02,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": 74
     },
     "2026-10-05": {
       "fecha": "2026-10-05",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 5702,
+      "calorias_dia": 2095.0,
+      "calorias_activas": 415.0,
+      "distancia_km": 4.73,
+      "minutos_activos": 36,
+      "fc_reposo": 55,
+      "estres_medio": 43,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 106,
+          "calorias": 533.0,
+          "fc_media": 101.0,
+          "fc_max": 192.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 106,
+        "calorias": 533.0,
+        "fc_media": 101.0,
+        "fc_max": 192.0
+      }
     }
   },
   "actualizado": "2026-10-05"

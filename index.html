@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_009</title>
+<title>Entreno Boyle vEXT_010</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -557,8 +557,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   // --- SERVICE WORKER v2: kill switch + registro nuevo ─────────────────
   (async function(){
     if(!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./sw.js?v=EXT_009', {scope: './'})
-      .then(function(reg){console.log('SW EXT_009 registrado:', reg.scope);})
+    navigator.serviceWorker.register('./sw.js?v=EXT_010', {scope: './'})
+      .then(function(reg){console.log('SW EXT_010 registrado:', reg.scope);})
       .catch(function(err){console.warn('SW error:', err);});
   })();
 })();
@@ -1483,9 +1483,9 @@ const SES_NOM={
 // ESTRUCTURA DEL PROGRAMA (para la pantalla Programa/consulta)
 const BOYLE_FASES=[
   {id:'F1', n:'Fase 1 — Acumulacion',        desc:'3x8. Tempo 3/1/1. Volumen alto — construir base y aprender los patrones.', sems:'Sem 1-3',  color:'var(--blue)'},
-  {id:'F2', n:'Fase 2 — Intensificacion',    desc:'3x5 (olimpicos/press/traccion a 3 reps escalando). Menos volumen, mas carga.', sems:'Sem 4-6',  color:'var(--orange)'},
-  {id:'F3', n:'Fase 3 — Fuerza + Complejos', desc:'3-5x5 con complejos fuerza+potencia (deadlift+salto, press+medball).', sems:'Sem 7-9',  color:'var(--green)'},
-  {id:'F4', n:'Fase 4 — Fuerza + Complejos', desc:'Igual que fase 3. Pliometria se mantiene en nivel F3 por precaucion con la rodilla.', sems:'Sem 10-12',color:'var(--red-text)'},
+  {id:'F2', n:'Fase 2 — Intensificacion',    desc:'Series de 3 (olimpicos/press/traccion) y de 5 (tren inferior) al 70-80%. Menos volumen, mas carga.', sems:'Sem 4-6',  color:'var(--orange)'},
+  {id:'F3', n:'Fase 3 — Fuerza + Complejos I', desc:'Vuelve el volumen. Complejos fuerza+potencia (deadlift+salto, press+medball).', sems:'Sem 7-9',  color:'var(--green)'},
+  {id:'F4', n:'Fase 4 — Fuerza + Complejos II', desc:'Igual que fase 3 (tablas 11.4 y 11.5 del libro). Pliometria se mantiene en nivel F3 por precaucion con la rodilla.', sems:'Sem 10-12',color:'var(--red-text)'},
 ];
 
 // PROGRAMA DE 4 DIAS BOYLE — fiel al Excel boyle24.xlsx (la biblia)
@@ -2628,9 +2628,9 @@ const CAL={
   ],
 };
 const PROG=[
-  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:3,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:2,r:8,p:60,pa:'90 seg',d:true},
-  {s:5,n:3,r:8,p:72,pa:'2 min'},{s:6,n:3,r:8,p:74,pa:'2-3 min'},{s:7,n:4,r:6,p:78,pa:'3 min'},{s:8,n:2,r:8,p:65,pa:'90 seg',d:true},
-  {s:9,n:3,r:6,p:75,pa:'3-4 min'},{s:10,n:4,r:5,p:80,pa:'4 min'},{s:11,n:4,r:5,p:82,pa:'4-5 min'},{s:12,n:2,r:6,p:65,pa:'2 min',d:true},
+  {s:1,n:2,r:10,p:60,pa:'90 seg'},{s:2,n:3,r:10,p:65,pa:'90 seg'},{s:3,n:3,r:10,p:68,pa:'2 min'},{s:4,n:3,r:8,p:70,pa:'2 min'},
+  {s:5,n:3,r:8,p:72,pa:'2 min'},{s:6,n:3,r:8,p:74,pa:'2-3 min'},{s:7,n:4,r:6,p:78,pa:'3 min'},{s:8,n:4,r:6,p:80,pa:'3-4 min'},
+  {s:9,n:3,r:6,p:75,pa:'3-4 min'},{s:10,n:4,r:5,p:80,pa:'4 min'},{s:11,n:4,r:5,p:82,pa:'4-5 min'},{s:12,n:4,r:5,p:82,pa:'4-5 min'},
 ];
 const COMIDAS={
   Manana:[{h:'06:15',n:'Desayuno pre-turno',d:'Avena 60g + proteina 30g + leche + platano',k:510,p:42,hc:65,g:7},{h:'10:00',n:'Media manana',d:'Yogur griego 0% 200g + nueces 15g + manzana',k:300,p:22,hc:25,g:9},{h:'14:30',n:'Pre-entreno',d:'Arroz 80g + pollo 160g + verduras + AOVE',k:530,p:42,hc:62,g:9},{h:'18:30',n:'Post-entreno',d:'Proteina 35g + platano + leche 200ml',k:380,p:40,hc:38,g:4},{h:'21:00',n:'Cena ligera',d:'Salmon o merluza 180g + ensalada + 2 huevos',k:420,p:48,hc:12,g:18}],
@@ -3376,7 +3376,7 @@ const renders={
     try{renderCircuitosBody();}catch(e){}
     const c=CICLO[(ST.dia-1)%12];
     const pr=PROG[(ST.sem-1)%12];
-    document.getElementById('e-sem').textContent='Semana '+ST.sem+(pr.d?' — Descarga':'');
+    document.getElementById('e-sem').textContent='Semana '+ST.sem;
     const dB=getDiaBoyle();
     const el=document.getElementById('e-list');
     // Con estructura Boyle, verificar que hay pares definidos
@@ -3677,7 +3677,7 @@ function renderBoyleFaseTabs(){
   var el=document.getElementById('boyle-fase-tabs');
   if(!el) return;
   var fases=['F1','F2','F3','F4'];
-  var faseNoms={F1:'F1 — Acum.',F2:'F2 — Intensif.',F3:'F3 — Fuerza',F4:'F4 — Fuerza 2'};
+  var faseNoms={F1:'F1 — Acum.',F2:'F2 — Intensif.',F3:'F3 — Complejos I',F4:'F4 — Complejos II'};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
@@ -3713,12 +3713,12 @@ function renderBoyleContenido(){
   // Historial de veces que se realizó este día
   var historialDia=getHistorialDiaBoyle(diaKey, fase);
   // Info de fase
-  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza + Complejos 2'};
+  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'};
   var faseDesc={
-    F1:'2-3 series × 10 reps al 60-68%. Tempo 3/1/1. Construir base de volumen.',
-    F2:'2-3 series × 3-5 reps al 60-74% (sem.4 descarga). Menos volumen, mas carga.',
-    F3:'2-4 series × 5-6 reps con complejos (ejercicio + potencia), 65-78%. Máxima transferencia.',
-    F4:'Igual que F3 (65-82%). Pliometría se mantiene en nivel F3 por precaución con la rodilla.',
+    F1:'3 series × 8 reps (olímpicos × 5). Tempo 3/1/1. Volumen alto, cargas moderadas: construir base.',
+    F2:'3-5 series de 3 (press, chin-ups, olímpicos) y de 5 (tren inferior), al 70-80%. Menos volumen, más carga.',
+    F3:'Vuelve el volumen. Complejos de fuerza + potencia (peso muerto + salto de vallas, press + balón medicinal).',
+    F4:'Igual que F3 (tablas 11.4 y 11.5 del libro): complejos de fuerza + potencia. Transición a la pretemporada. Pliometría en nivel F3 por precaución con la rodilla.',
   };
   var semanas=[1,2,3];
   var html='';
@@ -4538,7 +4538,7 @@ function verDiaBoyle(d){
   var semEnFase=getSemEnFase(ST.sem);
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
-  var faseNoms={F1:'F1 — 2-3x10 · 60-68%',F2:'F2 — 2-3x3-5 · 60-74%',F3:'F3 — 2-4x5-6 · 65-78%',F4:'F4 — 2-4x5-6 · 65-82%'};
+  var faseNoms={F1:'F1 — 3x8 · 60-68%',F2:'F2 — 3-5x3-5 · 70-80%',F3:'F3 — Complejos I · 75-80%',F4:'F4 — Complejos II · 80-82%'};
   var faseTempo={F1:' · Tempo 3/1/1',F2:'',F3:' · Tempo 3/1/1',F4:''};
   // Ejercicios de EJS_FASES para esta fase y dia
   var ejsFase=(EJS_FASES[fase]&&EJS_FASES[fase][d])||[];
@@ -4625,8 +4625,7 @@ function renderCicloBoyle(){
     '<div class="prow"><span class="plbl">Series x Reps</span><span class="pval">'+pr.n+' x '+pr.r+'</span></div>'+
     '<div class="prow"><span class="plbl">Intensidad</span><span class="pval">'+pr.p+'% del maximo</span></div>'+
     '<div class="prow"><span class="plbl">Pausa entre series</span><span class="pval">'+pr.pa+'</span></div>'+
-    '<div class="prow"><span class="plbl">Excentrico (bajada)</span><span class="pval">'+(pr.s<=4?'3 seg':'4 seg')+'</span></div>'+
-    (pr.d?'<div style="margin-top:.5rem"><span class="tag to">Semana de descarga</span></div>':'');
+    '<div class="prow"><span class="plbl">Excentrico (bajada)</span><span class="pval">'+(pr.s<=4?'3 seg':'4 seg')+'</span></div>';
   var semlbl=document.getElementById('c-semlbl');
   if(semlbl) semlbl.textContent='Sem '+ST.sem;
   var dialbl=document.getElementById('c-dialbl');
@@ -4684,7 +4683,7 @@ function renderProgramaCompleto(){
   var porSemana={};
   proyeccion.forEach(function(p){(porSemana[p.semana]=porSemana[p.semana]||[]).push(p);});
   var historialSemana=getHistorialPorSemana();
-  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos',F4:'Fuerza + Complejos 2'};
+  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var slotsOrden=['D1','D2','D3','D4'];
   function filaHecha(real,slotKey){
@@ -5184,7 +5183,7 @@ function cdSemRender(){
   if(lbl) lbl.textContent=_cdSemTemp;
   if(faseLbl){
     var fase=getFaseActual(_cdSemTemp);
-    var faseNoms={F1:'F1 — Acumulación',F2:'F2 — Intensificación',F3:'F3 — Fuerza',F4:'F4 — Fuerza 2'};
+    var faseNoms={F1:'F1 — Acumulación',F2:'F2 — Intensificación',F3:'F3 — Complejos I',F4:'F4 — Complejos II'};
     var faseColors={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
     faseLbl.textContent=faseNoms[fase]||fase;
     faseLbl.style.color=faseColors[fase]||'var(--text2)';
@@ -6387,13 +6386,13 @@ function renderFaseBanner(){
   var semEnFase=getSemEnFase(ST.sem);
   // Nombres y datos EXACTOS del Excel boyle24.xlsx
   var faseNoms={
-    F1:'F1 — Acumulación · 2-3×10 · 60-68%',
-    F2:'F2 — Intensificación · 2-3×3-5 · 60-74%',
-    F3:'F3 — Fuerza · 2-4×5-6 · 65-78%',
-    F4:'F4 — Fuerza 2 · 2-4×5-6 · 65-82%'
+    F1:'F1 — Acumulación · 3×8 · 60-68%',
+    F2:'F2 — Intensificación · 3-5×3-5 · 70-80%',
+    F3:'F3 — Fuerza + Complejos I · 75-80%',
+    F4:'F4 — Fuerza + Complejos II · 80-82%'
   };
-  var faseReps={F1:'2-3×10',F2:'2-3×3-5',F3:'2-4×5-6',F4:'2-4×5-6'};
-  var fasePct={F1:'60-68%',F2:'60-74%',F3:'65-78%',F4:'65-82%'};
+  var faseReps={F1:'3×8',F2:'3-5×3-5',F3:'3-5×5',F4:'3-5×5'};
+  var fasePct={F1:'60-68%',F2:'70-80%',F3:'75-80%',F4:'80-82%'};
   var faseTempo={F1:'Tempo 3/1/1',F2:'',F3:'Tempo 3/1/1',F4:''};
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
@@ -8582,7 +8581,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_009';
+const APP_VERSION='vEXT_010';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9684,14 +9683,28 @@ function calSelDia(fecha){
       const sesKeysEj=sesKeys.filter(k=>!k.includes('_fin_'));
       const sesKeysFin=sesKeys.filter(k=>k.includes('_fin_'));
       // Calcular tonelaje total del día (ejercicios + finishers)
-      var volDia=0, serDia=0;
+      var tonDia=0, serPeso=0, repsPeso=0;
       sesKeys.forEach(function(k){
         var sets=(ST.sets[k]||[]).filter(Boolean);
-        sets.forEach(function(s){ if(s.tipo==='reps'||!s.tipo){ volDia+=((s.p||0)*(s.r||0)); serDia++; } else { serDia++; } });
+        sets.forEach(function(s){
+          var p=Number(s.p)||0, r=Number(s.r)||0;
+          if((s.tipo==='reps'||!s.tipo)&&p>0&&r>0){ tonDia+=p*r; serPeso++; repsPeso+=r; }
+        });
       });
+      // kcal de la actividad de fuerza de Garmin (no las totales del día)
+      var kcalFuerza=null;
+      if(g&&g.actividades&&g.actividades.length){
+        g.actividades.forEach(function(act){
+          var t=(act.tipo||'').toLowerCase();
+          if(t.includes('strength')||t.includes('weight')||t.includes('fuerza')){ kcalFuerza=(kcalFuerza||0)+(Number(act.calorias)||0); }
+        });
+      }
+      if(kcalFuerza===null&&g&&g.fuerza&&g.fuerza.calorias!=null) kcalFuerza=Number(g.fuerza.calorias)||0;
+      var _box='flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center';
       var statsHtml='<div style="display:flex;gap:6px;margin-bottom:6px">'
-        +'<div style="flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--orange)">'+Math.round(volDia)+'</div><div style="font-size:10px;color:var(--text2)">kg tonelaje</div></div>'
-        +'<div style="flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center"><div style="font-size:16px;font-weight:700;color:var(--blue)">'+serDia+'</div><div style="font-size:10px;color:var(--text2)">series</div></div>'
+        +'<div style="'+_box+'"><div style="font-size:16px;font-weight:700;color:var(--orange)">'+Math.round(tonDia).toLocaleString('es-ES')+'</div><div style="font-size:10px;color:var(--text2)">kg tonelaje</div></div>'
+        +'<div style="'+_box+'"><div style="font-size:16px;font-weight:700;color:var(--blue)">'+serPeso+' · '+repsPeso+'</div><div style="font-size:10px;color:var(--text2)">series · reps con peso</div></div>'
+        +'<div style="'+_box+'"><div style="font-size:16px;font-weight:700;color:var(--green)">'+(kcalFuerza!==null?kcalFuerza:'—')+'</div><div style="font-size:10px;color:var(--text2)">🔥 kcal Garmin</div></div>'
         +'</div>';
 
       function renderEjRow(k, isFinisher){

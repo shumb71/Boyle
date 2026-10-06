@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_012</title>
+<title>Entreno Boyle vEXT_013</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -563,9 +563,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_012', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_013', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_012 registrado:', reg.scope);
+        console.log('SW EXT_013 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -8604,7 +8604,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_012';
+const APP_VERSION='vEXT_013';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9686,10 +9686,13 @@ function calSelDia(fecha){
   if(g){
     const suenoh=g.sueno_total_min?Math.floor(g.sueno_total_min/60)+'h '+(g.sueno_total_min%60)+'min':'—';
     var bloqueGarminCal='';
-    if(g.fuerza||(g.actividades&&g.actividades.length)){
-      bloqueGarminCal='<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin-bottom:6px">⌚ GARMIN — ENTRENO</div>';
-      if(g.actividades&&g.actividades.length){
-        bloqueGarminCal+=g.actividades.map(function(act){
+    // Solo actividades que NO son de fuerza (la fuerza ya sale en el cuadro de tonelaje)
+    var _esFuerzaAct=function(act){var t=(act.tipo||'').toLowerCase();return t.includes('strength')||t.includes('weight')||t.includes('fuerza');};
+    var _actsNoFuerza=(g.actividades||[]).filter(function(act){return !_esFuerzaAct(act);});
+    if(_actsNoFuerza.length){
+      bloqueGarminCal='<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.06em;margin-bottom:6px">⌚ GARMIN — ACTIVIDADES</div>';
+      if(_actsNoFuerza.length){
+        bloqueGarminCal+=_actsNoFuerza.map(function(act){
           var t=(act.tipo||'').toLowerCase();
           var icono=t.includes('strength')||t.includes('weight')||t.includes('fuerza')?'💪':t.includes('walk')||t.includes('hik')?'🚶':t.includes('cycl')||t.includes('bik')?'🚴':t.includes('swim')?'🏊':t.includes('yoga')?'🧘':'🏃';
           return '<div style="background:var(--green-bg);border-radius:var(--rs);padding:.4rem .7rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--green-text)">'+icono+' '+(act.nombre||act.tipo)+'</span><span style="font-size:12px;color:var(--green-text)">'+act.duracion_min+' min · '+act.calorias+' kcal</span></div>';

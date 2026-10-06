@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_011</title>
+<title>Entreno Boyle vEXT_012</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -557,8 +557,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   // --- SERVICE WORKER v2: kill switch + registro nuevo ─────────────────
   (async function(){
     if(!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.register('./sw.js?v=EXT_011', {scope: './'})
-      .then(function(reg){console.log('SW EXT_011 registrado:', reg.scope);})
+    var _tuvoCtrl=!!navigator.serviceWorker.controller, _recargado=false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      // Solo recarga si ya había una versión anterior controlando (no en la primera instalación)
+      if(!_tuvoCtrl||_recargado) return;
+      _recargado=true; location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js?v=EXT_012', {scope: './', updateViaCache: 'none'})
+      .then(function(reg){
+        console.log('SW EXT_012 registrado:', reg.scope);
+        try{ reg.update(); }catch(e){}
+        document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
+      })
       .catch(function(err){console.warn('SW error:', err);});
   })();
 })();
@@ -1091,6 +1101,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <!-- Detalle día seleccionado -->
     <div class="card" id="cal-detalle" style="display:none">
       <div id="cal-det-titulo" class="card-lbl" style="font-size:15px;font-weight:700;margin-bottom:.5rem"></div>
+      <div id="cal-det-stats"></div>
       <div id="cal-det-garmin"></div>
       <div id="cal-det-entreno"></div>
       <div id="cal-det-circuito"></div>
@@ -8593,7 +8604,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_011';
+const APP_VERSION='vEXT_012';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9623,6 +9634,39 @@ function calGetEntrenosDia(fecha){
   return entrenos;
 }
 
+function calStatsDiaHtml(g,diaNum,histSes){
+  // Lista de series del día: primero historial de la sesión; si no, ST.sets del día de ciclo
+  var listas=[];
+  if(histSes&&histSes.ejerciciosRealizados&&histSes.ejerciciosRealizados.length){
+    histSes.ejerciciosRealizados.forEach(function(e){ listas.push((e.sets||[]).filter(Boolean)); });
+  } else if(diaNum){
+    Object.keys(ST.sets||{}).forEach(function(k){
+      var p=parseSetKey(k);
+      if(p&&String(p.dia)===String(diaNum)) listas.push((ST.sets[k]||[]).filter(Boolean));
+    });
+  }
+  var hay=false, ton=0, ser=0, reps=0;
+  listas.forEach(function(sets){ sets.forEach(function(s){
+    hay=true;
+    var p=Number(s.p)||0, r=Number(s.r)||0;
+    if((s.tipo==='reps'||!s.tipo)&&p>0&&r>0){ ton+=p*r; ser++; reps+=r; }
+  }); });
+  if(!hay) return '';
+  var kcal=null;
+  if(g&&g.actividades&&g.actividades.length){
+    g.actividades.forEach(function(act){
+      var t=(act.tipo||'').toLowerCase();
+      if(t.includes('strength')||t.includes('weight')||t.includes('fuerza')) kcal=(kcal||0)+(Number(act.calorias)||0);
+    });
+  }
+  if(kcal===null&&g&&g.fuerza&&g.fuerza.calorias!=null) kcal=Number(g.fuerza.calorias)||0;
+  var box='flex:1;background:var(--bg3);border-radius:var(--rs);padding:.4rem;text-align:center';
+  return '<div style="display:flex;gap:6px;margin-bottom:.6rem">'
+    +'<div style="'+box+'"><div style="font-size:16px;font-weight:700;color:var(--orange)">'+Math.round(ton).toLocaleString('es-ES')+'</div><div style="font-size:10px;color:var(--text2)">kg tonelaje</div></div>'
+    +'<div style="'+box+'"><div style="font-size:16px;font-weight:700;color:var(--blue)">'+ser+' × '+reps+'</div><div style="font-size:10px;color:var(--text2)">series · reps con peso</div></div>'
+    +'<div style="'+box+'"><div style="font-size:16px;font-weight:700;color:var(--green)">'+(kcal!==null?kcal:'—')+'</div><div style="font-size:10px;color:var(--text2)">🔥 kcal Garmin</div></div>'
+    +'</div>';
+}
 function calSelDia(fecha){
   calDiaSeleccionado=fecha;
   // Remarcar celda activa
@@ -9754,7 +9798,6 @@ function calSelDia(fecha){
         (semBoyle?' <span style="color:var(--orange-text);background:var(--orange-bg);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700">'+semBoyle+'</span>':'');
       if(todoHTML) htmlE=`<div>
         <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:4px">🏋️ ENTRENO DÍA ${diaNum}${badgesBoyle?' · '+badgesBoyle:''}</div>
-        ${statsHtml}
         ${todoHTML}
       </div>`;
     }
@@ -9855,7 +9898,7 @@ function calSelDia(fecha){
       +horaTag+duracionTag+varTag+'</div>'
       +'<button onclick="abrirEditarSesion(\''+fechaSafe+'\')" style="border:none;background:var(--blue-bg);color:var(--blue-text);border-radius:var(--rs);padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">✏ Editar</button>'
       +'</div>'
-      +statsHistHtml+sustHtml+ejsHtml+'</div>';
+      +sustHtml+ejsHtml+'</div>';
   }
   // Limpiar antes de rellenar para forzar re-render
   const garminEl = document.getElementById('cal-det-garmin');
@@ -9867,6 +9910,8 @@ function calSelDia(fecha){
   garminEl.offsetHeight;
   garminEl.innerHTML = htmlG;
   entrenoEl.innerHTML = htmlE;
+  var statsEl=document.getElementById('cal-det-stats');
+  if(statsEl){ try{ statsEl.innerHTML=calStatsDiaHtml(g,diaNum,histSes); }catch(e){ statsEl.innerHTML=''; console.warn('calStats',e); } }
   var resumenNutDia=getResumenNutricionFecha(fecha);
   if(nutricionEl){
     nutricionEl.innerHTML=resumenNutDia.tieneDatos

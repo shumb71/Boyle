@@ -1,6 +1,6 @@
 // sw.js — Entreno Boyle · network-first para el HTML (siempre la última versión si hay red)
 // Sube el número de CACHE en cada despliegue para purgar lo viejo.
-const CACHE = 'entreno-boyle-vEXT_011';
+const CACHE = 'entreno-boyle-vEXT_012';
 
 // Al instalar: activar de inmediato (sin esperar a que se cierren pestañas)
 self.addEventListener('install', (e) => {
@@ -29,7 +29,7 @@ self.addEventListener('fetch', (e) => {
   if (esDoc) {
     // NETWORK-FIRST: si hay red, siempre la última versión; si no, la cacheada.
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); return res; })
         .catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
     );

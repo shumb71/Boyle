@@ -3384,7 +3384,7 @@
     "2026-10-05": {
       "fecha": "2026-10-05",
       "pasos": 5702,
-      "calorias_dia": 2142.0,
+      "calorias_dia": 2514.0,
       "calorias_activas": 415.0,
       "distancia_km": 4.73,
       "minutos_activos": 36,
@@ -3411,13 +3411,23 @@
     },
     "2026-10-06": {
       "fecha": "2026-10-06",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 11523,
+      "calorias_dia": 2157.0,
+      "calorias_activas": 432.0,
+      "distancia_km": 8.13,
+      "minutos_activos": 45,
+      "fc_reposo": 54,
+      "estres_medio": 25,
+      "actividades": [
+        {
+          "nombre": "Ojén Senderismo",
+          "tipo": "hiking",
+          "duracion_min": 99,
+          "calorias": 537.0,
+          "fc_media": 105.0,
+          "fc_max": 146.0
+        }
+      ]
     }
   },
   "actualizado": "2026-10-06"

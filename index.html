@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_013</title>
+<title>Entreno Boyle vEXT_015</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -563,9 +563,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_013', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_015', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_013 registrado:', reg.scope);
+        console.log('SW EXT_015 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -1263,6 +1263,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <button class="bkbtn bkimp" onclick="fetchProgramaExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar programa desde GitHub</button>
       <button class="bkbtn bkimp" onclick="fetchEjerciciosExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar catálogo de ejercicios</button>
       <button class="bkbtn bkimp" onclick="fetchProtocolosExterno(true)" style="margin-bottom:.5rem"><i class="ti ti-refresh"></i> Actualizar protocolos (calentamiento/enfriamiento)</button>
+      <button class="bkbtn" onclick="exportarProgramaActual()" style="margin-bottom:.5rem"><i class="ti ti-download"></i> ⬇ Exportar programa actual (programa.json)</button>
       <button class="bkbtn" onclick="abrirEditorPrograma()"><i class="ti ti-external-link"></i> 🛠 Abrir editor de programa</button>
     </div>
 
@@ -3402,6 +3403,8 @@ const renders={
       document.getElementById('e-ser').textContent='0/0';
       document.getElementById('e-hist').innerHTML='<div class="empty">Sin historial</div>';
       renderEnf(dB||'Mov','e-enf','e-enf-card');
+      try{ renderFaseBanner(); }catch(e){}
+      try{ actualizarWarmupBadge(); }catch(e){}
       return;
     }
     let vol=0,done=0,tot=0;
@@ -3431,7 +3434,7 @@ const renders={
             // Si el esquema trae varios valores separados por coma (ej. "5,5,5,5+"), ese es
             // el número real de series a registrar esa semana, aunque no coincida con PROG.n
             // (los ejercicios principales a veces añaden una serie extra a mitad de fase).
-            numSer=(typeof rVal==='string'&&rVal.indexOf(',')>=0)?rVal.split(',').length:pr.n;
+            numSer=(typeof rVal==='string'&&rVal.indexOf(',')>=0)?rVal.split(',').length:((repsTarget.n>0)?repsTarget.n:pr.n);
             rpsLabel=info.reps?(rVal+' '+info.reps):String(rVal);
           }
           else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
@@ -4350,7 +4353,7 @@ function guardar(){
       var faseAll=getFaseActual(ST.sem), semEnFaseAll=getSemEnFase(ST.sem), diaBoyleAll=getDiaBoyle()||'D1';
       var repsTargetAll=getRepsTarget(ejClean,faseAll,semEnFaseAll,diaBoyleAll);
       var rValAll=repsTargetAll&&repsTargetAll.r!==undefined?repsTargetAll.r:pr.r;
-      num=(typeof rValAll==='string'&&rValAll.indexOf(',')>=0)?rValAll.split(',').length:pr.n;
+      num=(typeof rValAll==='string'&&rValAll.indexOf(',')>=0)?rValAll.split(',').length:((repsTargetAll&&repsTargetAll.n>0)?repsTargetAll.n:pr.n);
     }
     ST.sets[key]=[];
     for(var i=0;i<num;i++) ST.sets[key].push(Object.assign({},setData));
@@ -8604,7 +8607,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_013';
+const APP_VERSION='vEXT_015';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9049,6 +9052,44 @@ function getRepoPrograma(){ var r=(ST.repoPrograma||'').trim().replace(/^\/+|\/+
 function abrirEditorPrograma(){
   window.open('https://shumb71.github.io/'+getRepoPrograma()+'/editor.html', '_blank');
 }
+// Exporta el programa que la app está usando AHORA (fábrica o externo) en el formato de programa.json,
+// para subirlo al repo y editarlo (ejercicios, bloques, descanso, reps y series por semana).
+function exportarProgramaActual(){
+  try{
+    var out={version:'EXT',generado:new Date().toISOString(),
+      nota:'Edita nombres, reps ("r"), series ("n") por semana, bloques y descanso. Las semanas_globales (n,r,p,pa) son series/reps/% orientativo/pausa de las 12 semanas.',
+      semanas_globales:PROG.map(function(w){return {n:w.n,r:w.r,p:(w.p==null?null:w.p),pa:w.pa||''};}),
+      fases:{}};
+    ['F1','F2','F3','F4'].forEach(function(fase,fi){
+      out.fases[fase]={dias:{}};
+      ['D1','D2','D3','D4'].forEach(function(dia){
+        var ejs=(EJS_FASES[fase]&&EJS_FASES[fase][dia])||[];
+        var grupos=getGruposDia(fase,dia)||[{tipo:'par',descanso:90,n:ejs.length,lbl:''}];
+        var reps=(REPS_FASE[fase]&&REPS_FASE[fase][dia])||{};
+        var bloques=[], pos=0;
+        grupos.forEach(function(g,gi){
+          var cnt=(gi===grupos.length-1)?(ejs.length-pos):g.n;
+          var lista=ejs.slice(pos,pos+cnt); pos+=cnt;
+          if(!lista.length) return;
+          bloques.push({etiqueta:g.lbl||'',tipo:g.tipo||'par',descanso_seg:g.descanso||90,
+            ejercicios:lista.map(function(nom){
+              var e={nombre:nom};
+              if(reps[nom]) e.reps=reps[nom].map(function(r,wi){
+                var pw=PROG[(fi*3+wi)%12];
+                return {semana:r.s,r:r.r,n:(r.n>0?r.n:pw.n)};
+              });
+              return e;
+            })});
+        });
+        out.fases[fase].dias[dia]={bloques:bloques};
+      });
+    });
+    var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='programa.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+  }catch(e){ alert('No se pudo exportar el programa: '+e.message); console.warn(e); }
+}
 function getProgramaJsonUrl(){ return 'https://shumb71.github.io/'+getRepoPrograma()+'/programa.json'; }
 function getEjerciciosJsonUrl(){ return 'https://shumb71.github.io/'+getRepoPrograma()+'/ejercicios.json'; }
 
@@ -9091,6 +9132,19 @@ function validarEjerciciosExterno(data){
 
 // --- Adaptadores: mutan los objetos existentes EN SITIO (nunca los redeclaran) ---
 function aplicarProgramaExterno(data){
+  // Opcional: "semanas_globales": 12 entradas {n, r, p, pa} que sustituyen a PROG (series base,
+  // reps base, % orientativo y pausa de cada semana 1-12). Si no viene o no encaja, se ignora.
+  try{
+    if(Array.isArray(data.semanas_globales)&&data.semanas_globales.length===12){
+      data.semanas_globales.forEach(function(w,i){
+        if(!w||typeof w!=='object') return;
+        if(Number(w.n)>0) PROG[i].n=Math.round(Number(w.n));
+        if(w.r!==undefined&&w.r!==null&&w.r!=='') PROG[i].r=w.r;
+        if('p' in w) PROG[i].p=(w.p===''||w.p===undefined)?null:w.p;
+        if(w.pa!==undefined&&w.pa!==null) PROG[i].pa=String(w.pa);
+      });
+    }
+  }catch(e){ console.warn('semanas_globales:',e); }
   var nuevoEjs={}, nuevoReps={}, nuevoGrupos={};
   ['F1','F2','F3','F4'].forEach(function(fase){
     var fd=data.fases[fase];
@@ -9103,10 +9157,15 @@ function aplicarProgramaExterno(data){
         listaEjs=listaEjs.concat(ejsBloque);
         (b.ejercicios||[]).forEach(function(e){
           if(Array.isArray(e.reps)){
-            repsDia[e.nombre]=e.reps.map(function(r){return {s:r.semana,r:r.r};});
+            repsDia[e.nombre]=e.reps.map(function(r){
+              var o={s:r.semana,r:r.r};
+              var nn=Number(r.n!=null?r.n:e.series);
+              if(nn>0) o.n=Math.round(nn);   // series de ese ejercicio esa semana (opcional)
+              return o;
+            });
           }
         });
-        gruposDia.push({lbl:'',tipo:b.tipo||'par',descanso:b.descanso_seg||90,n:ejsBloque.length});
+        gruposDia.push({lbl:b.etiqueta||'',tipo:b.tipo||'par',descanso:b.descanso_seg||90,n:ejsBloque.length});
       });
       nuevoEjs[fase][dia]=listaEjs;
       nuevoReps[fase][dia]=repsDia;

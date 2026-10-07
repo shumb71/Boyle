@@ -3411,13 +3411,13 @@
     },
     "2026-10-06": {
       "fecha": "2026-10-06",
-      "pasos": 11523,
-      "calorias_dia": 2157.0,
-      "calorias_activas": 432.0,
-      "distancia_km": 8.13,
+      "pasos": 11987,
+      "calorias_dia": 2538.0,
+      "calorias_activas": 439.0,
+      "distancia_km": 8.52,
       "minutos_activos": 45,
-      "fc_reposo": 54,
-      "estres_medio": 25,
+      "fc_reposo": 47,
+      "estres_medio": 22,
       "actividades": [
         {
           "nombre": "Ojén Senderismo",
@@ -3431,13 +3431,18 @@
     },
     "2026-10-07": {
       "fecha": "2026-10-07",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 1465,
+      "calorias_dia": 767.0,
+      "calorias_activas": 42.0,
+      "distancia_km": 1.22,
+      "minutos_activos": 0,
+      "fc_reposo": 42,
+      "estres_medio": 17,
+      "sueno_total_min": 475,
+      "sueno_profundo_min": 156,
+      "sueno_ligero_min": 254,
+      "sueno_rem_min": 65,
+      "sueno_puntuacion": 90
     }
   },
   "actualizado": "2026-10-07"

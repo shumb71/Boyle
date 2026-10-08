@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_015</title>
+<title>Entreno Boyle vEXT_017</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -563,9 +563,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_015', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_017', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_015 registrado:', reg.scope);
+        console.log('SW EXT_017 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -1948,7 +1948,7 @@ const EJ_INFO={
   "Push-up progression":{tipo:"prog",tecnica:"Flexión con progresión: inclinado → suelo → pies elevados → lastrado. Cuerpo en tabla."},
   "Bench Press + Med Ball":{tipo:"prog",tecnica:"Complejo: press + lanzamiento/press de balón en banco para potencia."},
   "Squat Holds":{tipo:"prog",tecnica:"Sostén isométrico en sentadilla. Tolerable en general; baja el rango si molesta la rodilla."},
-  "Hang Clean (65-75%)":{tipo:"prog",tecnica:"Hang clean al 65-75%. SIEMPRE primero. Extensión completa de cadera, calidad sobre cantidad."},
+  "Hang Clean (65-75%)":{tipo:"prog",tecnica:"Hang clean al 65-75% de tu máximo en cargada. SIEMPRE primero. Extensión completa de cadera, calidad sobre cantidad. Día ligero: busca velocidad y técnica limpia, no el límite. Si las 5 reps salen rápidas y limpias, puedes pasar a pos. 2 (barra más baja al arrancar) bajando algo de peso. Si molesta la rodilla o la lumbar, quédate en pos. 1."},
   'Hang Clean':{tipo:'prog',tecnica:'SIEMPRE primero en la sesion. Desde encima de rodillas. Extension completa de cadera. 3-5 reps max — calidad sobre cantidad.'},
   'DB Snatch / KB Swing':{tipo:'prog',tecnica:'KB Swing: cadera atras y adelante explosivo. No es una sentadilla. Alternativa al Hang Clean si hay fatiga o tecnica no consolidada.'},
   'Trap Bar Deadlift':{tipo:'prog',tecnica:'Agarre neutro en hex bar. Cadera baja al inicio. Empujar el suelo. Espalda neutra durante todo el recorrido. PARA si la lumbar se redondea.',alerta:'⚠️ Condropatía femoral medial: vigilar que las rodillas NO colapsen en valgo durante el tirón. Generalmente bien tolerado.'},
@@ -3109,10 +3109,38 @@ function renderDiaPicker(){
 }
 
 
+// [v017] Nombres equivalentes de un ejercicio: el del programa + su variante BASE
+// (VAR_TIPO='base'), y al reves. Asi "Single-leg RDL (Straight-leg DL)" y "Single-leg RDL"
+// comparten historial. NO incluye regresiones ni progresiones (otra carga), y no mezcla
+// "Hang Clean" con "Hang Clean (65-75%)" porque son ejercicios distintos del programa.
+function ejNombresEquiv(nombre){
+  var n=(nombre||'').replace(/&#39;/g,"'");
+  var res=[n];
+  if(typeof VARIANTES==='undefined'||typeof VAR_TIPO==='undefined') return res;
+  function add(x){ if(x&&res.indexOf(x)<0) res.push(x); }
+  function baseDe(k){
+    var vars=VARIANTES[k]||[], tipo=VAR_TIPO[k]||{};
+    for(var i=0;i<vars.length;i++){ if(tipo[vars[i]]==='base') return vars[i]; }
+    return null;
+  }
+  if(VARIANTES[n]) add(baseDe(n));            // ejercicio del programa -> su variante base
+  Object.keys(VARIANTES).forEach(function(k){ // variante base -> ejercicio del programa
+    if(baseDe(k)===n) add(k);
+  });
+  return res;
+}
+// Clave de ST.sets que corresponde a alguno de los nombres equivalentes (coincidencia exacta del nombre)
+function claveEsDeEj(k,eq,principal){
+  if(principal&&k.includes('_'+principal)) return true; // comportamiento previo
+  for(var i=0;i<eq.length;i++){ if(eq[i]!==principal&&k.endsWith('_'+eq[i])) return true; }
+  return false;
+}
+
 // Obtener ultima sesion de un ejercicio
 function getUltimaSesion(ej){
   var ejC=(ej||'').replace(/&#39;/g,"'");
-  const keys=Object.keys(ST.sets).filter(k=>k.includes('_'+ejC)).sort((a,b)=>{
+  var _eqU=ejNombresEquiv(ejC);
+  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqU,ejC)).sort((a,b)=>{
     const da=parseInt(a.split('_')[0].replace('d',''));
     const db=parseInt(b.split('_')[0].replace('d',''));
     return db-da;
@@ -3129,7 +3157,8 @@ function getUltimaSesion(ej){
 
 // Obtener historial completo de un ejercicio
 function getHistorialEj(ej){
-  const keys=Object.keys(ST.sets).filter(k=>k.includes('_'+ej)).sort((a,b)=>{
+  var _eqH=ejNombresEquiv(ej);
+  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqH,ej)).sort((a,b)=>{
     const da=parseInt(a.split('_')[0].replace('d',''));
     const db=parseInt(b.split('_')[0].replace('d',''));
     return db-da;
@@ -3143,7 +3172,9 @@ function getHistorialEj(ej){
 }
 
 function getHistorialEjInline(ejNombre,limit){
-  var lim=limit||3;
+  var lim=limit||5; // [v017] antes 3
+  var _eqI=ejNombresEquiv(ejNombre);
+  if(_eqI.indexOf(ejNombre)<0) _eqI.push(ejNombre); // conserva la comparacion previa con el nombre tal cual
   var result=[];
   var hoy=hoyLocal();
   var hist=ST.historialFechas||{};
@@ -3156,7 +3187,7 @@ function getHistorialEjInline(ejNombre,limit){
       if(result.length>=lim) return;
       var ejClean=(e.ej||'').replace(/^p\d+_s\d+_d\d+_/,'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
       var ejBaseClean=(e.ejBase||ejClean).replace(/^p\d+_s\d+_d\d+_/,'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
-      if(ejClean!==ejNombre&&ejBaseClean!==ejNombre) return;
+      if(_eqI.indexOf(ejClean)<0&&_eqI.indexOf(ejBaseClean)<0) return;
       var sv=(e.sets||[]).filter(function(s){return s&&(s.p>0||s.r>0||s.t>0);});
       if(sv.length) result.push({fecha:fecha,sets:sv});
     });
@@ -3166,7 +3197,7 @@ function getHistorialEjInline(ejNombre,limit){
     var prefix=getProgramaPrefix();
     var hoyKey=prefix+'d'+ST.dia+'_'+ejNombre;
     var matchKeys=Object.keys(ST.sets).filter(function(k){
-      return k!==hoyKey&&(k.includes('_'+ejNombre));
+      return k!==hoyKey&&claveEsDeEj(k,_eqI,ejNombre);
     }).sort().reverse();
     matchKeys.slice(0,lim).forEach(function(k){
       var sv=(ST.sets[k]||[]).filter(Boolean);
@@ -7790,11 +7821,13 @@ function abrirFichaEj(ejId){
   // no de las claves de ST.sets (que solo tienen día-de-ciclo 1-12, se repite cada 12 días
   // y ademas el parseo antiguo aqui no entendia el formato de clave actual p..._s..._d..._).
   var hist = [];
+  var _eqF = ejNombresEquiv(nombre).concat(ejNombresEquiv(ej.n)); // [v017] nombres equivalentes
   Object.keys(ST.historialFechas||{}).forEach(function(fecha){
     var ses = ST.historialFechas[fecha];
     if(!ses || !ses.completado || !ses.ejerciciosRealizados) return;
     ses.ejerciciosRealizados.forEach(function(e){
-      var coincide = e.ejBase===ej.n || e.ejBase===nombre || e.ej===ej.n || e.ej===nombre;
+      var coincide = e.ejBase===ej.n || e.ejBase===nombre || e.ej===ej.n || e.ej===nombre
+        || _eqF.indexOf(e.ej)>=0 || _eqF.indexOf(e.ejBase)>=0;
       if(!coincide) return;
       (e.sets||[]).forEach(function(s){
         if(s) hist.push({fecha:fecha, p:s.p, r:s.r, rpe:s.rpe});
@@ -8607,7 +8640,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_015';
+const APP_VERSION='vEXT_017';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

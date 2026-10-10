@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-09T18:05:54.615417+00:00",
+  "actualizado": "2026-10-10T00:32:11.392308+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -1025,7 +1025,7 @@
     },
     "2026-10-03": {
       "pasos": 5688,
-      "distancia_km": 20.82,
+      "distancia_km": 0.06,
       "minutos_activos": 9,
       "calorias_dia": 3161.64,
       "fc_reposo": 49.0,
@@ -1050,7 +1050,7 @@
       "sueno_rem_min": 81
     },
     "2026-10-04": {
-      "pasos": 11841,
+      "pasos": 4683,
       "distancia_km": 10.61,
       "minutos_activos": 102,
       "calorias_dia": 3174.89,
@@ -1077,7 +1077,7 @@
     "2026-10-05": {
       "pasos": 16098,
       "distancia_km": 9.51,
-      "minutos_activos": 213,
+      "minutos_activos": 100,
       "calorias_dia": 2826.13,
       "actividadesFitbit": [
         {
@@ -1194,18 +1194,49 @@
       "sueno_rem_min": 47
     },
     "2026-10-09": {
-      "calorias_dia": 2626.87,
+      "calorias_dia": 3362.47,
       "fc_reposo": 50.0,
       "hrv": 44.55,
-      "actividadesFitbit": [],
-      "pasos": 16140,
-      "distancia_km": 8.95,
-      "minutos_activos": 524,
+      "actividadesFitbit": [
+        {
+          "id": "7695772445254291472",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-10-09T20:08:22.400Z",
+          "fin": "2026-10-09T20:37:57.200Z",
+          "duracion_min": 30,
+          "calorias": 206,
+          "fc_media": 75,
+          "fc_max": null
+        }
+      ],
+      "pasos": 25788,
+      "distancia_km": 15.37,
+      "minutos_activos": 711,
       "spo2": 95.7,
       "sueno_total_min": 481,
       "sueno_profundo_min": 105,
       "sueno_ligero_min": 260,
       "sueno_rem_min": 116
+    },
+    "2026-10-10": {
+      "pasos": 4435,
+      "distancia_km": 3.74,
+      "minutos_activos": 64,
+      "calorias_dia": 355.15,
+      "actividadesFitbit": [
+        {
+          "id": "7937815173155791832",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-10-09T21:41:36.800Z",
+          "fin": "2026-10-09T22:02:11.600Z",
+          "duracion_min": 21,
+          "calorias": 141,
+          "fc_media": 74,
+          "fc_max": null
+        }
+      ]
     }
   }
 }

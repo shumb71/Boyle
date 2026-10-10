@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-10T09:32:47.995177+00:00",
+  "actualizado": "2026-10-10T17:05:06.256168+00:00",
   "dias": {
     "2026-08-22": {
       "pasos": 1828,
@@ -1051,7 +1051,7 @@
     },
     "2026-10-04": {
       "pasos": 4683,
-      "distancia_km": 8.29,
+      "distancia_km": 0.83,
       "minutos_activos": 102,
       "calorias_dia": 3174.89,
       "fc_reposo": 49.0,
@@ -1075,7 +1075,7 @@
       "sueno_rem_min": 108
     },
     "2026-10-05": {
-      "pasos": 16075,
+      "pasos": 3918,
       "distancia_km": 9.51,
       "minutos_activos": 100,
       "calorias_dia": 2826.13,
@@ -1104,7 +1104,7 @@
     "2026-10-06": {
       "pasos": 34826,
       "distancia_km": 19.32,
-      "minutos_activos": 389,
+      "minutos_activos": 266,
       "calorias_dia": 2997.2,
       "fc_reposo": 49.0,
       "hrv": 48.2,
@@ -1214,18 +1214,40 @@
       "distancia_km": 22.51,
       "minutos_activos": 711,
       "spo2": 95.7,
+      "peso_kg": 86.5,
       "sueno_total_min": 481,
       "sueno_profundo_min": 105,
       "sueno_ligero_min": 260,
-      "sueno_rem_min": 116,
-      "peso_kg": 86.5
+      "sueno_rem_min": 116
     },
     "2026-10-10": {
-      "pasos": 6766,
-      "distancia_km": 5.15,
-      "minutos_activos": 72,
-      "calorias_dia": 1033.64,
+      "pasos": 24738,
+      "distancia_km": 15.47,
+      "minutos_activos": 412,
+      "calorias_dia": 2487.12,
       "actividadesFitbit": [
+        {
+          "id": "8224699916078183864",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-10-10T14:36:34.400Z",
+          "fin": "2026-10-10T15:01:03.200Z",
+          "duracion_min": 24,
+          "calorias": 174,
+          "fc_media": 71,
+          "fc_max": null
+        },
+        {
+          "id": "7547016859321291976",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-10-10T13:29:46.400Z",
+          "fin": "2026-10-10T14:10:45.200Z",
+          "duracion_min": 41,
+          "calorias": 314,
+          "fc_media": 88,
+          "fc_max": null
+        },
         {
           "id": "7937815173155791832",
           "tipo": "WALKING",

@@ -3464,13 +3464,13 @@
     },
     "2026-10-08": {
       "fecha": "2026-10-08",
-      "pasos": 2584,
-      "calorias_dia": 2010.0,
-      "calorias_activas": 298.0,
-      "distancia_km": 2.16,
+      "pasos": 2645,
+      "calorias_dia": 2398.0,
+      "calorias_activas": 299.0,
+      "distancia_km": 2.21,
       "minutos_activos": 33,
       "fc_reposo": 49,
-      "estres_medio": 22,
+      "estres_medio": 23,
       "actividades": [
         {
           "nombre": "Fuerza",
@@ -3492,33 +3492,53 @@
     },
     "2026-10-09": {
       "fecha": "2026-10-09",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 10759,
+      "calorias_dia": 2414.0,
+      "calorias_activas": 315.0,
+      "distancia_km": 8.88,
+      "minutos_activos": 0,
+      "fc_reposo": 55,
+      "estres_medio": 33
     },
     "2026-10-10": {
       "fecha": "2026-10-10",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 16151,
+      "calorias_dia": 2523.0,
+      "calorias_activas": 424.0,
+      "distancia_km": 13.32,
+      "minutos_activos": 0,
+      "fc_reposo": 43,
+      "estres_medio": 24,
+      "sueno_total_min": 467,
+      "sueno_profundo_min": 108,
+      "sueno_ligero_min": 274,
+      "sueno_rem_min": 85,
+      "sueno_puntuacion": 79
     },
     "2026-10-11": {
       "fecha": "2026-10-11",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 19575,
+      "calorias_dia": 2257.0,
+      "calorias_activas": 1067.0,
+      "distancia_km": 13.2,
+      "minutos_activos": 46,
+      "fc_reposo": 46,
+      "estres_medio": 24,
+      "sueno_total_min": 459,
+      "sueno_profundo_min": 87,
+      "sueno_ligero_min": 296,
+      "sueno_rem_min": 76,
+      "sueno_puntuacion": 78,
+      "actividades": [
+        {
+          "nombre": "Cabra Senderismo",
+          "tipo": "hiking",
+          "duracion_min": 183,
+          "calorias": 1147.0,
+          "fc_media": 118.0,
+          "fc_max": 168.0
+        }
+      ]
     }
   },
   "actualizado": "2026-10-11"

@@ -42,6 +42,15 @@ v7 — Añadido procesar_peso(): peso corporal desde la báscula Renpho, vía Go
   patrón que se usó para exercise en v5/v6. Revisar ese log tras la primera ejecución real
   y ajustar procesar_peso() si el candidato acertado no es el primero de la lista.
 
+v8 — PASOS y DISTANCIA: pasaban a contarse 2-3 veces (reloj + móvil + Health Connect) porque
+  "dataPoints" (list) devuelve los datos CRUDOS de todas las fuentes sin fusionar. Según la doc
+  oficial, los totales diarios deben pedirse con dailyRollUp, que reconcilia fuentes y huecos.
+  Ahora: dailyRollUp con dataSourceFamily=google-wearables (solo relojes/trackers de Google y
+  Fitbit); si esa petición falla, se reintenta sin familia (all-sources, también reconciliada);
+  y solo si ambas fallan se usa el método antiguo (list) avisando en el log.
+  Además se pide daily-respiratory-rate (fr_respiratoria). Readiness y carga cardio NO existen
+  como tipos en la API v4, por eso solo se rellenan desde Takeout.
+
 Variables de entorno requeridas (Secrets del repo en GitHub):
   FITBIT_CLIENT_ID, FITBIT_CLIENT_SECRET, FITBIT_REFRESH_TOKEN
 """
@@ -157,8 +166,56 @@ def pedir_lista_interval(session, tipo_endpoint):
     return puntos
 
 
+def rollup_diario(session, tipo_endpoint, bloque, campo):
+    """dailyRollUp reconciliado. Devuelve {fecha: valor} o None si falla.
+    Prueba primero solo relojes de Google/Fitbit y, si falla, todas las fuentes reconciliadas."""
+    hoy = date.today()
+    desde_d = hoy - timedelta(days=DIAS_ATRAS)
+    hasta_d = hoy + timedelta(days=1)
+    url = f"{API_BASE}/users/me/dataTypes/{tipo_endpoint}/dataPoints:dailyRollUp"
+    for familia in ("google-wearables", None):
+        body = {
+            "range": {
+                "start": {"date": {"year": desde_d.year, "month": desde_d.month, "day": desde_d.day}},
+                "end": {"date": {"year": hasta_d.year, "month": hasta_d.month, "day": hasta_d.day}},
+            },
+            "windowSizeDays": 1,
+        }
+        if familia:
+            body["dataSourceFamily"] = f"users/me/dataSourceFamilies/{familia}"
+        etiqueta = familia or "all-sources"
+        try:
+            resp = session.post(url, json=body, timeout=30)
+            if not resp.ok:
+                print(f"  ⚠️  {tipo_endpoint} rollup ({etiqueta}): HTTP {resp.status_code} — {resp.text[:DEBUG_LEN]}")
+                continue
+            data = resp.json()
+        except requests.RequestException as e:
+            print(f"  ⚠️  {tipo_endpoint} rollup ({etiqueta}): error de red — {e}")
+            continue
+        puntos = data.get("rollupDataPoints") or data.get("rollup_data_points") or []
+        out = {}
+        for p in puntos:
+            civil = p.get("civilStartTime") or {}
+            fecha = fecha_desde_civil_date(civil.get("date"))
+            valor = a_numero((p.get(bloque) or {}).get(campo))
+            if fecha is not None and valor is not None:
+                out[fecha] = valor
+        if out:
+            print(f"  ✅ {tipo_endpoint}: {len(out)} días vía dailyRollUp ({etiqueta})")
+            return out
+        log_json(f"  ⚠️  {tipo_endpoint} rollup ({etiqueta}): sin valores reconocidos. Respuesta:", data)
+    return None
+
+
 def procesar_steps(session, dias):
-    print("Pidiendo steps...")
+    print("Pidiendo steps (dailyRollUp reconciliado)...")
+    rollup = rollup_diario(session, "steps", "steps", "countSum")
+    if rollup:
+        for fecha, total in rollup.items():
+            dias.setdefault(fecha, {})["pasos"] = round(total)
+        return
+    print("  ⚠️  steps: usando el método antiguo (list), puede contar varias fuentes a la vez.")
     puntos = pedir_lista_interval(session, "steps")
     if not puntos:
         return
@@ -180,7 +237,13 @@ def procesar_steps(session, dias):
 
 
 def procesar_distancia(session, dias):
-    print("Pidiendo distance...")
+    print("Pidiendo distance (dailyRollUp reconciliado)...")
+    rollup = rollup_diario(session, "distance", "distance", "millimetersSum")
+    if rollup:
+        for fecha, mm in rollup.items():
+            dias.setdefault(fecha, {})["distancia_km"] = round(mm / 1_000_000, 2)
+        return
+    print("  ⚠️  distance: usando el método antiguo (list), puede contar varias fuentes a la vez.")
     puntos = pedir_lista_interval(session, "distance")
     if not puntos:
         return
@@ -280,6 +343,7 @@ TIPOS_DAILY = [
     ("daily-resting-heart-rate", "dailyRestingHeartRate", ["beatsPerMinute", "value"], "fc_reposo"),
     ("daily-heart-rate-variability", "dailyHeartRateVariability", ["averageHeartRateVariabilityMilliseconds", "value"], "hrv"),
     ("daily-oxygen-saturation", "dailyOxygenSaturation", ["averagePercentage", "value"], "spo2"),
+    ("daily-respiratory-rate", "dailyRespiratoryRate", ["breathsPerMinute", "value"], "fr_respiratoria"),
 ]
 
 

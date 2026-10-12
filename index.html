@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_018</title>
+<title>Entreno Boyle vEXT_019</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -6952,7 +6952,7 @@ function toggleSection(id){
   }
 }
 
-// ── TURNO REAL + RECUPERACIÓN [vEXT_018] ─────────────────────────────────────
+// ── TURNO REAL + RECUPERACIÓN [vEXT_018, ampliado en vEXT_019] ─────────────────────────────────────
 // Por defecto cada día cuenta con el turno del cuadrante (ciclo anclado).
 // ST.turnoReal[fecha] = {t:'Manana'|'Tarde'|'Noche'|'Libre', c:false} SOLO si ese día se cambió.
 // Es lo único editable del informe de Recuperación: al cambiarlo se recalcula todo.
@@ -7001,7 +7001,7 @@ function recupDatos(){
     dias.push({f:f, t:turnoEfectivo(f), tp:turnoEfectivo(fechaMasDias(f,-1)), cu:turnoCuadranteFecha(f),
       hrv:g.hrv!=null?g.hrv:null, rhr:g.fc_reposo!=null?g.fc_reposo:null,
       sue:(g.sueno_total_min!=null&&g.sueno_total_min>=150)?g.sueno_total_min:null,
-      pasos:g.pasos!=null?g.pasos:null, peso:g.peso_kg!=null?g.peso_kg:null, pesas:pesas});
+      pasos:g.pasos!=null?g.pasos:null, peso:g.peso_kg!=null?g.peso_kg:null, rdy:g.readiness!=null?g.readiness:null, pesas:pesas});
   }
   return {dias:dias, desde:desde, H:H, HS:HS};
 }
@@ -7011,22 +7011,22 @@ function renderRecup(){
   var D=recupDatos(), dias=D.dias;
   if(!dias.length){ root.innerHTML='<div class="card"><div class="empty">Aún no hay días con datos de Fitbit.</div></div>'; return; }
   var chip=function(v,txt){ var on=_recupDias===v; return '<button onclick="_recupDias='+v+';renderRecup()" style="border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'+txt+'</button>'; };
-  var base={hrv:_media(dias.map(function(d){return d.hrv;})), rhr:_media(dias.map(function(d){return d.rhr;})), sue:_media(dias.map(function(d){return d.sue;})), pasos:_media(dias.map(function(d){return d.pasos;}))};
+  var base={rdy:_media(dias.map(function(d){return d.rdy;})), hrv:_media(dias.map(function(d){return d.hrv;})), rhr:_media(dias.map(function(d){return d.rhr;})), sue:_media(dias.map(function(d){return d.sue;})), pasos:_media(dias.map(function(d){return d.pasos;}))};
   var nPesas=dias.filter(function(d){return d.pesas;}).length, sem=dias.length/7;
   var html='<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem"><span class="card-lbl" style="margin:0 6px 0 0">Periodo</span>'+chip(28,'28 días')+chip(56,'56 días')+chip(0,'Todo')+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">'+
-    [['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
+    [['Readiness',base.rdy==null?'—':Math.round(base.rdy)],['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
     '</div><div style="font-size:10px;color:var(--text3);margin-top:6px">'+dias.length+' días desde '+D.desde+'. Con pocos días las diferencias son orientativas.</div></div>';
 
   // por turno
   var modoBtn=function(m,txt){ var on=_recupModo===m; return '<button onclick="_recupModo=\''+m+'\';renderRecup()" style="border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'+txt+'</button>'; };
   var filas=RECUP_TURNOS.map(function(p){
     var sel=dias.filter(function(d){ return (_recupModo==='dia'?d.t:d.tp)===p[0]; });
-    return {k:p[0],n:p[1],dias:sel.length,sue:_media(sel.map(function(d){return d.sue;})),hrv:_media(sel.map(function(d){return d.hrv;})),rhr:_media(sel.map(function(d){return d.rhr;})),pasos:_media(sel.map(function(d){return d.pasos;})),pesas:sel.filter(function(d){return d.pesas;}).length,nhrv:sel.filter(function(d){return d.hrv!=null;}).length};
+    return {k:p[0],n:p[1],dias:sel.length,sue:_media(sel.map(function(d){return d.sue;})),hrv:_media(sel.map(function(d){return d.hrv;})),rdy:_media(sel.map(function(d){return d.rdy;})),rhr:_media(sel.map(function(d){return d.rhr;})),pasos:_media(sel.map(function(d){return d.pasos;})),pesas:sel.filter(function(d){return d.pesas;}).length,nhrv:sel.filter(function(d){return d.hrv!=null;}).length};
   });
   html+='<div class="card"><div class="card-lbl">Recuperación por turno</div><div style="display:flex;gap:6px;margin-bottom:.6rem">'+modoBtn('dia','Turno del día')+modoBtn('post','Día después del turno')+'</div>'+
-    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text3);text-align:right"><th style="text-align:left;padding:4px">Turno</th><th>Días</th><th>Sueño</th><th>HRV</th><th>FC rep.</th><th>Pesas</th></tr></thead><tbody>'+
-    filas.map(function(f){ var pc=f.dias<5?'opacity:.55':''; return '<tr style="text-align:right;border-top:.5px solid rgba(128,128,128,.2);'+pc+'"><td style="text-align:left;padding:6px 4px;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+RECUP_COL[f.k]+';margin-right:5px"></span>'+f.n+'</td><td>'+f.dias+'</td><td>'+_fmt(f.sue==null?null:f.sue/60,1,' h')+'</td><td>'+_fmt(f.hrv,1)+'</td><td>'+_fmt(f.rhr,1)+'</td><td>'+f.pesas+'</td></tr>'; }).join('')+
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text3);text-align:right"><th style="text-align:left;padding:4px">Turno</th><th>Días</th><th>Sueño</th><th>HRV</th><th>Ready.</th><th>FC rep.</th><th>Pesas</th></tr></thead><tbody>'+
+    filas.map(function(f){ var pc=f.dias<5?'opacity:.55':''; return '<tr style="text-align:right;border-top:.5px solid rgba(128,128,128,.2);'+pc+'"><td style="text-align:left;padding:6px 4px;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+RECUP_COL[f.k]+';margin-right:5px"></span>'+f.n+'</td><td>'+f.dias+'</td><td>'+_fmt(f.sue==null?null:f.sue/60,1,' h')+'</td><td>'+_fmt(f.hrv,1)+'</td><td>'+(f.rdy==null?'—':Math.round(f.rdy))+'</td><td>'+_fmt(f.rhr,1)+'</td><td>'+f.pesas+'</td></tr>'; }).join('')+
     '</tbody></table></div>';
   var cand=filas.filter(function(f){return f.nhrv>=5&&f.hrv!=null;}).sort(function(a,b){return b.hrv-a.hrv;});
   if(cand.length>=2) html+='<div style="font-size:12px;color:var(--text2);margin-top:.6rem;line-height:1.5">HRV más alto con <strong>'+cand[0].n+'</strong> ('+cand[0].hrv.toFixed(1)+' ms) y más bajo con <strong>'+cand[cand.length-1].n+'</strong> ('+cand[cand.length-1].hrv.toFixed(1)+' ms). Filas con menos de 5 días, atenuadas.</div>';
@@ -7040,14 +7040,14 @@ function renderRecup(){
     var vol=0, rp=[];
     (s.ejerciciosRealizados||[]).forEach(function(e){ (e.sets||[]).forEach(function(st){ if(st.tipo==='reps') vol+=(st.r||0)*(st.p||0); if(st.rpe) rp.push(st.rpe); }); });
     var sig=D.H[fechaMasDias(f,1)]||{};
-    (porTipo[tipo]=porTipo[tipo]||[]).push({vol:vol,rpe:_media(rp),hrv:sig.hrv!=null?sig.hrv:null,rhr:sig.fc_reposo!=null?sig.fc_reposo:null,sue:(sig.sueno_total_min>=150)?sig.sueno_total_min:null});
+    (porTipo[tipo]=porTipo[tipo]||[]).push({vol:vol,rpe:_media(rp),hrv:sig.hrv!=null?sig.hrv:null,rdy:sig.readiness!=null?sig.readiness:null,rhr:sig.fc_reposo!=null?sig.fc_reposo:null,sue:(sig.sueno_total_min>=150)?sig.sueno_total_min:null});
   });
   var tipos=Object.keys(porTipo).sort();
   if(tipos.length){
-    html+='<div class="card"><div class="card-lbl">Sesiones y recuperación de la noche siguiente</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text3);text-align:right"><th style="text-align:left;padding:4px">Sesión</th><th>Nº</th><th>Vol. kg</th><th>RPE</th><th>HRV</th><th>FC rep.</th><th>Sueño</th></tr></thead><tbody>'+
-      tipos.map(function(t){ var a=porTipo[t]; var m=function(k){return _media(a.map(function(x){return x[k];}));}; var vol=m('vol'); return '<tr style="text-align:right;border-top:.5px solid rgba(128,128,128,.2);'+(a.length<4?'opacity:.55':'')+'"><td style="text-align:left;padding:6px 4px;font-weight:600">'+t+'</td><td>'+a.length+'</td><td>'+(vol==null?'—':Math.round(vol).toLocaleString('es-ES'))+'</td><td>'+_fmt(m('rpe'),1)+'</td><td>'+_fmt(m('hrv'),1)+'</td><td>'+_fmt(m('rhr'),1)+'</td><td>'+_fmt(m('sue')==null?null:m('sue')/60,1,' h')+'</td></tr>'; }).join('')+
-      '<tr style="text-align:right;border-top:1px solid rgba(128,128,128,.4);color:var(--text3)"><td style="text-align:left;padding:6px 4px">Media del periodo</td><td></td><td></td><td></td><td>'+_fmt(base.hrv,1)+'</td><td>'+_fmt(base.rhr,1)+'</td><td>'+_fmt(base.sue==null?null:base.sue/60,1,' h')+'</td></tr>'+
-      '</tbody></table></div><div style="font-size:10px;color:var(--text3);margin-top:6px">Volumen = reps × kg de los ejercicios por repeticiones. HRV, FC y sueño son los del día siguiente a la sesión.</div></div>';
+    html+='<div class="card"><div class="card-lbl">Sesiones y recuperación de la noche siguiente</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text3);text-align:right"><th style="text-align:left;padding:4px">Sesión</th><th>Nº</th><th>Vol. kg</th><th>RPE</th><th>HRV</th><th>Ready.</th><th>FC rep.</th><th>Sueño</th></tr></thead><tbody>'+
+      tipos.map(function(t){ var a=porTipo[t]; var m=function(k){return _media(a.map(function(x){return x[k];}));}; var vol=m('vol'); return '<tr style="text-align:right;border-top:.5px solid rgba(128,128,128,.2);'+(a.length<4?'opacity:.55':'')+'"><td style="text-align:left;padding:6px 4px;font-weight:600">'+t+'</td><td>'+a.length+'</td><td>'+(vol==null?'—':Math.round(vol).toLocaleString('es-ES'))+'</td><td>'+_fmt(m('rpe'),1)+'</td><td>'+_fmt(m('hrv'),1)+'</td><td>'+(m('rdy')==null?'—':Math.round(m('rdy')))+'</td><td>'+_fmt(m('rhr'),1)+'</td><td>'+_fmt(m('sue')==null?null:m('sue')/60,1,' h')+'</td></tr>'; }).join('')+
+      '<tr style="text-align:right;border-top:1px solid rgba(128,128,128,.4);color:var(--text3)"><td style="text-align:left;padding:6px 4px">Media del periodo</td><td></td><td></td><td></td><td>'+_fmt(base.hrv,1)+'</td><td>'+(base.rdy==null?'—':Math.round(base.rdy))+'</td><td>'+_fmt(base.rhr,1)+'</td><td>'+_fmt(base.sue==null?null:base.sue/60,1,' h')+'</td></tr>'+
+      '</tbody></table></div><div style="font-size:10px;color:var(--text3);margin-top:6px">Volumen = reps × kg de los ejercicios por repeticiones. HRV, readiness, FC y sueño son los del día siguiente a la sesión. El readiness solo existe en los días rellenados desde Takeout.</div></div>';
   }
 
   // gráfico
@@ -8774,7 +8774,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_018';
+const APP_VERSION='vEXT_019';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9005,7 +9005,8 @@ const GARMIN_JSON_URL = 'https://shumb71.github.io/Boyle/garmin_historial.json';
 // Decisión de Jou: Garmin = entrenos (actividades/fuerza), Fitbit Air = el resto del día.
 const FITBIT_OWNED_FIELDS=['pasos','calorias_dia','calorias_activas','fc_reposo','sueno_total_min',
   'sueno_profundo_min','sueno_ligero_min','sueno_rem_min','sueno_puntuacion','hrv','spo2',
-  'estres_medio','distancia_km','minutos_activos','peso_kg'];
+  'estres_medio','distancia_km','minutos_activos','peso_kg',
+  'readiness','carga_cardio','fr_respiratoria','azm'];
 
 // Fusiona un día proveniente de Garmin. Si ese día ya tiene datos de Fitbit (marcados con
 // _fuenteFitbit), Garmin SOLO aporta actividades/fuerza — no pisa pasos/sueño/FC/etc.

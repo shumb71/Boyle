@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_017</title>
+<title>Entreno Boyle vEXT_018</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -632,6 +632,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <div><div style="font-size:34px;font-weight:700;color:var(--text)" id="f-dia">—</div><div style="font-size:13px;color:var(--text2);margin-top:2px" id="f-turno">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="f-anclaje-lbl"></div></div>
         <div style="text-align:right"><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px" id="f-sesion">—</div><span id="f-tag" class="tag">—</span></div>
       </div>
+      <div id="f-turnoreal" style="margin-top:.75rem;padding-top:.6rem;border-top:.5px solid rgba(128,128,128,.25)"></div>
     </div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
@@ -1174,6 +1175,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   </div>
 
   <!-- PESO -->
+  <div class="screen" id="s-recup">
+    <div class="ph"><h1>Recuperación</h1><span style="font-size:13px;color:var(--text2)">Fitbit · Garmin · turnos</span></div>
+    <div id="recup-body"></div>
+  </div>
+
   <div class="screen" id="s-peso">
     <div class="ph"><h1>Peso</h1><span style="font-size:13px;color:var(--text2)">Báscula Renpho</span></div>
     <div class="card" id="peso-actual-card" style="text-align:center;padding:1.25rem 1rem">
@@ -1325,6 +1331,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </button>
       <button class="dnav-item" id="dnav-garmin" onclick="navTo('garmin','Garmin')">
         <i class="ti ti-device-watch dnav-icon" aria-hidden="true"></i><span class="dnav-label">Garmin Epic</span>
+      </button>
+      <button class="dnav-item" id="dnav-recup" onclick="navTo('recup','Recuperación')">
+        <i class="ti ti-heart-rate-monitor dnav-icon" aria-hidden="true"></i><span class="dnav-label">Recuperación</span>
       </button>
       <button class="dnav-item" id="dnav-peso" onclick="navTo('peso','Peso')">
         <i class="ti ti-scale dnav-icon" aria-hidden="true"></i><span class="dnav-label">Peso</span>
@@ -2784,7 +2793,7 @@ function getConfigFields(){
     alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},nutricionComidaAlimentos:ST.nutricionComidaAlimentos||{},
     boxeoBloque:ST.boxeoBloque||'B1',boxeoChecklist:ST.boxeoChecklist||{},boxeoSesiones:ST.boxeoSesiones||[],boxeoLibreItems:ST.boxeoLibreItems||[],
     espacioReducido:!!ST.espacioReducido,
-    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
+    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],turnoReal:ST.turnoReal||{},
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
     ciclosCompletados:ST.ciclosCompletados||[],
@@ -2828,7 +2837,7 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma',
+    'espacioReducido','actividadesFitbitOcultas','turnoReal','ultimoBackupLocal','ciclosCompletados','repoPrograma',
     'circuitos','circuitosSesiones'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
@@ -3353,6 +3362,7 @@ function toggleEnf(bodyId,btnId){
 }
 
 const renders={
+  recup(){ renderRecup(); },
   hoy(){
     // Autocorregir el día del ciclo desde la fecha de anclaje SIEMPRE que se muestre Hoy —
     // antes solo se recalculaba al fijar un día manual, así que si pasaba tiempo sin tocar
@@ -3370,6 +3380,7 @@ const renders={
     var fechaCorta=d.toLocaleDateString('es-ES',{day:'numeric',month:'numeric'});
     document.getElementById('f-dia').textContent='Dia '+c.d+' · '+fechaCorta;
     document.getElementById('f-turno').textContent=tnom(c.t)+' · '+c.h;
+    try{renderTurnoReal();}catch(e){}
     // Mostrar fecha de anclaje del ciclo
     var anclajeEl=document.getElementById('f-anclaje-lbl');
     if(anclajeEl){
@@ -6941,6 +6952,129 @@ function toggleSection(id){
   }
 }
 
+// ── TURNO REAL + RECUPERACIÓN [vEXT_018] ─────────────────────────────────────
+// Por defecto cada día cuenta con el turno del cuadrante (ciclo anclado).
+// ST.turnoReal[fecha] = {t:'Manana'|'Tarde'|'Noche'|'Libre', c:false} SOLO si ese día se cambió.
+// Es lo único editable del informe de Recuperación: al cambiarlo se recalcula todo.
+var _recupDias=56, _recupModo='dia', _recupChart=null;
+var RECUP_COL={Manana:'#e0a32e',Tarde:'#d9703a',Noche:'#4a5db0',Libre:'#3f9b6b'};
+var RECUP_TURNOS=[['Manana','Mañana'],['Tarde','Tarde'],['Noche','Noche'],['Libre','Libre']];
+function fechaMasDias(f,n){ var d=new Date(f+'T00:00:00'); d.setDate(d.getDate()+n); return fmtFechaLocal(d); }
+function turnoCuadranteFecha(f){ var d=calcularDiaDesdeAnclaje(f); return d?CICLO[(d-1)%12].t:null; }
+function turnoEfectivo(f){ var r=ST.turnoReal&&ST.turnoReal[f]; return (r&&r.t)||turnoCuadranteFecha(f); }
+function elegirTurno(f,t){
+  if(!ST.turnoReal) ST.turnoReal={};
+  if(!t||t===turnoCuadranteFecha(f)) delete ST.turnoReal[f]; else ST.turnoReal[f]={t:t,c:false};
+  save(); renderTurnoReal(); if(document.getElementById('s-recup')&&document.getElementById('s-recup').classList.contains('active')) renderRecup();
+}
+function _btnTurno(f,etq,t,sel,esCuad){
+  var bg=sel?RECUP_COL[t]:'var(--bg3)', fg=sel?'#fff':'var(--text2)';
+  return '<button onclick="elegirTurno(\''+f+'\',\''+t+'\')" style="border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;background:'+bg+';color:'+fg+'">'+etq+(esCuad?' •':'')+'</button>';
+}
+function _botonesTurno(f){
+  var ef=turnoEfectivo(f), cu=turnoCuadranteFecha(f);
+  return RECUP_TURNOS.map(function(p){ return _btnTurno(f,p[1],p[0],ef===p[0],cu===p[0]); }).join('');
+}
+function renderTurnoReal(){
+  var el=document.getElementById('f-turnoreal'); if(!el) return;
+  var f=hoyLocal(), cu=turnoCuadranteFecha(f);
+  if(!cu){ el.innerHTML=''; return; }
+  var r=ST.turnoReal&&ST.turnoReal[f];
+  var est=r?'<span style="color:var(--orange-text,#e65100)">Cambiado a '+tnom(r.t).split(' ')[0]+'</span>':'<span style="color:var(--text3)">Según cuadrante</span>';
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div class="card-lbl" style="margin-bottom:0">Turno de hoy</div><div style="font-size:12px;font-weight:600">'+est+'</div></div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+_botonesTurno(f)+'</div>'+
+    '<div style="font-size:10px;color:var(--text3);margin-top:5px">• = turno del cuadrante. Toca otro solo si hoy lo cambiaste.</div>';
+}
+function _media(a){ var v=a.filter(function(x){return x!=null&&!isNaN(x);}); return v.length?v.reduce(function(s,x){return s+x;},0)/v.length:null; }
+function _fmt(x,dec,suf){ return x==null?'—':x.toFixed(dec)+(suf||''); }
+function recupDatos(){
+  var H=ST.garminHist||{}, HS=ST.historialFechas||{};
+  var fechas=Object.keys(H).sort(), ini=null;
+  fechas.forEach(function(f){ if(ini===null&&H[f]&&H[f]._fuenteFitbit) ini=f; });
+  if(ini===null) ini=fechas[0]||hoyLocal();
+  var hoy=hoyLocal(), desde=ini;
+  if(_recupDias>0){ var d0=fechaMasDias(hoy,-_recupDias); if(d0>desde) desde=d0; }
+  var dias=[];
+  for(var f=desde; f<hoy; f=fechaMasDias(f,1)){
+    var g=H[f]||{}, s=HS[f];
+    var pesas=!!(s&&s.completado)||!!g.fuerza;
+    dias.push({f:f, t:turnoEfectivo(f), tp:turnoEfectivo(fechaMasDias(f,-1)), cu:turnoCuadranteFecha(f),
+      hrv:g.hrv!=null?g.hrv:null, rhr:g.fc_reposo!=null?g.fc_reposo:null,
+      sue:(g.sueno_total_min!=null&&g.sueno_total_min>=150)?g.sueno_total_min:null,
+      pasos:g.pasos!=null?g.pasos:null, peso:g.peso_kg!=null?g.peso_kg:null, pesas:pesas});
+  }
+  return {dias:dias, desde:desde, H:H, HS:HS};
+}
+function renderRecup(){
+  var root=document.getElementById('recup-body'); if(!root) return;
+  if(!ST.cicloAnclaje){ root.innerHTML='<div class="card"><div class="empty">Fija primero el anclaje del ciclo en Programa para conocer tus turnos.</div></div>'; return; }
+  var D=recupDatos(), dias=D.dias;
+  if(!dias.length){ root.innerHTML='<div class="card"><div class="empty">Aún no hay días con datos de Fitbit.</div></div>'; return; }
+  var chip=function(v,txt){ var on=_recupDias===v; return '<button onclick="_recupDias='+v+';renderRecup()" style="border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'+txt+'</button>'; };
+  var base={hrv:_media(dias.map(function(d){return d.hrv;})), rhr:_media(dias.map(function(d){return d.rhr;})), sue:_media(dias.map(function(d){return d.sue;})), pasos:_media(dias.map(function(d){return d.pasos;}))};
+  var nPesas=dias.filter(function(d){return d.pesas;}).length, sem=dias.length/7;
+  var html='<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem"><span class="card-lbl" style="margin:0 6px 0 0">Periodo</span>'+chip(28,'28 días')+chip(56,'56 días')+chip(0,'Todo')+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">'+
+    [['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
+    '</div><div style="font-size:10px;color:var(--text3);margin-top:6px">'+dias.length+' días desde '+D.desde+'. Con pocos días las diferencias son orientativas.</div></div>';
+
+  // por turno
+  var modoBtn=function(m,txt){ var on=_recupModo===m; return '<button onclick="_recupModo=\''+m+'\';renderRecup()" style="border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'+txt+'</button>'; };
+  var filas=RECUP_TURNOS.map(function(p){
+    var sel=dias.filter(function(d){ return (_recupModo==='dia'?d.t:d.tp)===p[0]; });
+    return {k:p[0],n:p[1],dias:sel.length,sue:_media(sel.map(function(d){return d.sue;})),hrv:_media(sel.map(function(d){return d.hrv;})),rhr:_media(sel.map(function(d){return d.rhr;})),pasos:_media(sel.map(function(d){return d.pasos;})),pesas:sel.filter(function(d){return d.pesas;}).length,nhrv:sel.filter(function(d){return d.hrv!=null;}).length};
+  });
+  html+='<div class="card"><div class="card-lbl">Recuperación por turno</div><div style="display:flex;gap:6px;margin-bottom:.6rem">'+modoBtn('dia','Turno del día')+modoBtn('post','Día después del turno')+'</div>'+
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text3);text-align:right"><th style="text-align:left;padding:4px">Turno</th><th>Días</th><th>Sueño</th><th>HRV</th><th>FC rep.</th><th>Pesas</th></tr></thead><tbody>'+
+    filas.map(function(f){ var pc=f.dias<5?'opacity:.55':''; return '<tr style="text-align:right;border-top:.5px solid rgba(128,128,128,.2);'+pc+'"><td style="text-align:left;padding:6px 4px;font-weight:600"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+RECUP_COL[f.k]+';margin-right:5px"></span>'+f.n+'</td><td>'+f.dias+'</td><td>'+_fmt(f.sue==null?null:f.sue/60,1,' h')+'</td><td>'+_fmt(f.hrv,1)+'</td><td>'+_fmt(f.rhr,1)+'</td><td>'+f.pesas+'</td></tr>'; }).join('')+
+    '</tbody></table></div>';
+  var cand=filas.filter(function(f){return f.nhrv>=5&&f.hrv!=null;}).sort(function(a,b){return b.hrv-a.hrv;});
+  if(cand.length>=2) html+='<div style="font-size:12px;color:var(--text2);margin-top:.6rem;line-height:1.5">HRV más alto con <strong>'+cand[0].n+'</strong> ('+cand[0].hrv.toFixed(1)+' ms) y más bajo con <strong>'+cand[cand.length-1].n+'</strong> ('+cand[cand.length-1].hrv.toFixed(1)+' ms). Filas con menos de 5 días, atenuadas.</div>';
+  html+='</div>';
+
+  // sesiones D1-D4
+  var porTipo={};
+  Object.keys(D.HS).sort().forEach(function(f){
+    var s=D.HS[f]; if(!s||!s.completado||f<D.desde||f>=hoyLocal()) return;
+    var tipo=s.diaBoyleReal||s.diaBoyleProg; if(!tipo) return;
+    var vol=0, rp=[];
+    (s.ejerciciosRealizados||[]).forEach(function(e){ (e.sets||[]).forEach(function(st){ if(st.tipo==='reps') vol+=(st.r||0)*(st.p||0); if(st.rpe) rp.push(st.rpe); }); });
+    var sig=D.H[fechaMasDias(f,1)]||{};
+    (porTipo[tipo]=porTipo[tipo]||[]).push({vol:vol,rpe:_media(rp),hrv:sig.hrv!=null?sig.hrv:null,rhr:sig.fc_reposo!=null?sig.fc_reposo:null,sue:(sig.sueno_total_min>=150)?sig.sueno_total_min:null});
+  });
+  var tipos=Object.keys(porTipo).sort();
+  if(tipos.length){
+    html+='<div class="card"><div class="card-lbl">Sesiones y recuperación de la noche siguiente</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:var(--text3);text-align:right"><th style="text-align:left;padding:4px">Sesión</th><th>Nº</th><th>Vol. kg</th><th>RPE</th><th>HRV</th><th>FC rep.</th><th>Sueño</th></tr></thead><tbody>'+
+      tipos.map(function(t){ var a=porTipo[t]; var m=function(k){return _media(a.map(function(x){return x[k];}));}; var vol=m('vol'); return '<tr style="text-align:right;border-top:.5px solid rgba(128,128,128,.2);'+(a.length<4?'opacity:.55':'')+'"><td style="text-align:left;padding:6px 4px;font-weight:600">'+t+'</td><td>'+a.length+'</td><td>'+(vol==null?'—':Math.round(vol).toLocaleString('es-ES'))+'</td><td>'+_fmt(m('rpe'),1)+'</td><td>'+_fmt(m('hrv'),1)+'</td><td>'+_fmt(m('rhr'),1)+'</td><td>'+_fmt(m('sue')==null?null:m('sue')/60,1,' h')+'</td></tr>'; }).join('')+
+      '<tr style="text-align:right;border-top:1px solid rgba(128,128,128,.4);color:var(--text3)"><td style="text-align:left;padding:6px 4px">Media del periodo</td><td></td><td></td><td></td><td>'+_fmt(base.hrv,1)+'</td><td>'+_fmt(base.rhr,1)+'</td><td>'+_fmt(base.sue==null?null:base.sue/60,1,' h')+'</td></tr>'+
+      '</tbody></table></div><div style="font-size:10px;color:var(--text3);margin-top:6px">Volumen = reps × kg de los ejercicios por repeticiones. HRV, FC y sueño son los del día siguiente a la sesión.</div></div>';
+  }
+
+  // gráfico
+  html+='<div class="card"><div class="card-lbl">Sueño (barras, color = turno) y HRV (línea)</div><div style="position:relative;height:230px"><canvas id="recup-chart"></canvas></div></div>';
+
+  // lista editable
+  html+='<div class="card"><div class="card-lbl">Turno de cada día</div><div style="font-size:12px;color:var(--text3);margin-bottom:.6rem;line-height:1.5">Cada día cuenta con el turno del cuadrante (•). Cambia solo los días en que hiciste otro turno y el informe se recalcula.</div>';
+  var n=0;
+  for(var i=dias.length-1;i>=0&&n<45;i--,n++){
+    var d=dias[i], dd=new Date(d.f+'T00:00:00');
+    var cambiado=!!(ST.turnoReal&&ST.turnoReal[d.f]);
+    html+='<div style="padding:.45rem 0;border-top:.5px solid rgba(128,128,128,.2)"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">'+dd.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'})+'</span><span style="color:'+(cambiado?'var(--orange-text,#e65100)':'var(--text3)')+'">'+(cambiado?'cambiado':'cuadrante')+'</span></div><div style="display:flex;gap:5px;flex-wrap:wrap">'+_botonesTurno(d.f)+'</div></div>';
+  }
+  html+='</div>';
+  root.innerHTML=html;
+  dibujarRecupChart(dias);
+}
+function dibujarRecupChart(dias){
+  var cv=document.getElementById('recup-chart'); if(!cv||typeof Chart==='undefined') return;
+  if(_recupChart){ try{_recupChart.destroy();}catch(e){} _recupChart=null; }
+  var fg=getComputedStyle(document.body).getPropertyValue('--text2')||'#888';
+  _recupChart=new Chart(cv,{data:{labels:dias.map(function(d){return d.f.slice(5);}),datasets:[
+    {type:'bar',label:'Sueño (h)',data:dias.map(function(d){return d.sue==null?null:Math.round(d.sue/6)/10;}),backgroundColor:dias.map(function(d){return RECUP_COL[d.t]||'#999';}),yAxisID:'y',order:2},
+    {type:'line',label:'HRV (ms)',data:dias.map(function(d){return d.hrv;}),borderColor:'#888',backgroundColor:'#888',pointRadius:2,borderWidth:1.5,spanGaps:true,yAxisID:'y2',order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:8,color:fg}},y:{min:0,ticks:{color:fg},title:{display:true,text:'h',color:fg}},y2:{position:'right',grid:{display:false},ticks:{color:fg},title:{display:true,text:'ms',color:fg}}}}});
+}
+
 // ── ANCLAJE DE CICLO A FECHA REAL ────────────────────────────────────────────
 function calcularDiaDesdeAnclaje(fechaStr){
   if(!ST.cicloAnclaje) return null;
@@ -8640,7 +8774,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_017';
+const APP_VERSION='vEXT_018';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9041,6 +9175,7 @@ async function fetchFitbitAuto(manual) {
     if (typeof renderHoy === 'function') renderHoy();
     if(document.getElementById('s-cal')&&document.getElementById('s-cal').classList.contains('active')&&typeof renders!=='undefined'&&renders.cal) renders.cal();
     if(document.getElementById('s-peso')&&document.getElementById('s-peso').classList.contains('active')&&typeof renders!=='undefined'&&renders.peso) renders.peso();
+    if(document.getElementById('s-recup')&&document.getElementById('s-recup').classList.contains('active')) renderRecup();
 
     const total = Object.keys(data.dias).length;
     if (statusEl) {

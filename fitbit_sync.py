@@ -670,11 +670,15 @@ def main():
     session.headers.update({"Authorization": f"Bearer {access_token}"})
 
     dias = {}
+    extra = {}  # claves que no genera la sincronización (p. ej. fecha del último Takeout)
     if os.path.exists(OUTPUT_FILE):
         try:
             with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
                 previo = json.load(f)
                 dias = previo.get("dias", {})
+                for k in ("takeout_importado", "takeout_hasta"):
+                    if k in previo:
+                        extra[k] = previo[k]
         except (json.JSONDecodeError, OSError):
             print("⚠️  No se pudo leer el fitbit_historial.json previo, empezando de cero.")
 
@@ -687,8 +691,18 @@ def main():
     procesar_ejercicios(session, dias)
     procesar_peso(session, dias)
 
+    # Resumen: último día con dato de cada campo clave (la app avisa si se queda atrás)
+    campos_resumen = ["pasos", "fc_reposo", "hrv", "sueno_total_min", "calorias_dia", "peso_kg"]
+    ultimos = {}
+    for campo in campos_resumen:
+        fechas = [f for f, v in dias.items() if isinstance(v, dict) and v.get(campo) is not None]
+        ultimos[campo] = max(fechas) if fechas else None
+    print("📋 Último día con dato:", ", ".join(f"{c}={u or '—'}" for c, u in ultimos.items()))
+
     salida = {
         "actualizado": datetime.now(timezone.utc).isoformat(),
+        **extra,
+        "sync_resumen": {"ultimo_dato": ultimos},
         "dias": dias,
     }
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:

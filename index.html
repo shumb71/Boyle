@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_020</title>
+<title>Entreno Boyle vEXT_021</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -6952,7 +6952,7 @@ function toggleSection(id){
   }
 }
 
-// ── TURNO REAL + RECUPERACIÓN [vEXT_018, ampliado en vEXT_019 y vEXT_020] ─────────────────────────────────────
+// ── TURNO REAL + RECUPERACIÓN [vEXT_018, ampliado en vEXT_019 y vEXT_021] ─────────────────────────────────────
 // Por defecto cada día cuenta con el turno del cuadrante (ciclo anclado).
 // ST.turnoReal[fecha] = {t:'Manana'|'Tarde'|'Noche'|'Libre', c:false} SOLO si ese día se cambió.
 // Es lo único editable del informe de Recuperación: al cambiarlo se recalcula todo.
@@ -6987,7 +6987,7 @@ function renderTurnoReal(){
 }
 function _media(a){ var v=a.filter(function(x){return x!=null&&!isNaN(x);}); return v.length?v.reduce(function(s,x){return s+x;},0)/v.length:null; }
 function _fmt(x,dec,suf){ return x==null?'—':x.toFixed(dec)+(suf||''); }
-// ── VISTA DIARIA + PREMISAS [vEXT_020] ───────────────────────────────────────
+// ── VISTA DIARIA + PREMISAS [vEXT_021] ───────────────────────────────────────
 var RECUP_EST={v:'#3f9b6b',a:'#d9a02e',r:'#cf4d4d'}, _recupSel=null, _recupListaN=14;
 var RECUP_CAT={pesas:{i:'💪',n:'Pesas'},senderismo:{i:'🥾',n:'Senderismo'},natacion:{i:'🏊',n:'Natación'},caminata:{i:'🚶',n:'Caminata'},otro:{i:'🏃',n:'Actividad'}};
 function _recupVista(){ try{return localStorage.getItem('recup_vista')||'lista';}catch(e){return 'lista';} }
@@ -7169,6 +7169,27 @@ function recupHtmlDias(D,dias,B){
   return html;
 }
 
+// Estado de las fuentes de datos: último Takeout importado (rojo si >30 días) y avisos de datos atrasados
+function recupHtmlFuentes(){
+  var hoy=hoyLocal(), out='';
+  var dif=function(f){ return Math.round((new Date(hoy+'T12:00:00')-new Date(f+'T12:00:00'))/86400000); };
+  var tk=ST.takeoutImportado, rojo='color:var(--red-text,#d32f2f);font-weight:700';
+  var txtTk, estTk='color:var(--text2)';
+  if(!tk){ txtTk='Último Takeout importado: sin registrar'; estTk=rojo; }
+  else {
+    var d=dif(tk), fmt=new Date(tk+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
+    txtTk='Último Takeout importado: '+fmt+' ('+(d<=0?'hoy':d===1?'hace 1 día':'hace '+d+' días')+')';
+    if(d>30){ estTk=rojo; txtTk+=' · toca exportar uno nuevo'; }
+  }
+  if(ST.takeoutHasta) txtTk+=' · datos hasta '+new Date(ST.takeoutHasta+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+  out+='<div style="font-size:12px;margin:0 2px .5rem;'+estTk+'">'+txtTk+'</div>';
+  // avisos: campos clave de Fitbit sin dato reciente (más de 2 días)
+  var U=ST.fitbitUltimoDato, etq={hrv:'HRV',sueno_total_min:'sueño',pasos:'pasos',fc_reposo:'FC en reposo'}, atras=[];
+  if(U) Object.keys(etq).forEach(function(k){ if(U[k]&&dif(U[k])>2) atras.push(etq[k]+' (último: '+new Date(U[k]+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})+')'); });
+  if(atras.length) out+='<div style="font-size:12px;margin:0 2px .5rem;color:var(--orange-text,#e65100)">⚠️ Sin datos recientes de Fitbit: '+atras.join(', ')+'. Revisa la sincronización.</div>';
+  return out;
+}
+
 function renderRecup(){
   var root=document.getElementById('recup-body'); if(!root) return;
   if(!ST.cicloAnclaje){ root.innerHTML='<div class="card"><div class="empty">Fija primero el anclaje del ciclo en Programa para conocer tus turnos.</div></div>'; return; }
@@ -7177,7 +7198,7 @@ function renderRecup(){
   var chip=function(v,txt){ var on=_recupDias===v; return '<button onclick="_recupDias='+v+';renderRecup()" style="border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'+txt+'</button>'; };
   var base={rdy:_media(dias.map(function(d){return d.rdy;})), hrv:_media(dias.map(function(d){return d.hrv;})), rhr:_media(dias.map(function(d){return d.rhr;})), sue:_media(dias.map(function(d){return d.sue;})), pasos:_media(dias.map(function(d){return d.pasos;}))};
   var nPesas=dias.filter(function(d){return d.pesas;}).length, sem=dias.length/7;
-  var html='<style>#recup-body th,#recup-body td{padding:3px 5px;white-space:nowrap}</style><div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem"><span class="card-lbl" style="margin:0 6px 0 0">Periodo</span>'+chip(28,'28 días')+chip(56,'56 días')+chip(0,'Todo')+'</div>'+
+  var html='<style>#recup-body th,#recup-body td{padding:3px 5px;white-space:nowrap}</style>'+recupHtmlFuentes()+'<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem"><span class="card-lbl" style="margin:0 6px 0 0">Periodo</span>'+chip(28,'28 días')+chip(56,'56 días')+chip(0,'Todo')+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">'+
     [['Readiness',base.rdy==null?'—':Math.round(base.rdy)],['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
     '</div><div style="font-size:10px;color:var(--text3);margin-top:6px">'+dias.length+' días desde '+D.desde+'. Con pocos días las diferencias son orientativas.</div></div>';
@@ -8940,7 +8961,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_020';
+const APP_VERSION='vEXT_021';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9337,6 +9358,9 @@ async function fetchFitbitAuto(manual) {
     var horaLocal = ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     var fechaLocal = ahora.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
     ST.fitbitActualizado = (data.actualizado||fechaLocal) + ' · ' + horaLocal;
+    ST.takeoutImportado = data.takeout_importado || null;
+    ST.takeoutHasta = data.takeout_hasta || null;
+    ST.fitbitUltimoDato = (data.sync_resumen && data.sync_resumen.ultimo_dato) || null;
     save();
     if (typeof renderGarminHoy === 'function') renderGarminHoy();
     if (typeof renderHoy === 'function') renderHoy();

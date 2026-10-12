@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_017</title>
+<title>Entreno Boyle vEXT_018</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -632,6 +632,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         <div><div style="font-size:34px;font-weight:700;color:var(--text)" id="f-dia">—</div><div style="font-size:13px;color:var(--text2);margin-top:2px" id="f-turno">—</div><div style="font-size:11px;color:var(--text3);margin-top:2px" id="f-anclaje-lbl"></div></div>
         <div style="text-align:right"><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px" id="f-sesion">—</div><span id="f-tag" class="tag">—</span></div>
       </div>
+      <div id="f-turnoreal" style="margin-top:.75rem;padding-top:.6rem;border-top:.5px solid rgba(128,128,128,.25)"></div>
     </div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
@@ -805,6 +806,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         </div>
       </div>
       <div id="c-list"></div>
+    </div>
+
+    <!-- REGISTRO DE TURNOS REALES -->
+    <div class="card">
+      <div class="card-lbl">Registro de turnos reales</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:.6rem;line-height:1.5">Marca si hiciste el turno del cuadrante o si lo cambiaste. Sirve para cruzarlo con sueño, HRV y recuperación.</div>
+      <div style="margin-bottom:.6rem"><button class="bkbtn" onclick="turnoRealMarcarPasados()"><i class="ti ti-checks"></i> Marcar como cuadrante los días sin revisar</button></div>
+      <div id="c-turnoreal"></div>
     </div>
 
     <!-- HISTORIAL DE PROGRAMACIÓN -->
@@ -2784,7 +2793,7 @@ function getConfigFields(){
     alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},nutricionComidaAlimentos:ST.nutricionComidaAlimentos||{},
     boxeoBloque:ST.boxeoBloque||'B1',boxeoChecklist:ST.boxeoChecklist||{},boxeoSesiones:ST.boxeoSesiones||[],boxeoLibreItems:ST.boxeoLibreItems||[],
     espacioReducido:!!ST.espacioReducido,
-    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],
+    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],turnoReal:ST.turnoReal||{},
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
     ciclosCompletados:ST.ciclosCompletados||[],
@@ -2828,7 +2837,7 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','actividadesFitbitOcultas','ultimoBackupLocal','ciclosCompletados','repoPrograma',
+    'espacioReducido','actividadesFitbitOcultas','turnoReal','ultimoBackupLocal','ciclosCompletados','repoPrograma',
     'circuitos','circuitosSesiones'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
@@ -3370,6 +3379,7 @@ const renders={
     var fechaCorta=d.toLocaleDateString('es-ES',{day:'numeric',month:'numeric'});
     document.getElementById('f-dia').textContent='Dia '+c.d+' · '+fechaCorta;
     document.getElementById('f-turno').textContent=tnom(c.t)+' · '+c.h;
+    try{renderTurnoReal();}catch(e){}
     // Mostrar fecha de anclaje del ciclo
     var anclajeEl=document.getElementById('f-anclaje-lbl');
     if(anclajeEl){
@@ -4652,6 +4662,7 @@ function verDiaBoyle(d){
 }
 
 function renderCicloBoyle(){
+  try{renderRegistroTurnos();}catch(e){}
   var cl=document.getElementById('c-list');
   if(!cl) return;
   cl.innerHTML=CICLO.map(function(c){
@@ -6941,6 +6952,84 @@ function toggleSection(id){
   }
 }
 
+// ── TURNO REAL vs CUADRANTE [vEXT_018] ───────────────────────────────────────
+// ST.turnoReal[fecha] = {t:'Manana'|'Tarde'|'Noche'|'Libre', c:true|false}
+//   c=true  → se hizo el turno que marcaba el cuadrante
+//   c=false → se cambió a otro turno (t es el que se hizo de verdad)
+// Un día sin entrada = sin revisar (no se usa en los análisis).
+function turnoCuadranteFecha(fecha){
+  var d=calcularDiaDesdeAnclaje(fecha);
+  return d?CICLO[(d-1)%12].t:null;
+}
+function getTurnoReal(fecha){ return (ST.turnoReal&&ST.turnoReal[fecha])||null; }
+function setTurnoReal(fecha,modo,t){
+  if(!ST.turnoReal) ST.turnoReal={};
+  var cuad=turnoCuadranteFecha(fecha);
+  if(modo==='borrar'){ delete ST.turnoReal[fecha]; }
+  else if(modo==='cuadrante'){ if(!cuad) return; ST.turnoReal[fecha]={t:cuad,c:true}; }
+  else if(modo==='cambio'){ if(!t) return; ST.turnoReal[fecha]={t:t,c:(t===cuad)}; }
+  save();
+  renderTurnoReal(); renderRegistroTurnos();
+}
+function turnoRealMarcarPasados(){
+  if(!ST.cicloAnclaje) return;
+  if(!ST.turnoReal) ST.turnoReal={};
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  for(var i=1;i<=60;i++){
+    var f=fmtFechaLocal(new Date(hoy.getTime()-i*86400000));
+    if(ST.turnoReal[f]) continue;
+    var cuad=turnoCuadranteFecha(f); if(!cuad) continue;
+    ST.turnoReal[f]={t:cuad,c:true};
+  }
+  save(); renderTurnoReal(); renderRegistroTurnos();
+}
+function _btnTurno(fecha,txt,onSel,sel,verde){
+  var on=sel?'background:'+(verde?'var(--green,#2e7d32)':'var(--blue)')+';color:#fff':'background:var(--bg3);color:var(--text2)';
+  return '<button onclick="'+onSel+'" style="border:none;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;'+on+'">'+txt+'</button>';
+}
+function _botonesTurno(fecha,actual){
+  var out='';
+  [['Manana','Mañana'],['Tarde','Tarde'],['Noche','Noche'],['Libre','Libre']].forEach(function(p){
+    out+=_btnTurno(fecha,p[1],"setTurnoReal('"+fecha+"','cambio','"+p[0]+"')",actual&&!actual.c&&actual.t===p[0],false);
+  });
+  return out;
+}
+function _estadoTurno(r){
+  if(!r) return '<span style="color:var(--text3)">sin revisar</span>';
+  if(r.c) return '<span style="color:var(--green-text,#2e7d32)">✓ según cuadrante</span>';
+  return '<span style="color:var(--orange-text,#e65100)">cambiado a '+tnom(r.t).split(' ')[0]+'</span>';
+}
+function renderTurnoReal(){
+  var el=document.getElementById('f-turnoreal'); if(!el) return;
+  var f=hoyLocal(), cuad=turnoCuadranteFecha(f);
+  if(!cuad){ el.innerHTML=''; return; }
+  var r=getTurnoReal(f);
+  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div class="card-lbl" style="margin-bottom:0">Turno real de hoy</div><div style="font-size:12px;font-weight:600">'+_estadoTurno(r)+'</div></div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
+    _btnTurno(f,'Según cuadrante ('+tnom(cuad).split(' ')[0]+')',"setTurnoReal('"+f+"','cuadrante')",r&&r.c,true)+
+    '<span style="font-size:11px;color:var(--text3)">o cambié a:</span>'+_botonesTurno(f,r)+'</div>';
+}
+function renderRegistroTurnos(){
+  var el=document.getElementById('c-turnoreal'); if(!el) return;
+  if(!ST.cicloAnclaje){ el.innerHTML='<div style="font-size:12px;color:var(--text3)">Fija primero el anclaje del ciclo.</div>'; return; }
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  var html='';
+  for(var i=0;i<=30;i++){
+    var d=new Date(hoy.getTime()-i*86400000), f=fmtFechaLocal(d), cuad=turnoCuadranteFecha(f);
+    if(!cuad) continue;
+    var r=getTurnoReal(f);
+    var etq=d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'});
+    html+='<div style="padding:.5rem 0;border-bottom:.5px solid rgba(128,128,128,.2)">'+
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="font-weight:600">'+etq+(i===0?' · hoy':'')+' <span style="font-weight:400;color:var(--text3)">· cuadrante: '+tnom(cuad).split(' ')[0]+'</span></span><span>'+_estadoTurno(r)+'</span></div>'+
+      '<div style="display:flex;gap:5px;flex-wrap:wrap">'+
+      _btnTurno(f,'✓ Cuadrante',"setTurnoReal('"+f+"','cuadrante')",r&&r.c,true)+
+      _botonesTurno(f,r)+
+      (r?'<button onclick="setTurnoReal(\''+f+'\',\'borrar\')" style="border:none;background:transparent;color:var(--text3);font-size:11px;cursor:pointer">✕</button>':'')+
+      '</div></div>';
+  }
+  el.innerHTML=html||'<div style="font-size:12px;color:var(--text3)">Sin días en el rango del anclaje.</div>';
+}
+
 // ── ANCLAJE DE CICLO A FECHA REAL ────────────────────────────────────────────
 function calcularDiaDesdeAnclaje(fechaStr){
   if(!ST.cicloAnclaje) return null;
@@ -8640,7 +8729,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_017';
+const APP_VERSION='vEXT_018';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

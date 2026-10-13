@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_021</title>
+<title>Entreno Boyle vEXT_022</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1380,6 +1380,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="ig" id="ig-dist" style="display:none"><label>Distancia (metros)</label><input type="number" id="m-d" placeholder="20" min="1" inputmode="numeric"></div>
     <div class="ig"><label>RPE — esfuerzo 1-10</label><input type="number" id="m-rpe" placeholder="7" min="1" max="10" inputmode="numeric"></div>
     <div class="ig"><label>Nota (opcional)</label><input type="text" id="m-n" placeholder="Todo bien..."></div>
+    <div class="ig" id="ig-dec"><label>Próxima vez con este ejercicio</label>
+      <div style="display:flex;gap:8px">
+        <button type="button" id="mdec-up" onclick="setDecEj('up')" aria-label="Subir carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><i class="ti ti-arrow-up"></i></button>
+        <button type="button" id="mdec-eq" onclick="setDecEj('eq')" aria-label="Mantener carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><i class="ti ti-equal"></i></button>
+        <button type="button" id="mdec-down" onclick="setDecEj('down')" aria-label="Bajar carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><i class="ti ti-arrow-down"></i></button>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:.5px solid var(--border)">
       <div><div style="font-size:14px;font-weight:600;color:var(--text)">Aplicar a todas las series</div><div style="font-size:12px;color:var(--text2);margin-top:1px">Mismo peso en todas</div></div>
       <label style="position:relative;display:inline-block;width:48px;height:28px;flex-shrink:0">
@@ -2815,6 +2822,7 @@ function saveSetV2(fecha,ej){
   fbDb.collection(FB_COL_V2).doc(fbUser.uid).collection('sets').doc(docId).set({
     fecha:fecha,ejercicio:ej,diaCiclo:dia,sem:sem,sets:sets,
     checkManual:!!(ST.checksManual&&ST.checksManual[key]),
+    dec:(ST.decEj&&ST.decEj[key])||null,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
   }).catch(function(e){console.warn('saveSet error',e);});
 }
@@ -3198,7 +3206,7 @@ function getHistorialEjInline(ejNombre,limit){
       var ejBaseClean=(e.ejBase||ejClean).replace(/^p\d+_s\d+_d\d+_/,'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
       if(_eqI.indexOf(ejClean)<0&&_eqI.indexOf(ejBaseClean)<0) return;
       var sv=(e.sets||[]).filter(function(s){return s&&(s.p>0||s.r>0||s.t>0);});
-      if(sv.length) result.push({fecha:fecha,sets:sv});
+      if(sv.length) result.push({fecha:fecha,sets:sv,dec:e.dec||null});
     });
   });
   // Fallback: ST.sets si historialFechas no tiene datos para este ejercicio
@@ -3218,7 +3226,7 @@ function getHistorialEjInline(ejNombre,limit){
         return String(ST.fechaSesiones[f])===diaStr;
       }).sort().pop():null;
       if(!fecha) return; // sin fecha real, no mostrar
-      result.push({fecha:fecha,sets:sv});
+      result.push({fecha:fecha,sets:sv,dec:(ST.decEj&&ST.decEj[k])||null});
     });
   }
   return result;
@@ -3493,7 +3501,12 @@ const renders={
           var _histArr=getHistorialEjInline(ejR);
           var histInlineHtml='';
           if(_histArr.length){
+            var _nCom=0; _histArr.forEach(function(h){ h.sets.forEach(function(s){ if(s.n) _nCom++; }); });
+            var _verCom=!!ST.verComentHist;
+            var _togCom='<div onclick="toggleComentHist()" style="display:flex;align-items:center;justify-content:flex-end;gap:6px;cursor:pointer;font-size:10px;color:var(--text3);margin-bottom:2px"><span>Comentarios'+(_nCom?' ('+_nCom+')':'')+'</span>'
+              +'<span style="position:relative;display:inline-block;width:26px;height:15px;border-radius:8px;border:.5px solid var(--border2);background:'+(_verCom?'var(--blue)':'var(--bg3)')+'"><span style="position:absolute;top:1.5px;left:'+(_verCom?'12.5px':'1.5px')+';width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)"></span></span></div>';
             histInlineHtml='<div style="margin:.2rem 0 .4rem;padding:.3rem .5rem;background:var(--bg2);border-radius:8px;border-left:2px solid var(--blue)">'
+              +_togCom
               +_histArr.map(function(h,idx){
                 var fStr='';
                 if(h.fecha&&h.fecha.match&&h.fecha.match(/^\d{4}-\d{2}-\d{2}$/)){
@@ -3505,10 +3518,16 @@ const renders={
                   var rp=s.rpe?' <span style="color:'+(s.rpe>=9?'var(--red-text)':s.rpe>=8?'var(--orange-text)':'var(--text3)')+'">R'+s.rpe+'</span>':'';
                   return 'S'+(si+1)+': '+(s.p||0)+'×'+val+rp;
                 }).join(' &nbsp;·&nbsp; ');
+                var comHtml='';
+                if(_verCom){
+                  var _cm=[]; h.sets.forEach(function(s,si){ if(s.n) _cm.push('S'+(si+1)+': '+String(s.n).replace(/</g,'&lt;')); });
+                  if(_cm.length) comHtml='<div style="font-size:10px;color:var(--text3);font-style:italic;line-height:1.5;margin:0 0 3px 62px">'+_cm.join(' &nbsp;·&nbsp; ')+'</div>';
+                }
                 return '<div style="font-size:11px;display:flex;gap:8px;align-items:baseline;padding:1px 0;'+(idx>0?'color:var(--text2)':'color:var(--text)')+'">'
                   +'<span style="font-weight:700;color:var(--blue-text);min-width:44px;flex-shrink:0">'+fStr+'</span>'
+                  +'<span style="width:14px;flex-shrink:0;text-align:center">'+decIconoHtml(h.dec,12)+'</span>'
                   +'<span style="flex:1;line-height:1.6">'+sStr+'</span>'
-                  +'</div>';
+                  +'</div>'+comHtml;
               }).join('')
               +'</div>';
           }
@@ -4062,6 +4081,9 @@ function eliminarSesionFecha(fecha){
       if(ST.checksManual){
         Object.keys(ST.checksManual).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.checksManual[k]; });
       }
+      if(ST.decEj){
+        Object.keys(ST.decEj).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.decEj[k]; });
+      }
     }
   }
   if(ST.historialFechas) delete ST.historialFechas[fecha];
@@ -4298,6 +4320,38 @@ function setTipoSet(tipo){
   document.getElementById('ig-dist').style.display=tipo==='distancia'?'':'none';
 }
 
+// [v022] Decisión por ejercicio y sesión: subir / mantener / bajar carga la próxima vez
+var DEC_ICONO={up:'arrow-up',eq:'equal',down:'arrow-down'};
+var DEC_TXT={up:'Subir carga',eq:'Mantener carga',down:'Bajar carga'};
+function decIconoHtml(d,sz){
+  if(!d||!DEC_ICONO[d]) return '';
+  return '<i class="ti ti-'+DEC_ICONO[d]+'" title="'+DEC_TXT[d]+'" style="font-size:'+(sz||13)+'px;color:var(--text2)"></i>';
+}
+function pintarDecBtns(){
+  var ejClean=mEj||'';
+  var d=(ST.decEj&&ST.decEj[diaDayPrefix(ST.dia)+ejClean])||null;
+  ['up','eq','down'].forEach(function(v){
+    var b=document.getElementById('mdec-'+v); if(!b) return;
+    var on=(d===v);
+    b.style.background=on?'var(--blue)':'var(--bg3)';
+    b.style.color=on?'#fff':'var(--text2)';
+  });
+}
+function setDecEj(v){
+  var ejClean=mEj||''; if(!ejClean||ejClean.indexOf('__fin__')===0) return;
+  var key=diaDayPrefix(ST.dia)+ejClean;
+  if(!ST.decEj) ST.decEj={};
+  if(ST.decEj[key]===v) delete ST.decEj[key]; else ST.decEj[key]=v;
+  save();
+  pintarDecBtns();
+  autoRegistrarFecha(); // lo copia al registro de la sesión si ya hay series
+  saveSetV2(hoyLocal(),ejClean);
+}
+function toggleComentHist(){
+  ST.verComentHist=!ST.verComentHist;
+  save();
+  renders.entreno();
+}
 function openMo(ej,serie){
   mEj=(ej||'').replace(/&#39;/g,"'");
   mSer=serie;
@@ -4333,6 +4387,8 @@ function openMo(ej,serie){
   document.getElementById('m-d').value=prev?prev.dist||'':'';
   document.getElementById('m-rpe').value=prev?prev.rpe:7;
   document.getElementById('m-n').value='';
+  var _igDec=document.getElementById('ig-dec');
+  if(_igDec){ _igDec.style.display=(ejClean.indexOf('__fin__')===0)?'none':''; pintarDecBtns(); }
   // Última sesión
   const ult=getUltimaSesion(ejClean);
   const ultEl=document.getElementById('mo-ultima');
@@ -4451,7 +4507,10 @@ function autoRegistrarFecha(){
       if(sets.length){
         var _varAct=!esFinisher&&ST.variantes&&ST.variantes[ejBase];
         var ejMostrar=(_varAct&&_varAct!==ejBase)?_varAct:ej;
-        ejsRealizados.push({ej:ejMostrar,ejBase:ejBase,sets:sets,finisher:esFinisher});
+        var _regEj={ej:ejMostrar,ejBase:ejBase,sets:sets,finisher:esFinisher};
+        var _decR=!esFinisher&&ST.decEj&&ST.decEj[k];
+        if(_decR) _regEj.dec=_decR;
+        ejsRealizados.push(_regEj);
       }
     });
     if(!ST.historialFechas) ST.historialFechas={};
@@ -6067,6 +6126,11 @@ function confirmarEliminarEntrenoHoy(){
       if(k.indexOf(prefNew)===0||k.indexOf(prefLeg)===0||(prefOld&&k.indexOf(prefOld)===0)) delete ST.checksManual[k];
     });
   }
+  if(ST.decEj){
+    Object.keys(ST.decEj).forEach(function(k){
+      if(k.indexOf(prefNew)===0||k.indexOf(prefLeg)===0||(prefOld&&k.indexOf(prefOld)===0)) delete ST.decEj[k];
+    });
+  }
   // 3. Borrar personalización de ejercicios de hoy (sesionCustom)
   var dB=getDiaBoyle();
   var ck=sesionCustomKey(ST.dia,dB);
@@ -6952,7 +7016,7 @@ function toggleSection(id){
   }
 }
 
-// ── TURNO REAL + RECUPERACIÓN [vEXT_018, ampliado en vEXT_019 y vEXT_021] ─────────────────────────────────────
+// ── TURNO REAL + RECUPERACIÓN [vEXT_018, ampliado en vEXT_019 y vEXT_022] ─────────────────────────────────────
 // Por defecto cada día cuenta con el turno del cuadrante (ciclo anclado).
 // ST.turnoReal[fecha] = {t:'Manana'|'Tarde'|'Noche'|'Libre', c:false} SOLO si ese día se cambió.
 // Es lo único editable del informe de Recuperación: al cambiarlo se recalcula todo.
@@ -6987,7 +7051,7 @@ function renderTurnoReal(){
 }
 function _media(a){ var v=a.filter(function(x){return x!=null&&!isNaN(x);}); return v.length?v.reduce(function(s,x){return s+x;},0)/v.length:null; }
 function _fmt(x,dec,suf){ return x==null?'—':x.toFixed(dec)+(suf||''); }
-// ── VISTA DIARIA + PREMISAS [vEXT_021] ───────────────────────────────────────
+// ── VISTA DIARIA + PREMISAS [vEXT_022] ───────────────────────────────────────
 var RECUP_EST={v:'#3f9b6b',a:'#d9a02e',r:'#cf4d4d'}, _recupSel=null, _recupListaN=14;
 var RECUP_CAT={pesas:{i:'💪',n:'Pesas'},senderismo:{i:'🥾',n:'Senderismo'},natacion:{i:'🏊',n:'Natación'},caminata:{i:'🚶',n:'Caminata'},otro:{i:'🏃',n:'Actividad'}};
 function _recupVista(){ try{return localStorage.getItem('recup_vista')||'lista';}catch(e){return 'lista';} }
@@ -8961,7 +9025,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_021';
+const APP_VERSION='vEXT_022';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

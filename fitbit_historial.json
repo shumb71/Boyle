@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-14T14:22:59.347760+00:00",
+  "actualizado": "2026-10-14T19:12:41.131630+00:00",
   "takeout_importado": "2026-10-12",
   "takeout_hasta": "2026-10-10",
   "sync_resumen": {
@@ -1475,7 +1475,7 @@
     "2026-10-10": {
       "pasos": 17401,
       "distancia_km": 12.81,
-      "minutos_activos": 452,
+      "minutos_activos": 406,
       "calorias_dia": 3185.49,
       "actividadesFitbit": [
         {
@@ -1618,11 +1618,11 @@
       "sueno_rem_min": 123
     },
     "2026-10-14": {
-      "calorias_dia": 2155.47,
+      "calorias_dia": 2808.54,
       "actividadesFitbit": [],
-      "pasos": 6565,
-      "distancia_km": 4.88,
-      "minutos_activos": 236,
+      "pasos": 8349,
+      "distancia_km": 6.22,
+      "minutos_activos": 365,
       "fc_reposo": 49.0,
       "hrv": 48.8,
       "fr_respiratoria": 14.8,

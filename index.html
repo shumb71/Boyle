@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_024</title>
+<title>Entreno Boyle vEXT_025</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -569,9 +569,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_024', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_025', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_024 registrado:', reg.scope);
+        console.log('SW EXT_025 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -7982,13 +7982,20 @@ function pdfIdb(modo,fn){
     });
   });
 }
-function pdfClave(tipo){ return tipo+':'+protoElegido(tipo); }
-function pdfIdsProto(tipo){ return (ST.protoPdfs&&ST.protoPdfs[pdfClave(tipo)])||[]; }
+// [vEXT_025] Los PDFs se asignan por DÍA del programa (D1..D4 / Descanso) y por tipo (cal / enf).
+// Las asignaciones de vEXT_024 (por protocolo, p.ej. 'cal:auto') siguen valiendo mientras ese día no tenga lista propia.
+function pdfDiaKey(){ return getDiaBoyle()||'Descanso'; }
+function pdfClave(tipo){ return tipo+':'+pdfDiaKey(); }
+function pdfIdsProto(tipo){
+  var m=ST.protoPdfs||{}, k=pdfClave(tipo);
+  if(m[k]!==undefined) return m[k];
+  return m[tipo+':'+protoElegido(tipo)]||[];
+}
 function pdfTam(b){ return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'; }
 
 function pdfFilaHtml(tipo){
   var h='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.6rem">'
-    +'<span style="font-size:11px;font-weight:700;color:var(--text2)">PDFs</span>';
+    +'<span style="font-size:11px;font-weight:700;color:var(--text2)">PDFs · '+pdfDiaKey()+'</span>';
   pdfIdsProto(tipo).forEach(function(id){
     var m=ST.pdfsMeta&&ST.pdfsMeta[id]; if(!m) return;
     h+='<span class="pill pdfchip" data-id="'+protoEsc(id)+'" onclick="pdfAbrir(this.dataset.id)" title="Abrir">'+protoEsc(m.n)+'</span>';
@@ -8005,9 +8012,8 @@ function pdfAbrirModal(tipo){
 function cerrarMoPdf(){ document.getElementById('mo-pdf').classList.remove('open'); }
 function pdfPintarModal(){
   var tipo=_pdfTipo, c=PROTO_CFG[tipo];
-  var r=protoResolver(tipo,getDiaBoyle()||'Descanso');
-  document.getElementById('mo-pdf-title').textContent='PDFs · '+c.titulo.replace(/^\S+\s/,'')+' · '+r.etiqueta;
-  document.getElementById('mo-pdf-info').textContent='Marca los PDFs que quieres en este protocolo. Tócalos para abrirlos. Se guardan solo en este dispositivo.';
+  document.getElementById('mo-pdf-title').textContent='PDFs · '+c.titulo.replace(/^\S+\s/,'')+' · '+pdfDiaKey();
+  document.getElementById('mo-pdf-info').textContent='Marca los PDFs que quieres en este día ('+pdfDiaKey()+'). Tócalos para abrirlos. Se guardan solo en este dispositivo.';
   var meta=ST.pdfsMeta||{}, ids=Object.keys(meta).sort(function(a,b){return (meta[b].f||0)-(meta[a].f||0);});
   var sel=pdfIdsProto(tipo);
   var list=document.getElementById('mo-pdf-list');
@@ -8024,9 +8030,9 @@ function pdfPintarModal(){
 }
 function pdfToggle(id,on){
   if(!ST.protoPdfs) ST.protoPdfs={};
-  var k=pdfClave(_pdfTipo), arr=(ST.protoPdfs[k]||[]).filter(function(x){return x!==id;});
+  var k=pdfClave(_pdfTipo), arr=pdfIdsProto(_pdfTipo).filter(function(x){return x!==id;});
   if(on) arr.push(id);
-  if(arr.length) ST.protoPdfs[k]=arr; else delete ST.protoPdfs[k];
+  ST.protoPdfs[k]=arr;
   save(); renderProtoSeccion(_pdfTipo);
 }
 function pdfSubir(input){
@@ -8043,7 +8049,7 @@ function pdfSubir(input){
         if(!ST.pdfsMeta) ST.pdfsMeta={};
         ST.pdfsMeta[id]={n:f.name.replace(/\.pdf$/i,''),t:f.size,f:Date.now()};
         if(!ST.protoPdfs) ST.protoPdfs={};
-        var k=pdfClave(_pdfTipo); ST.protoPdfs[k]=(ST.protoPdfs[k]||[]).concat([id]);
+        var k=pdfClave(_pdfTipo); ST.protoPdfs[k]=pdfIdsProto(_pdfTipo).concat([id]);
         ok++;
       }).catch(function(e){ fallos.push(f.name+' ('+(e&&e.message?e.message:'error')+')'); });
     });
@@ -8059,8 +8065,7 @@ function pdfBorrar(id){
   pdfIdb('readwrite',function(st){ return st.delete(id); }).catch(function(){}).then(function(){
     delete ST.pdfsMeta[id];
     Object.keys(ST.protoPdfs||{}).forEach(function(k){
-      var arr=ST.protoPdfs[k].filter(function(x){return x!==id;});
-      if(arr.length) ST.protoPdfs[k]=arr; else delete ST.protoPdfs[k];
+      ST.protoPdfs[k]=ST.protoPdfs[k].filter(function(x){return x!==id;});
     });
     save(); pdfPintarModal(); Object.keys(PROTO_CFG).forEach(renderProtoSeccion);
   });
@@ -9207,7 +9212,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_024';
+const APP_VERSION='vEXT_025';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

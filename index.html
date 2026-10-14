@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_022</title>
+<title>Entreno Boyle vEXT_023</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -448,6 +448,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .pills{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .pill{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:.5px solid var(--border2);background:var(--bg3);color:var(--text2);white-space:nowrap;transition:all .15s}
 .pill.done{background:var(--green-bg);border-color:rgba(99,153,34,.3);color:var(--green-text)}
+.pill.extra{border-style:dashed}
+.pill.ctl{padding:5px 11px;font-weight:800;color:var(--blue-text)}
 .strow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
 .stbox{background:var(--bg2);border-radius:var(--rs);padding:.75rem;text-align:center;border:.5px solid var(--border)}
 .stval{font-size:24px;font-weight:700;color:var(--text)}.stlbl{font-size:11px;color:var(--text2);margin-top:2px}
@@ -563,9 +565,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_017', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_023', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_017 registrado:', reg.scope);
+        console.log('SW EXT_023 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -3488,6 +3490,11 @@ const renders={
             rpsLabel=info.reps?(rVal+' '+info.reps):String(rVal);
           }
           else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
+          // [vEXT_023] Series extra por ejercicio (en pares/trisets cualquiera del bloque puede llevar alguna más)
+          var baseSer=numSer;
+          var extraSer=(ST.setsExtra&&ST.setsExtra[diaDayPrefix(ST.dia)+ejR])||0;
+          numSer+=extraSer;
+          if(ss.length>numSer) numSer=ss.length; // las series ya registradas nunca se ocultan
           tot+=numSer;
           var ult=getUltimaSesion(ej);
           var ejDone=ejEstaHecho(ej);
@@ -3542,8 +3549,13 @@ const renders={
               var val=tipo==='tiempo'?(s.t||0)+'s':tipo==='distancia'?(s.dist||0)+'m':(s.r||0);
               return s.p+'x'+val+' R'+s.rpe;
             })(st):('S'+(pi+1));
-            var spanEl='<span class="pill'+(st?' done':'')+'" data-ej="'+ejSafe+'" data-pi="'+pi+'" onclick="openMo2(this)">'+ lbl +'</span>';
+            var spanEl='<span class="pill'+(st?' done':'')+(pi>=baseSer?' extra':'')+'" data-ej="'+ejSafe+'" data-pi="'+pi+'" onclick="openMo2(this)">'+ lbl +'</span>';
             pillsArr.push(spanEl);
+          }
+          // [vEXT_023] botones para añadir / quitar una serie extra solo en este ejercicio
+          pillsArr.push('<span class="pill ctl" data-ej="'+ejSafe+'" onclick="addSerieExtra(this)" title="Añadir una serie a este ejercicio">&#65291;</span>');
+          if(extraSer>0&&numSer>baseSer&&!ss[numSer-1]){
+            pillsArr.push('<span class="pill ctl" data-ej="'+ejSafe+'" onclick="quitarSerieExtra(this)" title="Quitar la última serie extra">&#8722;</span>');
           }
           var ejQ=ej.replace(/'/g,"\'");
           var varBtn=getVariantesEj(ej).length>1?('<button data-ej="'+ejSafe+'" onclick="abrirVariantes2(this)" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';  
@@ -3557,7 +3569,7 @@ const renders={
             +'</div>'
             +varBtn
             +'<button data-ej="'+ejSafe+'" onclick="quitarEjSesion2(this)" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:15px;line-height:1"><i class="ti ti-x"></i></button>'
-            +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+numSer+'x'+rpsLabel+'</span>'
+            +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+baseSer+(numSer>baseSer?'+'+(numSer-baseSer):'')+'x'+rpsLabel+'</span>'
             +(info.tipo!=='fijo'&&getRpeObjetivo(fase)?'<span style="font-size:10px;color:var(--blue-text);background:var(--blue-bg);border-radius:20px;padding:1px 7px;white-space:nowrap">RPE '+getRpeObjetivo(fase)+'</span>':'')
             +'<button data-ej="'+ejSafe+'" onclick="abrirHistEj2(this)" style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:17px;line-height:1"><i class="ti ti-chart-line"></i></button>'
             +'</div>'
@@ -4084,6 +4096,9 @@ function eliminarSesionFecha(fecha){
       if(ST.decEj){
         Object.keys(ST.decEj).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.decEj[k]; });
       }
+      if(ST.setsExtra){
+        Object.keys(ST.setsExtra).forEach(function(k){ if(k.indexOf(prefix)===0) delete ST.setsExtra[k]; });
+      }
     }
   }
   if(ST.historialFechas) delete ST.historialFechas[fecha];
@@ -4287,6 +4302,24 @@ function quitarEjSesion2(el){
 function abrirHistEj2(el){
   var ej=el.dataset.ej.replace(/&#39;/g,"'");
   abrirHistEj(ej);
+}
+// [vEXT_023] Series extra por ejercicio y sesión (clave = misma que ST.sets)
+function addSerieExtra(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  var key=diaDayPrefix(ST.dia)+ej;
+  if(!ST.setsExtra) ST.setsExtra={};
+  ST.setsExtra[key]=(ST.setsExtra[key]||0)+1;
+  save();
+  renders.entreno();
+}
+function quitarSerieExtra(el){
+  var ej=el.dataset.ej.replace(/&#39;/g,"'");
+  var key=diaDayPrefix(ST.dia)+ej;
+  if(!ST.setsExtra||!ST.setsExtra[key]) return;
+  ST.setsExtra[key]--;
+  if(ST.setsExtra[key]<=0) delete ST.setsExtra[key];
+  save();
+  renders.entreno();
 }
 function openMo2(el){
   var ej=el.dataset.ej.replace(/&#39;/g,"'");
@@ -6129,6 +6162,11 @@ function confirmarEliminarEntrenoHoy(){
   if(ST.decEj){
     Object.keys(ST.decEj).forEach(function(k){
       if(k.indexOf(prefNew)===0||k.indexOf(prefLeg)===0||(prefOld&&k.indexOf(prefOld)===0)) delete ST.decEj[k];
+    });
+  }
+  if(ST.setsExtra){
+    Object.keys(ST.setsExtra).forEach(function(k){
+      if(k.indexOf(prefNew)===0) delete ST.setsExtra[k];
     });
   }
   // 3. Borrar personalización de ejercicios de hoy (sesionCustom)
@@ -9025,7 +9063,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_022';
+const APP_VERSION='vEXT_023';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

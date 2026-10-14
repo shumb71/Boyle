@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_023</title>
+<title>Entreno Boyle vEXT_024</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -449,6 +449,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .pill{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:.5px solid var(--border2);background:var(--bg3);color:var(--text2);white-space:nowrap;transition:all .15s}
 .pill.done{background:var(--green-bg);border-color:rgba(99,153,34,.3);color:var(--green-text)}
 .pill.extra{border-style:dashed}
+.pdfchip{max-width:46vw;overflow:hidden;text-overflow:ellipsis;background:var(--blue-bg);border-color:transparent;color:var(--blue-text)}
+.pdfrow{display:flex;align-items:center;gap:8px;padding:.55rem 0;border-bottom:.5px solid var(--border)}
+.pdfrow .pn{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.pdfrow .ps{font-size:11px;color:var(--text3);white-space:nowrap}
 .pill.ctl{padding:5px 11px;font-weight:800;color:var(--blue-text)}
 .strow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
 .stbox{background:var(--bg2);border-radius:var(--rs);padding:.75rem;text-align:center;border:.5px solid var(--border)}
@@ -565,9 +569,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_023', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_024', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_023 registrado:', reg.scope);
+        console.log('SW EXT_024 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -1384,9 +1388,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="ig"><label>Nota (opcional)</label><input type="text" id="m-n" placeholder="Todo bien..."></div>
     <div class="ig" id="ig-dec"><label>Próxima vez con este ejercicio</label>
       <div style="display:flex;gap:8px">
-        <button type="button" id="mdec-up" onclick="setDecEj('up')" aria-label="Subir carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><i class="ti ti-arrow-up"></i></button>
-        <button type="button" id="mdec-eq" onclick="setDecEj('eq')" aria-label="Mantener carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><i class="ti ti-equal"></i></button>
-        <button type="button" id="mdec-down" onclick="setDecEj('down')" aria-label="Bajar carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><i class="ti ti-arrow-down"></i></button>
+        <button type="button" id="mdec-up" onclick="setDecEj('up')" aria-label="Subir carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        <button type="button" id="mdec-eq" onclick="setDecEj('eq')" aria-label="Mantener carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14M5 15h14"/></svg></button>
+        <button type="button" id="mdec-down" onclick="setDecEj('down')" aria-label="Bajar carga" style="flex:1;padding:8px;border-radius:var(--rs);border:.5px solid var(--border2);font-size:18px;cursor:pointer;background:var(--bg3);color:var(--text2)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:.5px solid var(--border)">
@@ -4358,7 +4362,9 @@ var DEC_ICONO={up:'arrow-up',eq:'equal',down:'arrow-down'};
 var DEC_TXT={up:'Subir carga',eq:'Mantener carga',down:'Bajar carga'};
 function decIconoHtml(d,sz){
   if(!d||!DEC_ICONO[d]) return '';
-  return '<i class="ti ti-'+DEC_ICONO[d]+'" title="'+DEC_TXT[d]+'" style="font-size:'+(sz||13)+'px;color:var(--text2)"></i>';
+  var P={up:'M12 19V5M5 12l7-7 7 7',eq:'M5 9h14M5 15h14',down:'M12 5v14M5 12l7 7 7-7'};
+  var z=sz||13;
+  return '<svg viewBox="0 0 24 24" width="'+z+'" height="'+z+'" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" title="'+DEC_TXT[d]+'" style="color:var(--text2);vertical-align:middle"><path d="'+P[d]+'"/></svg>';
 }
 function pintarDecBtns(){
   var ejClean=mEj||'';
@@ -7839,6 +7845,7 @@ function renderProtoSeccion(tipo){
   var out=[];
   out.push('<div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem"><span style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap">Protocolo · día '+ST.dia+'</span>'
     +protoSelectHtml(tipo,ST.dia,'protoSet('+T+',this.value)')+'</div>');
+  out.push(pdfFilaHtml(tipo));
   out.push('<div style="background:'+bgTipo+';border-radius:var(--rs);padding:.4rem .75rem;margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:'+colorTipo+'">'+banner+'</span><span style="font-size:11px;color:'+colorTipo+';font-weight:700">'+n.done+'/'+n.total+'</span></div>');
   out.push('<div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:.6rem;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+colorTipo+';border-radius:2px;transition:width .3s"></div></div>');
   if(tipo==='cal'){
@@ -7947,6 +7954,143 @@ function protoRestaurar(tipo){
   save(); renderProtoSeccion(tipo); actualizarWarmupBadge();
 }
 // Cambia el protocolo elegido para un día del ciclo (numDia opcional: por defecto el día mostrado)
+// ══════════════════════════════════════════════════════════
+// [vEXT_024] PDFs en calentamiento / enfriamiento
+// Los ficheros se guardan en IndexedDB de ESTE dispositivo (no en ST, para no inflar la
+// copia en la nube). En ST solo van los metadatos (ST.pdfsMeta) y qué PDFs lleva cada
+// protocolo (ST.protoPdfs['cal:auto'] = [ids]).
+// ══════════════════════════════════════════════════════════
+var PDF_AVISO_BYTES=5*1024*1024;
+var _pdfDb=null, _pdfTipo='cal', _pdfUrl=null;
+function pdfDb(){
+  return new Promise(function(res,rej){
+    if(_pdfDb) return res(_pdfDb);
+    if(!window.indexedDB) return rej(new Error('Este navegador no permite guardar PDFs.'));
+    var rq=indexedDB.open('entreno_pdfs',1);
+    rq.onupgradeneeded=function(){ rq.result.createObjectStore('pdfs',{keyPath:'id'}); };
+    rq.onsuccess=function(){ _pdfDb=rq.result; res(_pdfDb); };
+    rq.onerror=function(){ rej(rq.error||new Error('No se pudo abrir el almacén de PDFs.')); };
+  });
+}
+function pdfIdb(modo,fn){
+  return pdfDb().then(function(db){
+    return new Promise(function(res,rej){
+      var tx=db.transaction('pdfs',modo), rq=fn(tx.objectStore('pdfs'));
+      tx.oncomplete=function(){ res(rq?rq.result:undefined); };
+      tx.onerror=function(){ rej(tx.error); };
+      tx.onabort=function(){ rej(tx.error||new Error('Operación cancelada (¿sin espacio?).')); };
+    });
+  });
+}
+function pdfClave(tipo){ return tipo+':'+protoElegido(tipo); }
+function pdfIdsProto(tipo){ return (ST.protoPdfs&&ST.protoPdfs[pdfClave(tipo)])||[]; }
+function pdfTam(b){ return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'; }
+
+function pdfFilaHtml(tipo){
+  var h='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.6rem">'
+    +'<span style="font-size:11px;font-weight:700;color:var(--text2)">PDFs</span>';
+  pdfIdsProto(tipo).forEach(function(id){
+    var m=ST.pdfsMeta&&ST.pdfsMeta[id]; if(!m) return;
+    h+='<span class="pill pdfchip" data-id="'+protoEsc(id)+'" onclick="pdfAbrir(this.dataset.id)" title="Abrir">'+protoEsc(m.n)+'</span>';
+  });
+  h+='<span class="pill ctl" onclick="pdfAbrirModal(\''+tipo+'\')">'+(pdfIdsProto(tipo).length?'Editar':'＋ Añadir PDF')+'</span></div>';
+  return h;
+}
+
+function pdfAbrirModal(tipo){
+  _pdfTipo=tipo;
+  document.getElementById('mo-pdf').classList.add('open');
+  pdfPintarModal();
+}
+function cerrarMoPdf(){ document.getElementById('mo-pdf').classList.remove('open'); }
+function pdfPintarModal(){
+  var tipo=_pdfTipo, c=PROTO_CFG[tipo];
+  var r=protoResolver(tipo,getDiaBoyle()||'Descanso');
+  document.getElementById('mo-pdf-title').textContent='PDFs · '+c.titulo.replace(/^\S+\s/,'')+' · '+r.etiqueta;
+  document.getElementById('mo-pdf-info').textContent='Marca los PDFs que quieres en este protocolo. Tócalos para abrirlos. Se guardan solo en este dispositivo.';
+  var meta=ST.pdfsMeta||{}, ids=Object.keys(meta).sort(function(a,b){return (meta[b].f||0)-(meta[a].f||0);});
+  var sel=pdfIdsProto(tipo);
+  var list=document.getElementById('mo-pdf-list');
+  if(!ids.length){ list.innerHTML='<div style="color:var(--text3);font-size:13px;padding:.6rem 0">Todavía no hay PDFs. Pulsa «Subir PDF».</div>'; return; }
+  list.innerHTML=ids.map(function(id){
+    var m=meta[id], on=sel.indexOf(id)>=0, e=protoEsc(id);
+    return '<div class="pdfrow">'
+      +'<input type="checkbox" '+(on?'checked ':'')+'data-id="'+e+'" onchange="pdfToggle(this.dataset.id,this.checked)" style="width:20px;height:20px;flex-shrink:0">'
+      +'<span class="pn" data-id="'+e+'" onclick="pdfAbrir(this.dataset.id)">'+protoEsc(m.n)+'</span>'
+      +'<span class="ps">'+pdfTam(m.t||0)+'</span>'
+      +'<button data-id="'+e+'" onclick="pdfBorrar(this.dataset.id)" title="Borrar PDF" style="border:none;background:var(--red-bg);color:var(--red-text);border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer">Borrar</button>'
+      +'</div>';
+  }).join('');
+}
+function pdfToggle(id,on){
+  if(!ST.protoPdfs) ST.protoPdfs={};
+  var k=pdfClave(_pdfTipo), arr=(ST.protoPdfs[k]||[]).filter(function(x){return x!==id;});
+  if(on) arr.push(id);
+  if(arr.length) ST.protoPdfs[k]=arr; else delete ST.protoPdfs[k];
+  save(); renderProtoSeccion(_pdfTipo);
+}
+function pdfSubir(input){
+  var files=Array.prototype.slice.call(input.files||[]); input.value='';
+  if(!files.length) return;
+  try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  var chain=Promise.resolve(), ok=0, fallos=[];
+  files.forEach(function(f){
+    chain=chain.then(function(){
+      if(!(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){ fallos.push(f.name+' (no es un PDF)'); return; }
+      if(f.size>PDF_AVISO_BYTES&&!confirm('«'+f.name+'» pesa '+pdfTam(f.size)+'. Ocupará bastante espacio en este dispositivo. ¿Guardarlo igualmente?')) return;
+      var id='pdf_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      return pdfIdb('readwrite',function(st){ return st.put({id:id,blob:f}); }).then(function(){
+        if(!ST.pdfsMeta) ST.pdfsMeta={};
+        ST.pdfsMeta[id]={n:f.name.replace(/\.pdf$/i,''),t:f.size,f:Date.now()};
+        if(!ST.protoPdfs) ST.protoPdfs={};
+        var k=pdfClave(_pdfTipo); ST.protoPdfs[k]=(ST.protoPdfs[k]||[]).concat([id]);
+        ok++;
+      }).catch(function(e){ fallos.push(f.name+' ('+(e&&e.message?e.message:'error')+')'); });
+    });
+  });
+  chain.then(function(){
+    save(); pdfPintarModal(); renderProtoSeccion(_pdfTipo);
+    if(fallos.length) alert('No se pudo guardar:\n'+fallos.join('\n'));
+  });
+}
+function pdfBorrar(id){
+  var m=ST.pdfsMeta&&ST.pdfsMeta[id]; if(!m) return;
+  if(!confirm('¿Borrar «'+m.n+'»? Se quitará de todos los protocolos.')) return;
+  pdfIdb('readwrite',function(st){ return st.delete(id); }).catch(function(){}).then(function(){
+    delete ST.pdfsMeta[id];
+    Object.keys(ST.protoPdfs||{}).forEach(function(k){
+      var arr=ST.protoPdfs[k].filter(function(x){return x!==id;});
+      if(arr.length) ST.protoPdfs[k]=arr; else delete ST.protoPdfs[k];
+    });
+    save(); pdfPintarModal(); Object.keys(PROTO_CFG).forEach(renderProtoSeccion);
+  });
+}
+function pdfAbrir(id){
+  var m=ST.pdfsMeta&&ST.pdfsMeta[id];
+  pdfIdb('readonly',function(st){ return st.get(id); }).then(function(rec){
+    if(!rec||!rec.blob){ alert('Este PDF no está guardado en este dispositivo. Súbelo de nuevo desde «Editar».'); return; }
+    pdfCerrarVisor();
+    _pdfUrl=URL.createObjectURL(rec.blob);
+    var viewer=document.getElementById('pdf-viewer'), frame=document.getElementById('pdf-frame'), msg=document.getElementById('pdf-viewer-msg');
+    document.getElementById('pdf-viewer-title').textContent=(m&&m.n)||'PDF';
+    var a=document.getElementById('pdf-open-aparte'); a.href=_pdfUrl;
+    if(/Android/i.test(navigator.userAgent)){
+      // Chrome en Android no enseña PDFs dentro de la página: se abren aparte
+      frame.style.display='none'; frame.removeAttribute('src');
+      msg.style.display='block';
+      msg.innerHTML='En este móvil el PDF se abre con su propio visor.<br><br><a href="'+_pdfUrl+'" target="_blank" rel="noopener" style="display:inline-block;padding:12px 20px;background:var(--blue);color:#fff;border-radius:var(--rs);font-weight:700;text-decoration:none">Abrir PDF</a>';
+    } else {
+      msg.style.display='none'; frame.style.display='block'; frame.src=_pdfUrl;
+    }
+    viewer.style.display='flex';
+  }).catch(function(e){ alert('No se pudo abrir el PDF: '+(e&&e.message?e.message:'error')); });
+}
+function pdfCerrarVisor(){
+  var v=document.getElementById('pdf-viewer'); if(v) v.style.display='none';
+  var f=document.getElementById('pdf-frame'); if(f) f.removeAttribute('src');
+  if(_pdfUrl){ try{URL.revokeObjectURL(_pdfUrl);}catch(e){} _pdfUrl=null; }
+}
+
 function protoSet(tipo,val,numDia){
   var d=numDia||ST.dia;
   if(!ST.protocoloDia) ST.protocoloDia={};
@@ -9063,7 +9207,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_023';
+const APP_VERSION='vEXT_024';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -11328,6 +11472,28 @@ checkBackupReminder();
     </div>
     <button onclick="eliminarSesionFecha(_editarFecha)" style="width:100%;margin-top:.5rem;padding:10px;border:none;background:var(--red-bg);color:var(--red-text);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">🗑 Eliminar sesión de este día</button>
   </div>
+</div>
+
+<!-- [vEXT_024] PDFs de calentamiento / enfriamiento -->
+<div class="mo" id="mo-pdf" onclick="if(event.target===this)cerrarMoPdf()">
+  <div class="ms">
+    <div class="mh"></div>
+    <div class="mt" id="mo-pdf-title">PDFs</div>
+    <div id="mo-pdf-info" style="font-size:12px;color:var(--text3);margin-bottom:.5rem;line-height:1.4"></div>
+    <div id="mo-pdf-list" style="max-height:42vh;overflow-y:auto"></div>
+    <input type="file" id="mo-pdf-file" accept="application/pdf,.pdf" multiple style="display:none" onchange="pdfSubir(this)">
+    <button style="width:100%;padding:11px;border:none;background:var(--blue);color:#fff;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-top:.75rem" onclick="document.getElementById('mo-pdf-file').click()">Subir PDF</button>
+    <button style="width:100%;padding:11px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:14px;cursor:pointer;margin-top:.5rem" onclick="cerrarMoPdf()">Cerrar</button>
+  </div>
+</div>
+<div id="pdf-viewer" style="display:none;position:fixed;inset:0;z-index:300;background:var(--bg);flex-direction:column">
+  <div style="display:flex;align-items:center;gap:8px;padding:.6rem .75rem;border-bottom:.5px solid var(--border);background:var(--bg2)">
+    <div id="pdf-viewer-title" style="flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+    <a id="pdf-open-aparte" href="#" target="_blank" rel="noopener" style="font-size:13px;font-weight:700;color:var(--blue);text-decoration:none;white-space:nowrap">Abrir aparte</a>
+    <button onclick="pdfCerrarVisor()" style="border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);padding:7px 12px;font-size:13px;font-weight:700;cursor:pointer">Cerrar</button>
+  </div>
+  <div id="pdf-viewer-msg" style="display:none;padding:1.5rem 1rem;text-align:center;font-size:14px;color:var(--text2);line-height:1.5"></div>
+  <iframe id="pdf-frame" title="PDF" style="flex:1;border:0;width:100%;background:#fff"></iframe>
 </div>
 
 <div class="mo" id="mo-var" onclick="if(event.target===this)closeMoVar()">

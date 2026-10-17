@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_024</title>
+<title>Entreno Boyle vEXT_026</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -569,9 +569,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_024', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_026', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_024 registrado:', reg.scope);
+        console.log('SW EXT_026 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -7480,61 +7480,112 @@ function checkDeload(){
     +'</div>';
 }
 
+// AVISO DE RECUPERACIÓN (vEXT_026) — solo datos Fitbit (días con _fuenteFitbit), comparados con TU línea base
+// (media de los 28 días Fitbit anteriores) en vez de umbrales fijos. Una señal suelta no cambia el semáforo:
+// cuenta si está activa hoy Y hay otra, o si se repite 2 de los últimos 3 días.
+function recFitbitDias(){
+  var H=ST.garminHist||{};
+  return Object.keys(H).filter(function(f){return H[f]&&H[f]._fuenteFitbit;}).sort();
+}
+function recBaseFitbit(fechas,idx){
+  // media de hasta 28 días Fitbit anteriores al índice idx (sin incluirlo)
+  var H=ST.garminHist, ini=Math.max(0,idx-28), prev=fechas.slice(ini,idx);
+  function col(k,ok){return prev.map(function(f){return H[f][k];}).filter(function(x){return x!=null&&!isNaN(x)&&(!ok||ok(x));});}
+  function med(a){return a.length?a.reduce(function(s,x){return s+x;},0)/a.length:null;}
+  var rhr=col('fc_reposo'), hrv=col('hrv'), sue=col('sueno_total_min',function(x){return x>=150;}), prof=col('sueno_profundo_min');
+  return {rhr:med(rhr),nRhr:rhr.length,hrv:med(hrv),nHrv:hrv.length,sue:med(sue),prof:med(prof),nProf:prof.length};
+}
+function recRpeSenal(hoy){
+  // RPE medio de las 2 últimas sesiones frente al de las sesiones de las 6 semanas anteriores
+  var HS=ST.historialFechas||{}, fs=Object.keys(HS).filter(function(f){return f<=hoy;}).sort();
+  function rpeSes(f){
+    var v=[]; ((HS[f]&&HS[f].ejerciciosRealizados)||[]).forEach(function(e){(e.sets||[]).forEach(function(s){ if(s.rpe!=null&&s.rpe>0&&(s.p>0||s.t>0||s.dist>0)) v.push(+s.rpe); });});
+    return v.length?v.reduce(function(a,b){return a+b;},0)/v.length:null;
+  }
+  var con=fs.filter(function(f){return rpeSes(f)!=null;});
+  if(con.length<5) return null;
+  var ult=con.slice(-2), ant=con.slice(0,-2).filter(function(f){return f>=fechaMasDias(ult[0],-42);});
+  if(ant.length<3) return null;
+  var m=function(a){return a.reduce(function(s,x){return s+x;},0)/a.length;};
+  var a=m(ult.map(rpeSes)), b=m(ant.map(rpeSes)), d=a-b;
+  if(d>=1.2) return {k:'rpe',f:2,t:'RPE de tus últimas sesiones '+a.toFixed(1)+' (+'+d.toFixed(1)+' vs lo habitual)'};
+  if(d>=0.7) return {k:'rpe',f:1,t:'RPE de tus últimas sesiones '+a.toFixed(1)+' (+'+d.toFixed(1)+' vs lo habitual)'};
+  return null;
+}
+function recSenalesDia(fechas,i){
+  // señales objetivas (Fitbit) de fechas[i] contra su propia línea base
+  var g=ST.garminHist[fechas[i]], b=recBaseFitbit(fechas,i), out=[];
+  if(g.fc_reposo!=null&&b.nRhr>=10){
+    var d=g.fc_reposo-b.rhr;
+    if(d>=5) out.push({k:'rhr',f:2,t:'FC en reposo '+g.fc_reposo+' (+'+Math.round(d)+' vs tu media)'});
+    else if(d>=3) out.push({k:'rhr',f:1,t:'FC en reposo '+g.fc_reposo+' (+'+Math.round(d)+' vs tu media)'});
+  }
+  if(g.hrv!=null&&b.nHrv>=10){
+    var p=(g.hrv-b.hrv)/b.hrv*100;
+    if(p<=-20) out.push({k:'hrv',f:2,t:'HRV '+Math.round(g.hrv)+' ms ('+Math.round(p)+'% vs tu media)'});
+    else if(p<=-10) out.push({k:'hrv',f:1,t:'HRV '+Math.round(g.hrv)+' ms ('+Math.round(p)+'% vs tu media)'});
+  }
+  if(g.sueno_total_min!=null&&g.sueno_total_min>=150){
+    var h=Math.floor(g.sueno_total_min/60)+'h '+(g.sueno_total_min%60)+'min';
+    if(g.sueno_total_min<300) out.push({k:'sue',f:2,t:'Poco sueño ('+h+')'});
+    else if(g.sueno_total_min<360) out.push({k:'sue',f:1,t:'Poco sueño ('+h+')'});
+  }
+  if(g.sueno_profundo_min!=null&&b.nProf>=10&&b.prof>0&&g.sueno_total_min>=150){
+    var q=g.sueno_profundo_min/b.prof;
+    if(q<0.6) out.push({k:'prof',f:1,t:'Sueño profundo '+g.sueno_profundo_min+' min (muy por debajo de tu media)'});
+  }
+  return out;
+}
 function calcularAlertaRecuperacion(){
   var el=document.getElementById('e-alerta-recuperacion');
   if(!el) return;
-  // Datos Garmin de hoy o último día disponible
-  var hoy=hoyLocal();
-  var g=null;
-  if(ST.garminHist&&ST.garminHist[hoy]) g=ST.garminHist[hoy];
-  if(!g&&ST.garminHist){
-    var fechas=Object.keys(ST.garminHist).sort();
-    if(fechas.length) g=ST.garminHist[fechas[fechas.length-1]];
+  var hoy=hoyLocal(), fechas=recFitbitDias().filter(function(f){return f<=hoy;});
+  var sl=ST.sliders||{}, dolor=sl.d||0, fatiga=sl.f||1, sueSl=sl.s||3;
+  var ult=fechas.length?fechas[fechas.length-1]:null;
+  var dif=ult?Math.round((new Date(hoy+'T12:00:00')-new Date(ult+'T12:00:00'))/86400000):null;
+  var hayFitbit=ult&&dif<=2, senales=[], nota='';
+  if(hayFitbit){
+    var n=fechas.length, i0=n-1, evals=[];
+    for(var k=Math.max(0,i0-2);k<=i0;k++) evals.push(recSenalesDia(fechas,k));
+    var hoyS=evals[evals.length-1], cuenta={};
+    evals.forEach(function(ev){ev.forEach(function(s){cuenta[s.k]=(cuenta[s.k]||0)+1;});});
+    // activa si está hoy, o se repite en 2 de los últimos 3 días (se muestra la de más reciente)
+    var vistos={};
+    for(var j=evals.length-1;j>=0;j--) evals[j].forEach(function(s){
+      if(vistos[s.k]) return;
+      var hoyOn=hoyS.some(function(x){return x.k===s.k;});
+      if(hoyOn||cuenta[s.k]>=2){ vistos[s.k]=1; var c=Object.assign({},s); if(cuenta[s.k]>=2){c.rep=true;} senales.push(c); }
+    });
+    var b=recBaseFitbit(fechas,n);
+    if(b.nRhr<14) nota='Calibrando tu línea base Fitbit ('+b.nRhr+'/14 días): los avisos de FC y HRV serán más fiables en unos días.';
   }
-  // Sliders manuales
-  var sl=ST.sliders||{};
-  var dolor=sl.d||0;
-  var fatiga=sl.f||1;
-  // Puntuación de recuperación (0-100)
-  var score=100;
-  var alertas=[];
-  var esHoy=g&&g.fecha===hoy;
-  if(g){
-    if(g.fc_reposo&&g.fc_reposo>52){score-=20;alertas.push('FC reposo alta ('+g.fc_reposo+' bpm)');}
-    if(g.sueno_puntuacion&&g.sueno_puntuacion<60){score-=25;alertas.push('Sueño pobre ('+g.sueno_puntuacion+'/100)');}
-    else if(g.sueno_puntuacion&&g.sueno_puntuacion<75){score-=10;alertas.push('Sueño regular ('+g.sueno_puntuacion+'/100)');}
-    if(g.estres_medio&&g.estres_medio>40){score-=15;alertas.push('Estrés elevado ('+g.estres_medio+')');}
-    if(g.sueno_total_min&&g.sueno_total_min<360){score-=15;alertas.push('Poco sueño ('+Math.floor(g.sueno_total_min/60)+'h '+g.sueno_total_min%60+'min)');}
-  }
-  if(dolor>=3){score-=25;alertas.push('Dolor muscular ('+dolor+'/5)');}
-  else if(dolor>=2){score-=10;}
-  if(fatiga>=4){score-=20;alertas.push('Fatiga alta ('+fatiga+'/5)');}
-  else if(fatiga>=3){score-=10;}
-  score=Math.max(0,score);
-  // Sin datos suficientes
-  if(!g&&dolor===0&&fatiga<=1){el.style.display='none';return;}
-  // Determinar nivel
+  var rp=recRpeSenal(hoy); if(rp) senales.push(rp);
+  if(dolor>=3) senales.push({k:'dolor',f:2,t:'Dolor muscular '+dolor+'/5'}); else if(dolor>=2) senales.push({k:'dolor',f:1,t:'Dolor muscular '+dolor+'/5'});
+  if(fatiga>=4) senales.push({k:'fatiga',f:2,t:'Fatiga alta '+fatiga+'/5'}); else if(fatiga>=3) senales.push({k:'fatiga',f:1,t:'Fatiga '+fatiga+'/5'});
+  if(sueSl<=2) senales.push({k:'sueSl',f:1,t:'Dormiste mal según tú ('+sueSl+'/5)'});
+  if(!hayFitbit&&!senales.length&&dolor===0&&fatiga<=1){el.style.display='none';return;}
+  var nSen=senales.length, fuertes=senales.filter(function(s){return s.f>=2;}).length;
+  var rep=senales.some(function(s){return s.rep;});
   var nivel,color,bg,icono,recom;
-  if(score>=75){
-    nivel='Buena recuperación';color='var(--green-text)';bg='var(--green-bg)';icono='💚';
-    recom='Entrena con normalidad.';
-  } else if(score>=50){
-    nivel='Recuperación moderada';color='var(--orange-text)';bg='var(--orange-bg)';icono='🟡';
-    recom='Reduce volumen ~20%. Mismos ejercicios, menos series.';
-  } else {
+  if(nSen>=3||fuertes>=2||dolor>=4||(fatiga>=4&&nSen>=2)){
     nivel='Recuperación baja';color='var(--red-text)';bg='var(--red-bg)';icono='🔴';
-    recom='Considera movilidad o descanso activo. Evita alta intensidad.';
+    recom='Movilidad o descanso activo. Si entrenas, sin fallo y a baja intensidad.';
+  } else if(nSen>=2||rep||dolor>=3||fatiga>=4){
+    nivel='Recuperación moderada';color='var(--orange-text)';bg='var(--orange-bg)';icono='🟡';
+    recom='Reduce volumen ~20%. Mismos ejercicios, menos series, sin llegar al fallo.';
+  } else {
+    nivel='Buena recuperación';color='var(--green-text)';bg='var(--green-bg)';icono='💚';
+    recom=nSen===1?'Entrena con normalidad. Hay 1 señal suelta: vigílala, no cambia el plan.':'Entrena con normalidad.';
   }
-  var garminTag=g?(esHoy?'<span style="font-size:10px;opacity:.7">· Garmin hoy</span>':'<span style="font-size:10px;opacity:.7">· Garmin '+g.fecha+'</span>'):'';
+  var tag=hayFitbit?'<span style="font-size:10px;opacity:.7">· Fitbit '+(dif===0?'hoy':ult.slice(8)+'/'+ult.slice(5,7))+'</span>':'<span style="font-size:10px;opacity:.7">· sin datos Fitbit recientes</span>';
   var html='<div style="background:'+bg+';border-radius:var(--rs);padding:.6rem .75rem">';
   html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem">';
   html+='<span style="font-size:13px;font-weight:700;color:'+color+'">'+icono+' '+nivel+'</span>';
-  html+='<span style="font-size:12px;font-weight:700;color:'+color+'">'+score+'% '+garminTag+'</span>';
+  html+='<span style="font-size:12px;font-weight:700;color:'+color+'">'+(nSen?nSen+(nSen===1?' señal ':' señales '):'')+tag+'</span>';
   html+='</div>';
-  if(alertas.length){
-    html+='<div style="font-size:11px;color:'+color+';opacity:.85;margin-bottom:.3rem">'+alertas.join(' · ')+'</div>';
-  }
+  if(nSen) html+='<div style="font-size:11px;color:'+color+';opacity:.9;margin-bottom:.3rem">'+senales.map(function(s){return s.t+(s.rep?' · se repite':'');}).join(' · ')+'</div>';
   html+='<div style="font-size:11px;color:'+color+';font-weight:600">'+recom+'</div>';
+  if(nota) html+='<div style="font-size:10px;color:'+color+';opacity:.7;margin-top:.3rem">'+nota+'</div>';
   html+='</div>';
   el.style.display='block';
   el.innerHTML=html;
@@ -7982,13 +8033,20 @@ function pdfIdb(modo,fn){
     });
   });
 }
-function pdfClave(tipo){ return tipo+':'+protoElegido(tipo); }
-function pdfIdsProto(tipo){ return (ST.protoPdfs&&ST.protoPdfs[pdfClave(tipo)])||[]; }
+// [vEXT_025] Los PDFs se asignan por DÍA del programa (D1..D4 / Descanso) y por tipo (cal / enf).
+// Las asignaciones de vEXT_024 (por protocolo, p.ej. 'cal:auto') siguen valiendo mientras ese día no tenga lista propia.
+function pdfDiaKey(){ return getDiaBoyle()||'Descanso'; }
+function pdfClave(tipo){ return tipo+':'+pdfDiaKey(); }
+function pdfIdsProto(tipo){
+  var m=ST.protoPdfs||{}, k=pdfClave(tipo);
+  if(m[k]!==undefined) return m[k];
+  return m[tipo+':'+protoElegido(tipo)]||[];
+}
 function pdfTam(b){ return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'; }
 
 function pdfFilaHtml(tipo){
   var h='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.6rem">'
-    +'<span style="font-size:11px;font-weight:700;color:var(--text2)">PDFs</span>';
+    +'<span style="font-size:11px;font-weight:700;color:var(--text2)">PDFs · '+pdfDiaKey()+'</span>';
   pdfIdsProto(tipo).forEach(function(id){
     var m=ST.pdfsMeta&&ST.pdfsMeta[id]; if(!m) return;
     h+='<span class="pill pdfchip" data-id="'+protoEsc(id)+'" onclick="pdfAbrir(this.dataset.id)" title="Abrir">'+protoEsc(m.n)+'</span>';
@@ -8005,9 +8063,8 @@ function pdfAbrirModal(tipo){
 function cerrarMoPdf(){ document.getElementById('mo-pdf').classList.remove('open'); }
 function pdfPintarModal(){
   var tipo=_pdfTipo, c=PROTO_CFG[tipo];
-  var r=protoResolver(tipo,getDiaBoyle()||'Descanso');
-  document.getElementById('mo-pdf-title').textContent='PDFs · '+c.titulo.replace(/^\S+\s/,'')+' · '+r.etiqueta;
-  document.getElementById('mo-pdf-info').textContent='Marca los PDFs que quieres en este protocolo. Tócalos para abrirlos. Se guardan solo en este dispositivo.';
+  document.getElementById('mo-pdf-title').textContent='PDFs · '+c.titulo.replace(/^\S+\s/,'')+' · '+pdfDiaKey();
+  document.getElementById('mo-pdf-info').textContent='Marca los PDFs que quieres en este día ('+pdfDiaKey()+'). Tócalos para abrirlos. Se guardan solo en este dispositivo.';
   var meta=ST.pdfsMeta||{}, ids=Object.keys(meta).sort(function(a,b){return (meta[b].f||0)-(meta[a].f||0);});
   var sel=pdfIdsProto(tipo);
   var list=document.getElementById('mo-pdf-list');
@@ -8024,9 +8081,9 @@ function pdfPintarModal(){
 }
 function pdfToggle(id,on){
   if(!ST.protoPdfs) ST.protoPdfs={};
-  var k=pdfClave(_pdfTipo), arr=(ST.protoPdfs[k]||[]).filter(function(x){return x!==id;});
+  var k=pdfClave(_pdfTipo), arr=pdfIdsProto(_pdfTipo).filter(function(x){return x!==id;});
   if(on) arr.push(id);
-  if(arr.length) ST.protoPdfs[k]=arr; else delete ST.protoPdfs[k];
+  ST.protoPdfs[k]=arr;
   save(); renderProtoSeccion(_pdfTipo);
 }
 function pdfSubir(input){
@@ -8043,7 +8100,7 @@ function pdfSubir(input){
         if(!ST.pdfsMeta) ST.pdfsMeta={};
         ST.pdfsMeta[id]={n:f.name.replace(/\.pdf$/i,''),t:f.size,f:Date.now()};
         if(!ST.protoPdfs) ST.protoPdfs={};
-        var k=pdfClave(_pdfTipo); ST.protoPdfs[k]=(ST.protoPdfs[k]||[]).concat([id]);
+        var k=pdfClave(_pdfTipo); ST.protoPdfs[k]=pdfIdsProto(_pdfTipo).concat([id]);
         ok++;
       }).catch(function(e){ fallos.push(f.name+' ('+(e&&e.message?e.message:'error')+')'); });
     });
@@ -8059,8 +8116,7 @@ function pdfBorrar(id){
   pdfIdb('readwrite',function(st){ return st.delete(id); }).catch(function(){}).then(function(){
     delete ST.pdfsMeta[id];
     Object.keys(ST.protoPdfs||{}).forEach(function(k){
-      var arr=ST.protoPdfs[k].filter(function(x){return x!==id;});
-      if(arr.length) ST.protoPdfs[k]=arr; else delete ST.protoPdfs[k];
+      ST.protoPdfs[k]=ST.protoPdfs[k].filter(function(x){return x!==id;});
     });
     save(); pdfPintarModal(); Object.keys(PROTO_CFG).forEach(renderProtoSeccion);
   });
@@ -9207,7 +9263,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_024';
+const APP_VERSION='vEXT_026';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

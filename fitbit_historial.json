@@ -1,14 +1,14 @@
 {
-  "actualizado": "2026-10-17T22:55:44.535442+00:00",
+  "actualizado": "2026-10-18T03:33:16.193045+00:00",
   "takeout_importado": "2026-10-12",
   "takeout_hasta": "2026-10-10",
   "sync_resumen": {
     "ultimo_dato": {
-      "pasos": "2026-10-17",
+      "pasos": "2026-10-18",
       "fc_reposo": "2026-10-17",
       "hrv": "2026-10-17",
       "sueno_total_min": "2026-10-17",
-      "calorias_dia": "2026-10-17",
+      "calorias_dia": "2026-10-18",
       "peso_kg": "2026-10-16"
     }
   },
@@ -1521,17 +1521,6 @@
           "calorias": 314,
           "fc_media": 88,
           "fc_max": null
-        },
-        {
-          "id": "7937815173155791832",
-          "tipo": "WALKING",
-          "nombre": "Caminar",
-          "inicio": "2026-10-09T21:41:36.800Z",
-          "fin": "2026-10-09T22:02:11.600Z",
-          "duracion_min": 21,
-          "calorias": 141,
-          "fc_media": 74,
-          "fc_max": null
         }
       ],
       "fc_reposo": 52.0,
@@ -1592,7 +1581,7 @@
     "2026-10-13": {
       "pasos": 7907,
       "distancia_km": 5.9,
-      "minutos_activos": 333,
+      "minutos_activos": 297,
       "calorias_dia": 2949.49,
       "fc_reposo": 50.0,
       "hrv": 51.75,
@@ -1705,7 +1694,11 @@
       "sueno_rem_min": 84
     },
     "2026-10-18": {
-      "minutos_activos": 28
+      "minutos_activos": 30,
+      "pasos": 20,
+      "distancia_km": 0.01,
+      "calorias_dia": 407.91,
+      "actividadesFitbit": []
     }
   }
 }

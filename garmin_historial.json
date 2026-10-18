@@ -3636,13 +3636,13 @@
     },
     "2026-10-16": {
       "fecha": "2026-10-16",
-      "pasos": 2830,
-      "calorias_dia": 1492.0,
-      "calorias_activas": 188.0,
-      "distancia_km": 2.38,
+      "pasos": 2882,
+      "calorias_dia": 2288.0,
+      "calorias_activas": 189.0,
+      "distancia_km": 2.42,
       "minutos_activos": 21,
       "fc_reposo": 51,
-      "estres_medio": 26,
+      "estres_medio": 27,
       "actividades": [
         {
           "nombre": "Fuerza",
@@ -3665,22 +3665,22 @@
     "2026-10-17": {
       "fecha": "2026-10-17",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-10-18": {
       "fecha": "2026-10-18",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 675,
+      "calorias_dia": 2064.0,
+      "calorias_activas": 5.0,
+      "distancia_km": 0.57,
+      "minutos_activos": 0,
+      "fc_reposo": 46,
+      "estres_medio": 14
     }
   },
   "actualizado": "2026-10-18"

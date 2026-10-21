@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-20T23:39:57.007490+00:00",
+  "actualizado": "2026-10-21T03:45:04.502816+00:00",
   "takeout_importado": "2026-10-12",
   "takeout_hasta": "2026-10-10",
   "sync_resumen": {
@@ -8,7 +8,7 @@
       "fc_reposo": "2026-10-20",
       "hrv": "2026-10-20",
       "sueno_total_min": "2026-10-20",
-      "calorias_dia": "2026-10-20",
+      "calorias_dia": "2026-10-21",
       "peso_kg": "2026-10-20"
     }
   },
@@ -1750,6 +1750,10 @@
       "sueno_profundo_min": 76,
       "sueno_ligero_min": 188,
       "sueno_rem_min": 92
+    },
+    "2026-10-21": {
+      "calorias_dia": 416.83,
+      "actividadesFitbit": []
     }
   }
 }

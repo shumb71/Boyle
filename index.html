@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_027</title>
+<title>Entreno Boyle vEXT_028</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -609,9 +609,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_027', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_028', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
-        console.log('SW EXT_027 registrado:', reg.scope);
+        console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
         document.addEventListener('visibilitychange', function(){ if(!document.hidden){ try{ reg.update(); }catch(e){} } });
       })
@@ -3199,15 +3199,58 @@ function claveEsDeEj(k,eq,principal){
   return false;
 }
 
+// [vEXT_028] Datos de una clave de ST.sets: prefijo de programa, semana y día del ciclo.
+// Formatos: p20260612_s3_d5_Ej (actual) | p20260612_d5_Ej (v101-v116) | d5_Ej (legacy).
+// Antes se leía k.split('_')[0] (= "p20260612") como si fuera el día: salía "Dia p20260612"
+// y el orden de las sesiones no se podía calcular (NaN), con lo que "última vez" podía ser la más antigua.
+function infoClaveSet(k){
+  var m=String(k).match(/^p(\d{8})_s(\d+)_d(\d+)_/);
+  if(m) return {pref:+m[1],sem:+m[2],dia:+m[3]};
+  m=String(k).match(/^p(\d{8})_d(\d+)_/);
+  if(m) return {pref:+m[1],sem:0,dia:+m[2]};
+  m=String(k).match(/^d(\d+)_/);
+  if(m) return {pref:0,sem:0,dia:+m[1]};
+  return {pref:0,sem:0,dia:0};
+}
+// Comparador: sesión más reciente primero (programa, luego semana, luego día del ciclo)
+function cmpClaveSetDesc(a,b){
+  var A=infoClaveSet(a),B=infoClaveSet(b);
+  return (B.pref-A.pref)||(B.sem-A.sem)||(B.dia-A.dia);
+}
+// Fecha real de una sesión: primera del historial con esa semana y día que caiga dentro de su programa.
+// Si no se puede saber con seguridad, devuelve null (mejor sin fecha que con una equivocada).
+function fechaDeClaveSet(k){
+  var i=infoClaveSet(k);
+  if(!i.sem||!i.dia) return null;
+  var p=String(i.pref||'');
+  var desde=p?p.replace(/^(\d{4})(\d{2})(\d{2})$/,'$1-$2-$3'):'';
+  var sig=0;
+  Object.keys(ST.sets||{}).forEach(function(kk){ var q=infoClaveSet(kk).pref; if(q>i.pref&&(!sig||q<sig)) sig=q; });
+  var hasta=sig?String(sig).replace(/^(\d{4})(\d{2})(\d{2})$/,'$1-$2-$3'):'';
+  var hf=ST.historialFechas||{}, res=null;
+  Object.keys(hf).sort().forEach(function(f){
+    if(res) return;
+    var s=hf[f]; if(!s) return;
+    if(desde&&f<desde) return;
+    if(hasta&&f>=hasta) return;
+    if(Number(s.semana)===i.sem&&Number(s.diaCiclo)===i.dia) res=f;
+  });
+  return res;
+}
+function etiquetaSesionSet(i){
+  var base=(i.sem?'S'+i.sem+' · ':'')+'Dia '+i.dia;
+  if(i.fecha){
+    var d=new Date(i.fecha+'T00:00:00');
+    return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'})+' · '+base;
+  }
+  return base;
+}
+
 // Obtener ultima sesion de un ejercicio
 function getUltimaSesion(ej){
   var ejC=(ej||'').replace(/&#39;/g,"'");
   var _eqU=ejNombresEquiv(ejC);
-  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqU,ejC)).sort((a,b)=>{
-    const da=parseInt(a.split('_')[0].replace('d',''));
-    const db=parseInt(b.split('_')[0].replace('d',''));
-    return db-da;
-  });
+  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqU,ejC)).sort(cmpClaveSetDesc);
   if(!keys.length) return null;
   // Excluir el dia actual
   const keysNoHoy=keys.filter(k=>!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia)));
@@ -3215,24 +3258,24 @@ function getUltimaSesion(ej){
   const sets=(ST.sets[keysNoHoy[0]]||[]).filter(Boolean);
   if(!sets.length) return null;
   const best=sets.reduce((a,b)=>((b.p*b.r)>(a.p*a.r)?b:a),sets[0]);
-  return{dia:keysNoHoy[0].replace('d','').split('_')[0],peso:best.p,reps:best.r,rpe:best.rpe};
+  var _iU=infoClaveSet(keysNoHoy[0]);
+  return{dia:_iU.dia,sem:_iU.sem,fecha:fechaDeClaveSet(keysNoHoy[0]),peso:best.p,reps:best.r,rpe:best.rpe};
 }
 
 // Obtener historial completo de un ejercicio
 function getHistorialEj(ej){
   var _eqH=ejNombresEquiv(ej);
-  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqH,ej)).sort((a,b)=>{
-    const da=parseInt(a.split('_')[0].replace('d',''));
-    const db=parseInt(b.split('_')[0].replace('d',''));
-    return db-da;
-  });
+  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqH,ej)).sort(cmpClaveSetDesc);
   return keys.map(k=>{
-    const dia=k.split('_')[0].replace('d','');
+    const _i=infoClaveSet(k);
+    const dia=_i.dia, sem=_i.sem, fecha=fechaDeClaveSet(k);
+    const etiqueta=etiquetaSesionSet({dia:dia,sem:sem,fecha:fecha});
+    const corta=fecha?((+fecha.slice(8,10))+'/'+(+fecha.slice(5,7))):('D'+dia);
     const sets=(ST.sets[k]||[]).filter(Boolean);
     const maxPeso=sets.length?Math.max(...sets.map(s=>s.p)):0;
     // [vEXT_027] decisión ↑ = ↓ de esa sesión (misma clave que ST.sets)
     const dec=(ST.decEj&&ST.decEj[k])||null;
-    return{dia,sets,maxPeso,dec};
+    return{dia,sem,fecha,etiqueta,corta,sets,maxPeso,dec};
   }).filter(x=>x.sets.length);
 }
 
@@ -3293,12 +3336,12 @@ function abrirHistEj(ej){
     grafEl.innerHTML='<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Peso maximo por sesion (kg)</div><div class="graf-wrap">'+
       hist.slice(0,10).reverse().map(h=>{
         const pct=maxPeso>0?Math.round((h.maxPeso/maxPeso)*100):0;
-        return`<div class="graf-bar-wrap"><div class="graf-bar" style="height:${pct}%"></div><div class="graf-lbl">D${h.dia}</div></div>`;
+        return`<div class="graf-bar-wrap"><div class="graf-bar" style="height:${pct}%"></div><div class="graf-lbl">${h.corta}</div></div>`;
       }).join('')+'</div>';
     // Lista
     listEl.innerHTML=hist.map(h=>`
       <div class="ej-hist-row">
-        <div class="ej-hist-dia" style="display:flex;align-items:center;justify-content:space-between"><span>Dia ${h.dia}</span><span style="color:var(--text);margin-right:2px">${decIconoHtml(h.dec,15)}</span></div>
+        <div class="ej-hist-dia" style="display:flex;align-items:center;justify-content:space-between"><span>${h.etiqueta}</span><span style="color:var(--text);margin-right:2px">${decIconoHtml(h.dec,15)}</span></div>
         <div class="ej-hist-sets">
           ${h.sets.map((s,i)=>{
             const vol=s.p*s.r;
@@ -3547,7 +3590,7 @@ const renders={
           var tieneDatosReales=(ss.filter(Boolean).length>0);
           var ultFechaStr='';
           if(ult){
-            var fechaReal=ST.fechaSesiones&&ST.fechaSesiones[ult.dia];
+            var fechaReal=ult.fecha;
             if(fechaReal){var fd=new Date(fechaReal+'T00:00:00');ultFechaStr=fd.toLocaleDateString('es-ES',{day:'numeric',month:'short'});}
             else{ultFechaStr='Dia '+ult.dia;}
           }
@@ -4473,7 +4516,7 @@ function openMo(ej,serie){
   // Última sesión
   const ult=getUltimaSesion(ejClean);
   const ultEl=document.getElementById('mo-ultima');
-  if(ult){ultEl.style.display='block';ultEl.textContent='Ultima vez — Dia '+ult.dia+': '+ult.peso+'kg × '+ult.reps+' reps · RPE '+ult.rpe;}
+  if(ult){ultEl.style.display='block';ultEl.textContent='Ultima vez — '+etiquetaSesionSet(ult)+': '+ult.peso+'kg × '+ult.reps+' reps · RPE '+ult.rpe;}
   else{ultEl.style.display='none';}
   // Reset toggle
   const chk=document.getElementById('m-all');
@@ -9305,7 +9348,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_027';
+const APP_VERSION='vEXT_028';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

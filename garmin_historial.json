@@ -3761,13 +3761,23 @@
     "2026-10-22": {
       "fecha": "2026-10-22",
       "pasos": 7554,
-      "calorias_dia": 2208.0,
+      "calorias_dia": 2220.0,
       "calorias_activas": 121.0,
       "distancia_km": 6.22,
       "minutos_activos": 0,
       "fc_reposo": 51,
       "estres_medio": 26
+    },
+    "2026-10-23": {
+      "fecha": "2026-10-23",
+      "pasos": null,
+      "calorias_dia": 338.0,
+      "calorias_activas": 0.0,
+      "distancia_km": 0.0,
+      "minutos_activos": 0,
+      "fc_reposo": null,
+      "estres_medio": -1
     }
   },
-  "actualizado": "2026-10-22"
+  "actualizado": "2026-10-23"
 }

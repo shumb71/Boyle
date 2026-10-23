@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-23T11:11:10.489822+00:00",
+  "actualizado": "2026-10-23T16:39:27.036437+00:00",
   "takeout_importado": "2026-10-12",
   "takeout_hasta": "2026-10-10",
   "sync_resumen": {
@@ -1711,7 +1711,7 @@
     "2026-10-19": {
       "pasos": 8288,
       "distancia_km": 6.19,
-      "minutos_activos": 368,
+      "minutos_activos": 244,
       "calorias_dia": 2735.9,
       "fc_reposo": 50.0,
       "hrv": 43.4,
@@ -1795,20 +1795,32 @@
       "sueno_rem_min": 104
     },
     "2026-10-23": {
-      "pasos": 7251,
-      "distancia_km": 5.41,
-      "minutos_activos": 164,
-      "calorias_dia": 1523.36,
+      "pasos": 10406,
+      "distancia_km": 7.77,
+      "minutos_activos": 309,
+      "calorias_dia": 2475.44,
       "fc_reposo": 51.0,
       "hrv": 41.05,
       "fr_respiratoria": 13.6,
-      "actividadesFitbit": [],
+      "actividadesFitbit": [
+        {
+          "id": "4077877923471905184",
+          "tipo": "HIKING",
+          "nombre": "Senderismo",
+          "inicio": "2026-10-23T09:51:22.800Z",
+          "fin": "2026-10-23T11:21:02.800Z",
+          "duracion_min": 90,
+          "calorias": 711,
+          "fc_media": 105,
+          "fc_max": null
+        }
+      ],
       "spo2": 95.3,
+      "peso_kg": 86.7,
       "sueno_total_min": 490,
       "sueno_profundo_min": 99,
       "sueno_ligero_min": 261,
-      "sueno_rem_min": 130,
-      "peso_kg": 86.7
+      "sueno_rem_min": 130
     }
   }
 }

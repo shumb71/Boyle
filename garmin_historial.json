@@ -3803,7 +3803,17 @@
         "fc_media": 109.0,
         "fc_max": 170.0
       }
+    },
+    "2026-10-24": {
+      "fecha": "2026-10-24",
+      "pasos": 1202,
+      "calorias_dia": 274.0,
+      "calorias_activas": 16.0,
+      "distancia_km": 0.99,
+      "minutos_activos": 0,
+      "fc_reposo": 51,
+      "estres_medio": 19
     }
   },
-  "actualizado": "2026-10-23"
+  "actualizado": "2026-10-24"
 }

@@ -1,7 +1,7 @@
 {
   "actualizado": "2026-10-24T22:57:29.049129+00:00",
-  "takeout_importado": "2026-10-12",
-  "takeout_hasta": "2026-10-10",
+  "takeout_importado": "2026-10-25",
+  "takeout_hasta": "2026-10-24",
   "sync_resumen": {
     "ultimo_dato": {
       "pasos": "2026-10-24",
@@ -40,7 +40,12 @@
       "sueno_total_min": 426,
       "sueno_profundo_min": 61,
       "sueno_ligero_min": 287,
-      "sueno_rem_min": 78
+      "sueno_rem_min": 78,
+      "temp_noche": 33.49,
+      "zona_ligera_min": 1410,
+      "zona_moderada_min": 25,
+      "zona_vigorosa_min": 3,
+      "zona_pico_min": 0
     },
     "2026-08-21": {
       "pasos": 3506,
@@ -50,7 +55,11 @@
       "calorias_dia": 1461.92,
       "actividadesFitbit": [],
       "carga_cardio": 48.8,
-      "azm": 53
+      "azm": 53,
+      "zona_ligera_min": 561,
+      "zona_moderada_min": 17,
+      "zona_vigorosa_min": 11,
+      "zona_pico_min": 0
     },
     "2026-08-23": {
       "pasos": 6312,
@@ -79,7 +88,12 @@
       "sueno_total_min": 458,
       "sueno_profundo_min": 45,
       "sueno_ligero_min": 345,
-      "sueno_rem_min": 68
+      "sueno_rem_min": 68,
+      "temp_noche": 33.48,
+      "zona_ligera_min": 1401,
+      "zona_moderada_min": 30,
+      "zona_vigorosa_min": 9,
+      "zona_pico_min": 0
     },
     "2026-08-24": {
       "pasos": 7447,
@@ -108,7 +122,12 @@
       "sueno_total_min": 383,
       "sueno_profundo_min": 69,
       "sueno_ligero_min": 261,
-      "sueno_rem_min": 53
+      "sueno_rem_min": 53,
+      "temp_noche": 33.57,
+      "zona_ligera_min": 1384,
+      "zona_moderada_min": 37,
+      "zona_vigorosa_min": 10,
+      "zona_pico_min": 9
     },
     "2026-08-25": {
       "pasos": 7302,
@@ -137,7 +156,12 @@
       "sueno_total_min": 364,
       "sueno_profundo_min": 18,
       "sueno_ligero_min": 327,
-      "sueno_rem_min": 19
+      "sueno_rem_min": 19,
+      "temp_noche": 33.69,
+      "zona_ligera_min": 1410,
+      "zona_moderada_min": 12,
+      "zona_vigorosa_min": 12,
+      "zona_pico_min": 6
     },
     "2026-08-26": {
       "pasos": 6388,
@@ -154,7 +178,12 @@
       "sueno_total_min": 285,
       "sueno_profundo_min": 51,
       "sueno_ligero_min": 218,
-      "sueno_rem_min": 16
+      "sueno_rem_min": 16,
+      "temp_noche": 32.4,
+      "zona_ligera_min": 1438,
+      "zona_moderada_min": 2,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-08-27": {
       "pasos": 9565,
@@ -195,7 +224,12 @@
       "sueno_total_min": 532,
       "sueno_profundo_min": 38,
       "sueno_ligero_min": 356,
-      "sueno_rem_min": 138
+      "sueno_rem_min": 138,
+      "temp_noche": 33.75,
+      "zona_ligera_min": 1298,
+      "zona_moderada_min": 17,
+      "zona_vigorosa_min": 2,
+      "zona_pico_min": 0
     },
     "2026-08-28": {
       "calorias_dia": 2866.85,
@@ -224,7 +258,12 @@
       "sueno_total_min": 514,
       "sueno_profundo_min": 25,
       "sueno_ligero_min": 397,
-      "sueno_rem_min": 92
+      "sueno_rem_min": 92,
+      "temp_noche": 34.08,
+      "zona_ligera_min": 1440,
+      "zona_moderada_min": 0,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-08-29": {
       "calorias_dia": 2608.2,
@@ -242,7 +281,12 @@
       "sueno_total_min": 522,
       "sueno_profundo_min": 81,
       "sueno_ligero_min": 337,
-      "sueno_rem_min": 104
+      "sueno_rem_min": 104,
+      "temp_noche": 33.18,
+      "zona_ligera_min": 1437,
+      "zona_moderada_min": 3,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-08-30": {
       "pasos": 14624,
@@ -282,7 +326,12 @@
       "sueno_total_min": 439,
       "sueno_profundo_min": 77,
       "sueno_ligero_min": 286,
-      "sueno_rem_min": 76
+      "sueno_rem_min": 76,
+      "temp_noche": 33.81,
+      "zona_ligera_min": 1318,
+      "zona_moderada_min": 66,
+      "zona_vigorosa_min": 33,
+      "zona_pico_min": 13
     },
     "2026-08-31": {
       "pasos": 13602,
@@ -312,7 +361,12 @@
       "sueno_total_min": 565,
       "sueno_profundo_min": 41,
       "sueno_ligero_min": 406,
-      "sueno_rem_min": 118
+      "sueno_rem_min": 118,
+      "temp_noche": 33.82,
+      "zona_ligera_min": 1372,
+      "zona_moderada_min": 51,
+      "zona_vigorosa_min": 13,
+      "zona_pico_min": 4
     },
     "2026-09-01": {
       "calorias_dia": 3009.73,
@@ -342,7 +396,14 @@
       "sueno_total_min": 454,
       "sueno_profundo_min": 0,
       "sueno_ligero_min": 361,
-      "sueno_rem_min": 93
+      "sueno_rem_min": 93,
+      "acwr": 0.97,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.06,
+      "zona_ligera_min": 1392,
+      "zona_moderada_min": 27,
+      "zona_vigorosa_min": 12,
+      "zona_pico_min": 9
     },
     "2026-09-02": {
       "pasos": 7282,
@@ -360,7 +421,14 @@
       "sueno_total_min": 475,
       "sueno_profundo_min": 73,
       "sueno_ligero_min": 314,
-      "sueno_rem_min": 88
+      "sueno_rem_min": 88,
+      "acwr": 1.06,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.24,
+      "zona_ligera_min": 1428,
+      "zona_moderada_min": 8,
+      "zona_vigorosa_min": 4,
+      "zona_pico_min": 0
     },
     "2026-09-03": {
       "pasos": 9185,
@@ -378,7 +446,14 @@
       "sueno_total_min": 463,
       "sueno_profundo_min": 66,
       "sueno_ligero_min": 296,
-      "sueno_rem_min": 101
+      "sueno_rem_min": 101,
+      "acwr": 1.12,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.09,
+      "zona_ligera_min": 1424,
+      "zona_moderada_min": 4,
+      "zona_vigorosa_min": 12,
+      "zona_pico_min": 0
     },
     "2026-09-04": {
       "pasos": 6979,
@@ -408,7 +483,14 @@
       "readiness": 66,
       "carga_cardio": 39.1,
       "fr_respiratoria": 12.8,
-      "azm": 37
+      "azm": 37,
+      "acwr": 1.25,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.01,
+      "zona_ligera_min": 1240,
+      "zona_moderada_min": 30,
+      "zona_vigorosa_min": 3,
+      "zona_pico_min": 0
     },
     "2026-09-05": {
       "calorias_dia": 4180.22,
@@ -438,7 +520,14 @@
       "readiness": 57,
       "carga_cardio": 204.8,
       "fr_respiratoria": 12.8,
-      "azm": 227
+      "azm": 227,
+      "acwr": 1.48,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 33.58,
+      "zona_ligera_min": 1272,
+      "zona_moderada_min": 107,
+      "zona_vigorosa_min": 53,
+      "zona_pico_min": 8
     },
     "2026-09-06": {
       "calorias_dia": 3078.76,
@@ -479,7 +568,14 @@
       "readiness": 15,
       "carga_cardio": 47.9,
       "fr_respiratoria": 14.8,
-      "azm": 50
+      "azm": 50,
+      "acwr": 1.22,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.55,
+      "zona_ligera_min": 1396,
+      "zona_moderada_min": 38,
+      "zona_vigorosa_min": 6,
+      "zona_pico_min": 0
     },
     "2026-09-07": {
       "calorias_dia": 3144.41,
@@ -520,7 +616,14 @@
       "readiness": 43,
       "carga_cardio": 29.5,
       "fr_respiratoria": 15.8,
-      "azm": 29
+      "azm": 29,
+      "acwr": 1.16,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.1,
+      "zona_ligera_min": 1410,
+      "zona_moderada_min": 30,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-09-08": {
       "pasos": 11650,
@@ -561,7 +664,14 @@
       "readiness": 53,
       "carga_cardio": 27.4,
       "fr_respiratoria": 17.0,
-      "azm": 32
+      "azm": 32,
+      "acwr": 1.08,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.17,
+      "zona_ligera_min": 1394,
+      "zona_moderada_min": 24,
+      "zona_vigorosa_min": 4,
+      "zona_pico_min": 0
     },
     "2026-09-09": {
       "calorias_dia": 3235.25,
@@ -602,7 +712,15 @@
       "readiness": 63,
       "carga_cardio": 118.5,
       "fr_respiratoria": 16.0,
-      "azm": 117
+      "azm": 117,
+      "acwr": 1.27,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.17,
+      "zona_ligera_min": 1354,
+      "zona_moderada_min": 54,
+      "zona_vigorosa_min": 16,
+      "zona_pico_min": 16,
+      "grasa_pct": 28.6
     },
     "2026-09-10": {
       "pasos": 5130,
@@ -621,7 +739,15 @@
       "readiness": 53,
       "carga_cardio": 3.2,
       "fr_respiratoria": 15.0,
-      "azm": 2
+      "azm": 2,
+      "acwr": 1.26,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.33,
+      "zona_ligera_min": 1438,
+      "zona_moderada_min": 2,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.8
     },
     "2026-09-11": {
       "pasos": 5122,
@@ -663,7 +789,15 @@
       "readiness": 65,
       "carga_cardio": 164.0,
       "fr_respiratoria": 14.8,
-      "azm": 204
+      "azm": 204,
+      "acwr": 1.45,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 34.28,
+      "zona_ligera_min": 1260,
+      "zona_moderada_min": 73,
+      "zona_vigorosa_min": 63,
+      "zona_pico_min": 3,
+      "grasa_pct": 28.4
     },
     "2026-09-12": {
       "pasos": 7277,
@@ -682,7 +816,15 @@
       "readiness": 55,
       "carga_cardio": 34.3,
       "fr_respiratoria": 15.0,
-      "azm": 25
+      "azm": 25,
+      "acwr": 1.03,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.57,
+      "zona_ligera_min": 1416,
+      "zona_moderada_min": 24,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.4
     },
     "2026-09-13": {
       "pasos": 4879,
@@ -698,7 +840,14 @@
       "sueno_ligero_min": 318,
       "sueno_rem_min": 144,
       "readiness": 11,
-      "fr_respiratoria": 15.2
+      "fr_respiratoria": 15.2,
+      "acwr": 0.98,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.83,
+      "zona_ligera_min": 1440,
+      "zona_moderada_min": 0,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-09-14": {
       "pasos": 8980,
@@ -740,7 +889,15 @@
       "readiness": 63,
       "carga_cardio": 46.2,
       "fr_respiratoria": 15.2,
-      "azm": 55
+      "azm": 55,
+      "acwr": 1.13,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.16,
+      "zona_ligera_min": 1401,
+      "zona_moderada_min": 24,
+      "zona_vigorosa_min": 15,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.5
     },
     "2026-09-15": {
       "calorias_dia": 2617.83,
@@ -771,7 +928,15 @@
       "readiness": 53,
       "carga_cardio": 42.9,
       "fr_respiratoria": 15.6,
-      "azm": 51
+      "azm": 51,
+      "acwr": 1.18,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.59,
+      "zona_ligera_min": 1400,
+      "zona_moderada_min": 30,
+      "zona_vigorosa_min": 9,
+      "zona_pico_min": 1,
+      "grasa_pct": 28.6
     },
     "2026-09-16": {
       "pasos": 8691,
@@ -790,7 +955,15 @@
       "readiness": 65,
       "carga_cardio": 32.2,
       "fr_respiratoria": 14.0,
-      "azm": 25
+      "azm": 25,
+      "acwr": 0.98,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.69,
+      "zona_ligera_min": 1412,
+      "zona_moderada_min": 15,
+      "zona_vigorosa_min": 13,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.7
     },
     "2026-09-17": {
       "pasos": 4500,
@@ -821,7 +994,15 @@
       "readiness": 66,
       "carga_cardio": 121.7,
       "fr_respiratoria": 15.0,
-      "azm": 136
+      "azm": 136,
+      "acwr": 1.23,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.05,
+      "zona_ligera_min": 1343,
+      "zona_moderada_min": 57,
+      "zona_vigorosa_min": 35,
+      "zona_pico_min": 5,
+      "grasa_pct": 28.5
     },
     "2026-09-18": {
       "pasos": 10927,
@@ -873,7 +1054,15 @@
       "readiness": 65,
       "carga_cardio": 121.0,
       "fr_respiratoria": 13.6,
-      "azm": 118
+      "azm": 118,
+      "acwr": 1.08,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.93,
+      "zona_ligera_min": 1350,
+      "zona_moderada_min": 62,
+      "zona_vigorosa_min": 18,
+      "zona_pico_min": 10,
+      "grasa_pct": 28.6
     },
     "2026-09-19": {
       "calorias_dia": 2676.38,
@@ -903,7 +1092,14 @@
       "readiness": 51,
       "carga_cardio": 71.4,
       "fr_respiratoria": 13.6,
-      "azm": 93
+      "azm": 93,
+      "acwr": 1.15,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.28,
+      "zona_ligera_min": 1111,
+      "zona_moderada_min": 46,
+      "zona_vigorosa_min": 24,
+      "zona_pico_min": 0
     },
     "2026-09-20": {
       "calorias_dia": 2660.0,
@@ -925,7 +1121,13 @@
       "minutos_activos": 90,
       "fc_reposo": 51.0,
       "carga_cardio": 100.0,
-      "azm": 99
+      "azm": 99,
+      "acwr": 1.2,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "zona_ligera_min": 843,
+      "zona_moderada_min": 29,
+      "zona_vigorosa_min": 17,
+      "zona_pico_min": 18
     },
     "2026-09-21": {
       "pasos": 8390,
@@ -956,7 +1158,15 @@
       "readiness": 63,
       "carga_cardio": 90.5,
       "fr_respiratoria": 13.8,
-      "azm": 93
+      "azm": 93,
+      "acwr": 1.29,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.33,
+      "zona_ligera_min": 1373,
+      "zona_moderada_min": 40,
+      "zona_vigorosa_min": 22,
+      "zona_pico_min": 5,
+      "grasa_pct": 28.7
     },
     "2026-09-22": {
       "calorias_dia": 3068.64,
@@ -986,7 +1196,14 @@
       "readiness": 15,
       "carga_cardio": 107.7,
       "fr_respiratoria": 13.4,
-      "azm": 127
+      "azm": 127,
+      "acwr": 1.39,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 34.12,
+      "zona_ligera_min": 1335,
+      "zona_moderada_min": 82,
+      "zona_vigorosa_min": 19,
+      "zona_pico_min": 4
     },
     "2026-09-23": {
       "pasos": 6140,
@@ -1005,7 +1222,15 @@
       "readiness": 25,
       "carga_cardio": 22.1,
       "fr_respiratoria": 13.8,
-      "azm": 23
+      "azm": 23,
+      "acwr": 1.36,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 33.9,
+      "zona_ligera_min": 1419,
+      "zona_moderada_min": 17,
+      "zona_vigorosa_min": 4,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.8
     },
     "2026-09-24": {
       "pasos": 10858,
@@ -1036,7 +1261,15 @@
       "readiness": 90,
       "carga_cardio": 56.2,
       "fr_respiratoria": 14.4,
-      "azm": 68
+      "azm": 68,
+      "acwr": 1.19,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.93,
+      "zona_ligera_min": 1395,
+      "zona_moderada_min": 22,
+      "zona_vigorosa_min": 23,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.9
     },
     "2026-09-25": {
       "pasos": 7693,
@@ -1055,7 +1288,15 @@
       "readiness": 85,
       "carga_cardio": 64.5,
       "fr_respiratoria": 15.4,
-      "azm": 70
+      "azm": 70,
+      "acwr": 1.04,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.07,
+      "zona_ligera_min": 1391,
+      "zona_moderada_min": 28,
+      "zona_vigorosa_min": 17,
+      "zona_pico_min": 4,
+      "grasa_pct": 28.7
     },
     "2026-09-26": {
       "pasos": 5930,
@@ -1073,7 +1314,14 @@
       "readiness": 57,
       "carga_cardio": 2.7,
       "fr_respiratoria": 15.2,
-      "azm": 1
+      "azm": 1,
+      "acwr": 0.9,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.12,
+      "zona_ligera_min": 1439,
+      "zona_moderada_min": 1,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-09-27": {
       "calorias_dia": 3134.9,
@@ -1102,7 +1350,14 @@
       "readiness": 66,
       "carga_cardio": 140.0,
       "fr_respiratoria": 14.8,
-      "azm": 90
+      "azm": 90,
+      "acwr": 0.98,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.63,
+      "zona_ligera_min": 1339,
+      "zona_moderada_min": 43,
+      "zona_vigorosa_min": 57,
+      "zona_pico_min": 1
     },
     "2026-09-28": {
       "pasos": 7713,
@@ -1121,7 +1376,15 @@
       "readiness": 57,
       "carga_cardio": 28.2,
       "fr_respiratoria": 15.2,
-      "azm": 29
+      "azm": 29,
+      "acwr": 0.88,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.69,
+      "zona_ligera_min": 1390,
+      "zona_moderada_min": 14,
+      "zona_vigorosa_min": 7,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.7
     },
     "2026-09-29": {
       "pasos": 13861,
@@ -1152,7 +1415,15 @@
       "readiness": 67,
       "carga_cardio": 100.2,
       "fr_respiratoria": 14.6,
-      "azm": 97
+      "azm": 97,
+      "acwr": 0.85,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.34,
+      "zona_ligera_min": 1253,
+      "zona_moderada_min": 40,
+      "zona_vigorosa_min": 23,
+      "zona_pico_min": 6,
+      "grasa_pct": 28.5
     },
     "2026-09-30": {
       "pasos": 6847,
@@ -1183,7 +1454,15 @@
       "readiness": 77,
       "carga_cardio": 80.1,
       "fr_respiratoria": 14.6,
-      "azm": 97
+      "azm": 97,
+      "acwr": 0.94,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 32.56,
+      "zona_ligera_min": 1378,
+      "zona_moderada_min": 26,
+      "zona_vigorosa_min": 36,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.5
     },
     "2026-10-01": {
       "pasos": 11869,
@@ -1214,7 +1493,15 @@
       "readiness": 68,
       "carga_cardio": 106.6,
       "fr_respiratoria": 14.6,
-      "azm": 117
+      "azm": 117,
+      "acwr": 1.0,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.78,
+      "zona_ligera_min": 1355,
+      "zona_moderada_min": 48,
+      "zona_vigorosa_min": 31,
+      "zona_pico_min": 6,
+      "grasa_pct": 28.2
     },
     "2026-10-02": {
       "calorias_dia": 2870.94,
@@ -1245,7 +1532,15 @@
       "readiness": 67,
       "carga_cardio": 91.0,
       "fr_respiratoria": 14.6,
-      "azm": 112
+      "azm": 112,
+      "acwr": 1.03,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.97,
+      "zona_ligera_min": 1358,
+      "zona_moderada_min": 53,
+      "zona_vigorosa_min": 29,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.2
     },
     "2026-10-03": {
       "pasos": 14992,
@@ -1275,7 +1570,14 @@
       "readiness": 68,
       "carga_cardio": 150.3,
       "fr_respiratoria": 15.2,
-      "azm": 168
+      "azm": 168,
+      "acwr": 1.34,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 33.87,
+      "zona_ligera_min": 1325,
+      "zona_moderada_min": 60,
+      "zona_vigorosa_min": 49,
+      "zona_pico_min": 6
     },
     "2026-10-04": {
       "pasos": 9250,
@@ -1304,7 +1606,14 @@
       "sueno_total_min": 385,
       "sueno_profundo_min": 58,
       "sueno_ligero_min": 219,
-      "sueno_rem_min": 108
+      "sueno_rem_min": 108,
+      "acwr": 1.32,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 33.47,
+      "zona_ligera_min": 1278,
+      "zona_moderada_min": 108,
+      "zona_vigorosa_min": 54,
+      "zona_pico_min": 0
     },
     "2026-10-05": {
       "pasos": 8272,
@@ -1335,7 +1644,15 @@
       "sueno_total_min": 569,
       "sueno_profundo_min": 82,
       "sueno_ligero_min": 343,
-      "sueno_rem_min": 144
+      "sueno_rem_min": 144,
+      "acwr": 1.38,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 34.65,
+      "zona_ligera_min": 1372,
+      "zona_moderada_min": 45,
+      "zona_vigorosa_min": 23,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.0
     },
     "2026-10-06": {
       "pasos": 13573,
@@ -1366,7 +1683,15 @@
       "sueno_total_min": 239,
       "sueno_profundo_min": 60,
       "sueno_ligero_min": 133,
-      "sueno_rem_min": 46
+      "sueno_rem_min": 46,
+      "acwr": 1.32,
+      "acwr_etiqueta": "OVER_TRAINING",
+      "temp_noche": 34.27,
+      "zona_ligera_min": 1350,
+      "zona_moderada_min": 65,
+      "zona_vigorosa_min": 25,
+      "zona_pico_min": 0,
+      "grasa_pct": 27.9
     },
     "2026-10-07": {
       "calorias_dia": 2975.15,
@@ -1397,7 +1722,15 @@
       "sueno_total_min": 479,
       "sueno_profundo_min": 77,
       "sueno_ligero_min": 295,
-      "sueno_rem_min": 107
+      "sueno_rem_min": 107,
+      "acwr": 1.29,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.04,
+      "zona_ligera_min": 1309,
+      "zona_moderada_min": 22,
+      "zona_vigorosa_min": 8,
+      "zona_pico_min": 0,
+      "grasa_pct": 27.8
     },
     "2026-10-08": {
       "pasos": 7367,
@@ -1439,7 +1772,15 @@
       "sueno_total_min": 299,
       "sueno_profundo_min": 58,
       "sueno_ligero_min": 194,
-      "sueno_rem_min": 47
+      "sueno_rem_min": 47,
+      "acwr": 1.16,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.91,
+      "zona_ligera_min": 1395,
+      "zona_moderada_min": 34,
+      "zona_vigorosa_min": 10,
+      "zona_pico_min": 1,
+      "grasa_pct": 28.3
     },
     "2026-10-09": {
       "calorias_dia": 3362.47,
@@ -1470,7 +1811,15 @@
       "sueno_total_min": 481,
       "sueno_profundo_min": 105,
       "sueno_ligero_min": 260,
-      "sueno_rem_min": 116
+      "sueno_rem_min": 116,
+      "acwr": 1.13,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.02,
+      "zona_ligera_min": 1417,
+      "zona_moderada_min": 15,
+      "zona_vigorosa_min": 5,
+      "zona_pico_min": 3,
+      "grasa_pct": 28.3
     },
     "2026-10-10": {
       "pasos": 17401,
@@ -1533,7 +1882,14 @@
       "sueno_total_min": 439,
       "sueno_profundo_min": 51,
       "sueno_ligero_min": 302,
-      "sueno_rem_min": 86
+      "sueno_rem_min": 86,
+      "acwr": 0.9,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.8,
+      "zona_ligera_min": 1417,
+      "zona_moderada_min": 22,
+      "zona_vigorosa_min": 1,
+      "zona_pico_min": 0
     },
     "2026-10-11": {
       "pasos": 22264,
@@ -1560,7 +1916,17 @@
       "sueno_total_min": 459,
       "sueno_profundo_min": 117,
       "sueno_ligero_min": 235,
-      "sueno_rem_min": 107
+      "sueno_rem_min": 107,
+      "readiness": 25,
+      "carga_cardio": 273.6,
+      "azm": 295,
+      "acwr": 1.01,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 32.93,
+      "zona_ligera_min": 1228,
+      "zona_moderada_min": 127,
+      "zona_vigorosa_min": 60,
+      "zona_pico_min": 25
     },
     "2026-10-12": {
       "calorias_dia": 2469.41,
@@ -1576,7 +1942,18 @@
       "sueno_total_min": 554,
       "sueno_profundo_min": 96,
       "sueno_ligero_min": 313,
-      "sueno_rem_min": 145
+      "sueno_rem_min": 145,
+      "readiness": 55,
+      "carga_cardio": 13.9,
+      "azm": 12,
+      "acwr": 0.91,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.69,
+      "zona_ligera_min": 1431,
+      "zona_moderada_min": 6,
+      "zona_vigorosa_min": 1,
+      "zona_pico_min": 2,
+      "grasa_pct": 28.3
     },
     "2026-10-13": {
       "pasos": 7907,
@@ -1604,7 +1981,18 @@
       "sueno_total_min": 418,
       "sueno_profundo_min": 90,
       "sueno_ligero_min": 205,
-      "sueno_rem_min": 123
+      "sueno_rem_min": 123,
+      "readiness": 78,
+      "carga_cardio": 77.7,
+      "azm": 94,
+      "acwr": 0.88,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.48,
+      "zona_ligera_min": 1376,
+      "zona_moderada_min": 35,
+      "zona_vigorosa_min": 27,
+      "zona_pico_min": 2,
+      "grasa_pct": 28.2
     },
     "2026-10-14": {
       "calorias_dia": 3063.7,
@@ -1620,7 +2008,18 @@
       "sueno_total_min": 444,
       "sueno_profundo_min": 140,
       "sueno_ligero_min": 201,
-      "sueno_rem_min": 103
+      "sueno_rem_min": 103,
+      "readiness": 68,
+      "carga_cardio": 81.2,
+      "azm": 90,
+      "acwr": 0.94,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.81,
+      "zona_ligera_min": 1364,
+      "zona_moderada_min": 61,
+      "zona_vigorosa_min": 15,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.3
     },
     "2026-10-15": {
       "pasos": 7648,
@@ -1648,7 +2047,18 @@
       "sueno_total_min": 432,
       "sueno_profundo_min": 76,
       "sueno_ligero_min": 256,
-      "sueno_rem_min": 100
+      "sueno_rem_min": 100,
+      "readiness": 88,
+      "carga_cardio": 71.0,
+      "azm": 92,
+      "acwr": 1.0,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.43,
+      "zona_ligera_min": 1301,
+      "zona_moderada_min": 39,
+      "zona_vigorosa_min": 24,
+      "zona_pico_min": 2,
+      "grasa_pct": 28.5
     },
     "2026-10-16": {
       "pasos": 8021,
@@ -1676,7 +2086,18 @@
       "sueno_total_min": 510,
       "sueno_profundo_min": 88,
       "sueno_ligero_min": 302,
-      "sueno_rem_min": 120
+      "sueno_rem_min": 120,
+      "readiness": 58,
+      "carga_cardio": 22.5,
+      "azm": 20,
+      "acwr": 1.02,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 33.92,
+      "zona_ligera_min": 1421,
+      "zona_moderada_min": 17,
+      "zona_vigorosa_min": 2,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.3
     },
     "2026-10-17": {
       "minutos_activos": 172,
@@ -1691,7 +2112,17 @@
       "sueno_total_min": 487,
       "sueno_profundo_min": 99,
       "sueno_ligero_min": 304,
-      "sueno_rem_min": 84
+      "sueno_rem_min": 84,
+      "readiness": 46,
+      "carga_cardio": 1.1,
+      "azm": 1,
+      "acwr": 1.0,
+      "acwr_etiqueta": "OPTIMAL_TRAINING",
+      "temp_noche": 34.15,
+      "zona_ligera_min": 1439,
+      "zona_moderada_min": 1,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     },
     "2026-10-18": {
       "minutos_activos": 185,
@@ -1706,7 +2137,17 @@
       "sueno_total_min": 497,
       "sueno_profundo_min": 108,
       "sueno_ligero_min": 263,
-      "sueno_rem_min": 126
+      "sueno_rem_min": 126,
+      "readiness": 56,
+      "carga_cardio": 15.1,
+      "azm": 16,
+      "acwr": 0.54,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 34.12,
+      "zona_ligera_min": 1432,
+      "zona_moderada_min": 0,
+      "zona_vigorosa_min": 8,
+      "zona_pico_min": 0
     },
     "2026-10-19": {
       "pasos": 8288,
@@ -1722,7 +2163,18 @@
       "sueno_total_min": 382,
       "sueno_profundo_min": 75,
       "sueno_ligero_min": 248,
-      "sueno_rem_min": 59
+      "sueno_rem_min": 59,
+      "readiness": 56,
+      "carga_cardio": 5.1,
+      "azm": 3,
+      "acwr": 0.55,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 33.35,
+      "zona_ligera_min": 1437,
+      "zona_moderada_min": 3,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.8
     },
     "2026-10-20": {
       "pasos": 8020,
@@ -1749,7 +2201,18 @@
       "sueno_total_min": 356,
       "sueno_profundo_min": 76,
       "sueno_ligero_min": 188,
-      "sueno_rem_min": 92
+      "sueno_rem_min": 92,
+      "readiness": 56,
+      "carga_cardio": 72.4,
+      "azm": 84,
+      "acwr": 0.55,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 33.12,
+      "zona_ligera_min": 1374,
+      "zona_moderada_min": 47,
+      "zona_vigorosa_min": 15,
+      "zona_pico_min": 4,
+      "grasa_pct": 29.0
     },
     "2026-10-21": {
       "calorias_dia": 2984.43,
@@ -1777,7 +2240,18 @@
       "sueno_total_min": 578,
       "sueno_profundo_min": 105,
       "sueno_ligero_min": 342,
-      "sueno_rem_min": 131
+      "sueno_rem_min": 131,
+      "readiness": 13,
+      "carga_cardio": 29.8,
+      "azm": 27,
+      "acwr": 0.44,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 33.15,
+      "zona_ligera_min": 1418,
+      "zona_moderada_min": 18,
+      "zona_vigorosa_min": 4,
+      "zona_pico_min": 0,
+      "grasa_pct": 28.5
     },
     "2026-10-22": {
       "pasos": 7956,
@@ -1792,7 +2266,17 @@
       "sueno_total_min": 470,
       "sueno_profundo_min": 74,
       "sueno_ligero_min": 292,
-      "sueno_rem_min": 104
+      "sueno_rem_min": 104,
+      "readiness": 42,
+      "carga_cardio": 27.5,
+      "azm": 29,
+      "acwr": 0.36,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 33.3,
+      "zona_ligera_min": 1422,
+      "zona_moderada_min": 9,
+      "zona_vigorosa_min": 7,
+      "zona_pico_min": 2
     },
     "2026-10-23": {
       "pasos": 13567,
@@ -1831,7 +2315,18 @@
       "sueno_total_min": 490,
       "sueno_profundo_min": 99,
       "sueno_ligero_min": 261,
-      "sueno_rem_min": 130
+      "sueno_rem_min": 130,
+      "readiness": 51,
+      "carga_cardio": 141.1,
+      "azm": 150,
+      "acwr": 0.58,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 33.29,
+      "zona_ligera_min": 1337,
+      "zona_moderada_min": 56,
+      "zona_vigorosa_min": 36,
+      "zona_pico_min": 11,
+      "grasa_pct": 28.4
     },
     "2026-10-24": {
       "pasos": 7513,
@@ -1858,7 +2353,17 @@
       "sueno_total_min": 342,
       "sueno_profundo_min": 75,
       "sueno_ligero_min": 209,
-      "sueno_rem_min": 58
+      "sueno_rem_min": 58,
+      "readiness": 52,
+      "carga_cardio": 3.6,
+      "azm": 2,
+      "acwr": 0.59,
+      "acwr_etiqueta": "UNDER_TRAINING",
+      "temp_noche": 32.54,
+      "zona_ligera_min": 1257,
+      "zona_moderada_min": 2,
+      "zona_vigorosa_min": 0,
+      "zona_pico_min": 0
     }
   }
 }

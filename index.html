@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_028</title>
+<title>Entreno Boyle vEXT_029</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -7226,6 +7226,9 @@ function recupDia(f,H,HS){
     sue:(g.sueno_total_min!=null&&g.sueno_total_min>=150)?g.sueno_total_min:null,
     prof:g.sueno_profundo_min!=null?g.sueno_profundo_min:null, rem:g.sueno_rem_min!=null?g.sueno_rem_min:null,
     pasos:g.pasos!=null?g.pasos:null, peso:g.peso_kg!=null?g.peso_kg:null, rdy:g.readiness!=null?g.readiness:null,
+    acwr:g.acwr!=null?g.acwr:null, acwrE:g.acwr_etiqueta||null, temp:g.temp_noche!=null?g.temp_noche:null,
+    zm:g.zona_moderada_min!=null?g.zona_moderada_min:null, zv:g.zona_vigorosa_min!=null?g.zona_vigorosa_min:null, zp:g.zona_pico_min!=null?g.zona_pico_min:null,
+    gra:g.grasa_pct!=null?g.grasa_pct:null,
     pesas:!!(s&&s.completado)||!!g.fuerza, acts:acts, s:s};
 }
 function recupDatos(){
@@ -7264,6 +7267,34 @@ function _chipsActs(acts){
   return orden.map(function(k){ var x=g[k]; return '<span style="display:inline-block;background:var(--bg3);border-radius:12px;padding:2px 7px;font-size:11px;margin:1px 3px 1px 0;white-space:nowrap">'+x.i+' '+x.t+(x.n>1?' ×'+x.n:'')+(x.m?' '+x.m+'\'':'')+'</span>'; }).join('');
 }
 function _puntoEst(e){ return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+(e?RECUP_EST[e]:'rgba(128,128,128,.35)')+'"></span>'; }
+// [vEXT_029] Mini gráficos en SVG (sin librerías): línea con banda opcional y barras apiladas
+function _sparkSvg(vals,o){
+  o=o||{}; var w=o.w||280,h=o.h||44,pad=4;
+  var xs=vals.filter(function(x){return x!=null;}); if(xs.length<2) return '';
+  var lo=Math.min.apply(null,o.band?xs.concat([o.band[0]]):xs), hi=Math.max.apply(null,o.band?xs.concat([o.band[1]]):xs);
+  if(hi===lo){ hi+=1; lo-=1; }
+  var sx=(w-2*pad)/Math.max(vals.length-1,1), sy=function(v){ return h-pad-(v-lo)/(hi-lo)*(h-2*pad); };
+  var d='', ult=null;
+  vals.forEach(function(v,i){ if(v==null) return; d+=(d&&vals[i-1]!=null?'L':'M')+(pad+i*sx).toFixed(1)+' '+sy(v).toFixed(1)+' '; ult=[pad+i*sx,sy(v)]; });
+  var band=o.band?'<rect x="0" y="'+sy(o.band[1]).toFixed(1)+'" width="'+w+'" height="'+Math.max(sy(o.band[0])-sy(o.band[1]),1).toFixed(1)+'" fill="'+(o.bandCol||'rgba(46,125,50,.14)')+'"/>':'';
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block;margin-top:4px">'+band+
+    '<path d="'+d+'" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+
+    (ult?'<circle cx="'+ult[0].toFixed(1)+'" cy="'+ult[1].toFixed(1)+'" r="3" fill="var(--blue)"/>':'')+'</svg>';
+}
+function _zonasSvg(dias){
+  var arr=dias.filter(function(d){return d.zm!=null||d.zv!=null||d.zp!=null;}).slice(-14);
+  if(arr.length<3) return '';
+  var tot=function(d){return (d.zm||0)+(d.zv||0)+(d.zp||0);};
+  var mx=Math.max.apply(null,arr.map(tot).concat([30])), w=280,h=56,bw=w/arr.length;
+  var cols=['rgba(21,101,192,.30)','rgba(21,101,192,.62)','rgba(21,101,192,1)'];
+  var rects=arr.map(function(d,i){
+    var y=h, out='';
+    [[d.zm||0,0],[d.zv||0,1],[d.zp||0,2]].forEach(function(z){ var hh=z[0]/mx*(h-2); if(hh<=0) return; y-=hh; out+='<rect x="'+(i*bw+1.5).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-3).toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+cols[z[1]]+'"/>'; });
+    return out;
+  }).join('');
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" height="'+h+'" preserveAspectRatio="none" style="display:block;margin-top:4px">'+rects+'</svg>'+
+    '<div style="font-size:10px;color:var(--text3);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap"><span><span style="color:'+cols[0]+'">■</span> moderada</span><span><span style="color:'+cols[1]+'">■</span> vigorosa</span><span><span style="color:'+cols[2]+'">■</span> pico</span><span>· últimos '+arr.length+' días con dato</span></div>';
+}
 function recupHtmlInsights(dias,B){
   var tarj=function(tit,cuerpo){ return '<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem .75rem;margin-bottom:.5rem"><div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em">'+tit+'</div><div style="font-size:13px;line-height:1.5">'+cuerpo+'</div></div>'; };
   var out='';
@@ -7304,7 +7335,30 @@ function recupHtmlInsights(dias,B){
     if(seguidas>=2) t3+=' <span style="color:'+RECUP_EST.r+';font-weight:700">Llevas '+seguidas+' noches seguidas por debajo de 6 h.</span>';
     out+=tarj('Sueño',t3);
   }
-  return '<div class="card"><div class="card-lbl">Lo que veo</div>'+(out||'<div style="font-size:12px;color:var(--text3)">Aún no hay datos suficientes.</div>')+
+  // 4) ratio de carga aguda/crónica (lo calcula Google a partir de tu carga cardio)
+  var ac=dias.filter(function(d){return d.acwr!=null;});
+  if(ac.length>=3){
+    var ua=ac[ac.length-1], et={OPTIMAL_TRAINING:['en rango óptimo','v'],UNDER_TRAINING:['por debajo de tu carga habitual','a'],OVER_TRAINING:['por encima de tu carga habitual','r']}[ua.acwrE]||[null,null];
+    var ta='Ratio <strong>'+ua.acwr.toFixed(2)+'</strong> ('+_etqDia(ua.f)+')'+(et[0]?': '+_puntoEst(et[1])+' '+et[0]:'')+'. Compara tu carga de esta semana con tu media de las últimas semanas; la franja verde es el rango óptimo (0,8–1,3).';
+    out+=tarj('Carga reciente',ta+_sparkSvg(ac.slice(-28).map(function(d){return d.acwr;}),{band:[0.8,1.3]}));
+  }
+  // 5) temperatura de la piel por la noche frente a tu propia media
+  var tp=dias.filter(function(d){return d.temp!=null;});
+  if(tp.length>=7){
+    var mt=_media(tp.map(function(d){return d.temp;})), ut=tp[tp.length-1], dt=ut.temp-mt;
+    var altas=0; for(var q=tp.length-1;q>=0;q--){ if(tp[q].temp-mt>=0.5) altas++; else break; }
+    var tt='Última noche ('+_etqDia(ut.f)+'): <strong>'+ut.temp.toFixed(1)+' °C</strong>, '+(dt>=0?'+':'−')+Math.abs(dt).toFixed(1)+' °C frente a tu media ('+mt.toFixed(1)+' °C).';
+    if(altas>=2) tt+=' <span style="color:'+RECUP_EST.r+';font-weight:700">Llevas '+altas+' noches seguidas por encima (+0,5 °C o más).</span>';
+    out+=tarj('Temperatura nocturna',tt+_sparkSvg(tp.slice(-28).map(function(d){return d.temp;}),{}));
+  }
+  // 6) reparto de zonas de frecuencia cardiaca
+  var zs=dias.filter(function(d){return d.zv!=null||d.zp!=null;});
+  if(zs.length>=3){
+    var z7=zs.slice(-7), vp=_media(z7.map(function(d){return (d.zv||0)+(d.zp||0);})), mo=_media(z7.map(function(d){return d.zm||0;}));
+    out+=tarj('Zonas de frecuencia cardiaca','Últimos 7 días, de media al día: <strong>'+Math.round(mo)+' min</strong> en moderada y <strong>'+Math.round(vp)+' min</strong> en vigorosa o pico.'+_zonasSvg(dias));
+  }
+  return '<div class="card"><div class="card-lbl">Lo que veo</div>'
++(out||'<div style="font-size:12px;color:var(--text3)">Aún no hay datos suficientes.</div>')+
     '<details style="font-size:11px;color:var(--text3);margin-top:4px"><summary style="cursor:pointer">Cómo se calcula</summary><div style="margin-top:4px;line-height:1.5">Todo sale de tus propios datos del periodo elegido y se recalcula cada vez que entran días nuevos. El punto de color compara el HRV de esa mañana con tu media ± 1 desviación: verde dentro del rango, ámbar hasta 1,5 desviaciones por debajo, rojo más abajo. Sin HRV se usa el readiness (65 o más verde, 40 o más ámbar). Los efectos con menos de 5 casos salen atenuados como "en observación". Son pistas, no diagnósticos.</div></details></div>';
 }
 function recupHtmlDias(D,dias,B){
@@ -7349,6 +7403,9 @@ function recupHtmlDias(D,dias,B){
     fila('HRV (mañana)',d.hrv!=null?d.hrv.toFixed(0)+' ms'+(B.m!=null?' <span style="font-weight:400;color:var(--text3)">· tu media '+B.m.toFixed(0)+'</span>':''):'—')+
     fila('Readiness',d.rdy!=null?Math.round(d.rdy):'—')+
     fila('FC en reposo',d.rhr!=null?d.rhr.toFixed(0)+' lpm':'—')+
+    (d.zv!=null||d.zp!=null?fila('Zonas FC (min)','mod. '+(d.zm||0)+' · vig. '+(d.zv||0)+' · pico '+(d.zp||0)):'')+
+    (d.acwr!=null?fila('Ratio de carga',d.acwr.toFixed(2)):'')+
+    (d.temp!=null?fila('Temp. nocturna',d.temp.toFixed(1)+' °C'):'')+
     fila('Sueño',d.sue!=null?(d.sue/60).toFixed(1)+' h'+(d.prof!=null&&d.rem!=null?' <span style="font-weight:400;color:var(--text3)">· profundo '+d.prof+' min, REM '+d.rem+' min</span>':''):'—')+'</div>'+
     '<div style="border-top:.5px solid rgba(128,128,128,.2);margin-top:.4rem;padding-top:.5rem"><div class="card-lbl">Actividad</div>'+
     (d.acts.length?d.acts.map(function(a){ var c=RECUP_CAT[a.cat]||RECUP_CAT.otro; return '<div style="font-size:12px;padding:3px 0">'+c.i+' <strong>'+(a.etq||(a.cat==='otro'&&a.nombre?a.nombre:c.n))+'</strong>'+(a.min?' · '+a.min+' min':'')+(a.hr?' · '+Math.round(a.hr)+' lpm':'')+(a.cal?' · '+Math.round(a.cal)+' kcal':'')+' <span style="color:var(--text3)">('+a.fuente+')</span></div>'; }).join(''):'<div style="font-size:12px;color:var(--text3)">Sin entreno registrado.</div>')+'</div>';
@@ -7393,7 +7450,7 @@ function renderRecup(){
   var nPesas=dias.filter(function(d){return d.pesas;}).length, sem=dias.length/7;
   var html='<style>#recup-body th,#recup-body td{padding:3px 5px;white-space:nowrap}</style>'+recupHtmlFuentes()+'<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem"><span class="card-lbl" style="margin:0 6px 0 0">Periodo</span>'+chip(28,'28 días')+chip(56,'56 días')+chip(0,'Todo')+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">'+
-    [['Readiness',base.rdy==null?'—':Math.round(base.rdy)],['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
+    [['Readiness',base.rdy==null?'—':Math.round(base.rdy)],['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].concat((function(){ var gs=dias.filter(function(d){return d.gra!=null;}); return gs.length?[['Grasa',gs[gs.length-1].gra.toFixed(1)+' %']]:[]; })()).map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
     '</div><div style="font-size:10px;color:var(--text3);margin-top:6px">'+dias.length+' días desde '+D.desde+'. Con pocos días las diferencias son orientativas.</div></div>';
   var B=recupBase(dias);
   html+=recupHtmlInsights(dias,B)+recupHtmlDias(D,dias,B);
@@ -9348,7 +9405,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_028';
+const APP_VERSION='vEXT_029';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9580,7 +9637,8 @@ const GARMIN_JSON_URL = 'https://shumb71.github.io/Boyle/garmin_historial.json';
 const FITBIT_OWNED_FIELDS=['pasos','calorias_dia','calorias_activas','fc_reposo','sueno_total_min',
   'sueno_profundo_min','sueno_ligero_min','sueno_rem_min','sueno_puntuacion','hrv','spo2',
   'estres_medio','distancia_km','minutos_activos','peso_kg',
-  'readiness','carga_cardio','fr_respiratoria','azm'];
+  'readiness','carga_cardio','fr_respiratoria','azm',
+  'acwr','acwr_etiqueta','temp_noche','zona_ligera_min','zona_moderada_min','zona_vigorosa_min','zona_pico_min','grasa_pct'];
 
 // Fusiona un día proveniente de Garmin. Si ese día ya tiene datos de Fitbit (marcados con
 // _fuenteFitbit), Garmin SOLO aporta actividades/fuerza — no pisa pasos/sueño/FC/etc.

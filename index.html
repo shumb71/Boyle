@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Entreno PRO">
 <link rel="manifest" id="pwa-manifest" href="./manifest.json">
-<title>Entreno Boyle vEXT_029</title>
+<title>Entreno Boyle vEXT_030</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1233,6 +1233,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div id="peso-actual-fecha" style="font-size:12px;color:var(--text2);margin-top:2px">Sin datos todavía</div>
       <div id="peso-tendencia" style="font-size:13px;font-weight:700;margin-top:8px"></div>
     </div>
+    <div id="peso-obj"></div>
     <div class="card" id="peso-grafico-card" style="display:none">
       <div class="card-lbl">Evolución</div>
       <div id="peso-grafico"></div>
@@ -2846,7 +2847,7 @@ function getConfigFields(){
     alimentosCustom:ST.alimentosCustom||{},nutricionExtra:ST.nutricionExtra||{},nutricionComidaAlimentos:ST.nutricionComidaAlimentos||{},
     boxeoBloque:ST.boxeoBloque||'B1',boxeoChecklist:ST.boxeoChecklist||{},boxeoSesiones:ST.boxeoSesiones||[],boxeoLibreItems:ST.boxeoLibreItems||[],
     espacioReducido:!!ST.espacioReducido,
-    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],turnoReal:ST.turnoReal||{},
+    actividadesFitbitOcultas:ST.actividadesFitbitOcultas||[],turnoReal:ST.turnoReal||{},objPeso:ST.objPeso||{},
     googleLoginHint:ST.googleLoginHint||'',sheetsId:ST.sheetsId||'',
     ultimoBackupLocal:ST.ultimoBackupLocal||null,
     ciclosCompletados:ST.ciclosCompletados||[],
@@ -2891,7 +2892,7 @@ function aplicarConfigRemoto(data){
     'googleLoginHint','sheetsId','variantesEliminadas','programaCustom','notasGenerales',
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
-    'espacioReducido','actividadesFitbitOcultas','turnoReal','ultimoBackupLocal','ciclosCompletados','repoPrograma',
+    'espacioReducido','actividadesFitbitOcultas','turnoReal','objPeso','ultimoBackupLocal','ciclosCompletados','repoPrograma',
     'circuitos','circuitosSesiones'];
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
   if(data._v) ST._v=data._v;
@@ -7450,7 +7451,7 @@ function renderRecup(){
   var nPesas=dias.filter(function(d){return d.pesas;}).length, sem=dias.length/7;
   var html='<style>#recup-body th,#recup-body td{padding:3px 5px;white-space:nowrap}</style>'+recupHtmlFuentes()+'<div class="card"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.6rem"><span class="card-lbl" style="margin:0 6px 0 0">Periodo</span>'+chip(28,'28 días')+chip(56,'56 días')+chip(0,'Todo')+'</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">'+
-    [['Readiness',base.rdy==null?'—':Math.round(base.rdy)],['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].concat((function(){ var gs=dias.filter(function(d){return d.gra!=null;}); return gs.length?[['Grasa',gs[gs.length-1].gra.toFixed(1)+' %']]:[]; })()).map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
+    [['Readiness',base.rdy==null?'—':Math.round(base.rdy)],['HRV',_fmt(base.hrv,1,' ms')],['FC reposo',_fmt(base.rhr,1,' lpm')],['Sueño',_fmt(base.sue==null?null:base.sue/60,1,' h')],['Pesas/sem',_fmt(nPesas/sem,1)]].concat((function(){ var gs=dias.filter(function(d){return d.gra!=null;}); return gs.length?[['Grasa',gs[gs.length-1].gra.toFixed(1)+' %']]:[]; })()).concat((function(){ var pm=pesoMedia(pesoEntradas(),hoyLocal(),7); return pm?[['Peso 7 d',pm.m.toFixed(1)+' kg']]:[]; })()).map(function(x){return '<div style="background:var(--bg3);border-radius:var(--rs);padding:8px"><div style="font-size:10px;color:var(--text3)">'+x[0]+'</div><div style="font-size:17px;font-weight:700">'+x[1]+'</div></div>';}).join('')+
     '</div><div style="font-size:10px;color:var(--text3);margin-top:6px">'+dias.length+' días desde '+D.desde+'. Con pocos días las diferencias son orientativas.</div></div>';
   var B=recupBase(dias);
   html+=recupHtmlInsights(dias,B)+recupHtmlDias(D,dias,B);
@@ -9405,7 +9406,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_029';
+const APP_VERSION='vEXT_030';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -11115,12 +11116,95 @@ renders.garmin=function(){
 // ══════════════════════════════════════
 // PESO — histórico desde báscula Renpho (vía Fitbit/Google Health)
 // ══════════════════════════════════════
-renders.peso=function(){
+// ══════════════════════════════════════
+// [vEXT_030] OBJETIVO DE PESO: media semanal, kcal sugeridas, proteína y avisos (informativo)
+// ══════════════════════════════════════
+function pesoEntradas(){
   var hist=ST.garminHist||{};
-  var entradas=Object.keys(hist)
-    .filter(function(f){return hist[f]&&hist[f].peso_kg!=null;})
-    .sort()
+  return Object.keys(hist).filter(function(f){return hist[f]&&hist[f].peso_kg!=null;}).sort()
     .map(function(f){return {fecha:f,kg:hist[f].peso_kg};});
+}
+// media de los pesos en (fin-dias, fin]; null si hay menos de 2 pesadas
+function pesoMedia(entradas,fin,dias){
+  var ini=fechaMasDias(fin,-dias), v=entradas.filter(function(e){return e.fecha>ini&&e.fecha<=fin;}).map(function(e){return e.kg;});
+  if(v.length<2) return null;
+  return {m:v.reduce(function(a,b){return a+b;},0)/v.length,n:v.length};
+}
+// gasto medio diario según Fitbit (últimos 28 días cerrados; ignora días sin dato fiable)
+function gastoMedioKcal(){
+  var H=ST.garminHist||{}, hoy=hoyLocal(), v=[];
+  for(var i=1;i<=28;i++){ var g=H[fechaMasDias(hoy,-i)]; if(g&&g._fuenteFitbit&&g.calorias_dia>1500) v.push(g.calorias_dia); }
+  if(v.length<7) return null;
+  return {m:v.reduce(function(a,b){return a+b;},0)/v.length,n:v.length};
+}
+// días seguidos (hasta el último con dato) con HRV claramente por debajo de tu rango (media - 1,5 desv.)
+function hrvRojoSeguidos(){
+  var H=ST.garminHist||{}, hoy=hoyLocal(), serie=[];
+  for(var i=28;i>=1;i--){ var f=fechaMasDias(hoy,-i), g=H[f]; serie.push(g&&g.hrv!=null?g.hrv:null); }
+  var v=serie.filter(function(x){return x!=null;}); if(v.length<10) return 0;
+  var m=v.reduce(function(a,b){return a+b;},0)/v.length, sd=Math.sqrt(v.reduce(function(a,b){return a+(b-m)*(b-m);},0)/v.length); sd=Math.max(sd,2);
+  var n=0; for(var j=serie.length-1;j>=0;j--){ if(serie[j]==null) continue; if((serie[j]-m)/sd<-1.5) n++; else break; }
+  return n;
+}
+function pesoObjSet(k,v){
+  if(!ST.objPeso) ST.objPeso={};
+  var n=parseFloat(String(v).replace(',','.'));
+  if(k==='inicio') ST.objPeso.inicio=hoyLocal();
+  else if(isNaN(n)||n<=0){ delete ST.objPeso[k]; }
+  else ST.objPeso[k]=n;
+  save(); renders.peso();
+}
+function pesoObjHtml(entradas){
+  var o=ST.objPeso||{}, def=o.deficit||350, prot=o.prot||1.8, hoy=hoyLocal();
+  var m7=pesoMedia(entradas,hoy,7), mAnt=pesoMedia(entradas,fechaMasDias(hoy,-14),7);
+  var gasto=gastoMedioKcal();
+  var tarj=function(tit,cuerpo){ return '<div style="background:var(--bg3);border-radius:var(--rs);padding:.6rem .75rem;margin-bottom:.5rem"><div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">'+tit+'</div><div style="font-size:13px;line-height:1.5">'+cuerpo+'</div></div>'; };
+  var inp=function(k,val,ph,w){ return '<input type="number" inputmode="decimal" step="any" value="'+(val!=null?val:'')+'" placeholder="'+ph+'" onchange="pesoObjSet(\''+k+'\',this.value)" style="width:'+(w||64)+'px;padding:4px 6px;border-radius:6px;border:.5px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;text-align:center">'; };
+  var h='<div class="card"><div class="card-lbl">Objetivo: bajar grasa</div>';
+  // 1) tendencia (media 7 días)
+  if(m7){
+    var t='Media 7 días: <strong>'+m7.m.toFixed(1)+' kg</strong>';
+    if(mAnt){ var d=m7.m-mAnt.m; t+=' · '+(d>0?'+':d<0?'−':'')+Math.abs(d).toFixed(1)+' kg frente a hace 2 semanas'; }
+    t+='. <span style="color:var(--text3)">Un día suelto varía ±0,5 kg por agua y comida; fíate de la media.</span>';
+    if(o.meta){ var falta=m7.m-o.meta; t+=falta>0?'<br>Meta '+o.meta+' kg: te faltan <strong>'+falta.toFixed(1)+' kg</strong> (unas '+Math.ceil(falta/Math.max(def*7/7700,0.1))+' semanas al ritmo del déficit).':'<br>Meta '+o.meta+' kg: <strong>¡alcanzada!</strong>'; }
+    h+=tarj('Tendencia',t);
+  } else h+=tarj('Tendencia','Aún no hay suficientes pesadas esta semana para calcular la media.');
+  // 2) kcal y proteína
+  var kc='';
+  if(gasto){
+    var obj=Math.round((gasto.m-def)/10)*10, esp=def*7/7700;
+    kc='Tu gasto medio (Fitbit, '+gasto.n+' días): <strong>'+Math.round(gasto.m/10)*10+' kcal</strong>.<br>Con un déficit de '+inp('deficit',o.deficit||'',def,56)+' kcal: <strong>unas '+obj+' kcal al día</strong> (≈ −'+esp.toFixed(1)+' kg/semana).';
+  } else kc='Aún no hay suficientes días de Fitbit para estimar tu gasto.';
+  var pw=m7?m7.m:(entradas.length?entradas[entradas.length-1].kg:null);
+  if(pw){ kc+='<br>Proteína ('+inp('prot',o.prot||'',prot,48)+' g/kg): <strong>'+Math.round(pw*prot)+' g al día</strong>.'; }
+  kc+='<br>Peso meta (opcional): '+inp('meta',o.meta||'','kg',64);
+  h+=tarj('Kcal y proteína',kc);
+  // 3) seguimiento y avisos
+  var av=[];
+  if(!o.inicio){
+    h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px"><button onclick="pesoObjSet(\'inicio\',1)" style="border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff">Empezar hoy</button><span style="font-size:11px;color:var(--text3)">Activa el seguimiento y los avisos de ajuste.</span></div>';
+  } else {
+    var dias=Math.round((new Date(hoy+'T12:00:00')-new Date(o.inicio+'T12:00:00'))/86400000);
+    h+='<div style="font-size:11px;color:var(--text3);margin-bottom:4px">Seguimiento desde '+new Date(o.inicio+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})+' ('+dias+' días)</div>';
+    if(dias>=21){
+      var a=pesoMedia(entradas,hoy,7), b=pesoMedia(entradas,fechaMasDias(hoy,-21),7);
+      if(a&&b){
+        var dr=b.m-a.m;
+        if(dr>=0.6) av.push('En 3 semanas tu media ha bajado '+dr.toFixed(1)+' kg. Vas a buen ritmo.');
+        else if(dr>=0) av.push('En 3 semanas tu media ha bajado solo '+dr.toFixed(1)+' kg (menos de 0,6). Podrías bajar otras 100–150 kcal.');
+        else av.push('En 3 semanas tu media ha subido '+Math.abs(dr).toFixed(1)+' kg. Revisa lo que comes realmente o baja otras 100–150 kcal.');
+      }
+    } else av.push('Hacen falta 3 semanas para valorar el ritmo con fiabilidad.');
+    var hr=hrvRojoSeguidos();
+    if(hr>=3) av.push('Llevas '+hr+' mañanas seguidas con el HRV claramente bajo. Con déficit, mejor no apretar más: no recortes más kcal ni subas carga hasta que se recupere.');
+    h+=av.map(function(t){ return '<div style="font-size:12px;line-height:1.5;margin-top:4px;padding:6px 8px;border-radius:var(--rs);background:var(--bg3)">'+t+'</div>'; }).join('');
+  }
+  h+='<div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5">Orientación general, no un plan médico. El gasto es una estimación de tu reloj (puede fallar un ±10 %).</div></div>';
+  return h;
+}
+renders.peso=function(){
+  var entradas=pesoEntradas();
+  var objEl=document.getElementById('peso-obj'); if(objEl) objEl.innerHTML=pesoObjHtml(entradas);
 
   var actualVal=document.getElementById('peso-actual-val');
   var actualFecha=document.getElementById('peso-actual-fecha');
@@ -11172,15 +11256,24 @@ renders.peso=function(){
     datos.forEach(function(d,i){
       var x=PL+Math.round(i/(datos.length-1||1)*cW);
       var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);
-      circles+='<circle cx="'+x+'" cy="'+y+'" r="3.5" fill="var(--blue)" stroke="white" stroke-width="1.5"><title>'+d.fecha+': '+d.kg+' kg</title></circle>';
+      circles+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="var(--text3)" fill-opacity=".7"><title>'+d.fecha+': '+d.kg+' kg</title></circle>';
+    });
+    var mediaPts=[];
+    datos.forEach(function(d,i){
+      var mm=pesoMedia(entradas,d.fecha,7); if(!mm) return;
+      var x=PL+Math.round(i/(datos.length-1||1)*cW);
+      var y=PT+cH-Math.round((Math.min(Math.max(mm.m,minP),maxP)-minP)/rangoP*cH);
+      mediaPts.push(x+','+y);
     });
     var areaPath='M'+PL+','+(PT+cH)+' L'+datos.map(function(d,i){var x=PL+Math.round(i/(datos.length-1||1)*cW);var y=PT+cH-Math.round((d.kg-minP)/rangoP*cH);return x+','+y;}).join(' L')+' L'+(PL+cW)+','+(PT+cH)+' Z';
     graficoEl.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto">'
       +'<text x="'+(PL-4)+'" y="'+(PT+4)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+maxP.toFixed(1)+'</text>'
       +'<text x="'+(PL-4)+'" y="'+(PT+cH)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+minP.toFixed(1)+'</text>'
       +'<path d="'+areaPath+'" fill="var(--blue)" fill-opacity="0.08"/>'
-      +'<polyline points="'+pts+'" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-      +circles+'</svg>';
+      +'<polyline points="'+pts+'" fill="none" stroke="var(--text3)" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>'
+      +circles
+      +(mediaPts.length>1?'<polyline points="'+mediaPts.join(' ')+'" fill="none" stroke="var(--blue)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>':'')
+      +'</svg><div style="font-size:10px;color:var(--text3);margin-top:2px">Puntos grises = cada pesada · línea azul gruesa = media de 7 días</div>';
   } else {
     graficoCard.style.display='none';
   }

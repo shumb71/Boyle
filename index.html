@@ -609,7 +609,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_031', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_032', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -3248,10 +3248,22 @@ function etiquetaSesionSet(i){
 }
 
 // Obtener ultima sesion de un ejercicio
+// [vEXT_032] ¿La variante con la que se hizo un registro es la que está seleccionada ahora para el ejercicio ejProg?
+// usada = nombre de la variante registrada (set.v si existe; si no, el ejercicio tal cual). La variante base y el
+// ejercicio del programa cuentan como la misma (ejNombresEquiv).
+function varUsadaEsLaActual(usada,ejProg){
+  var sel=getVarianteActual(ejProg);
+  var eq=ejNombresEquiv(sel);
+  if(eq.indexOf(sel)<0) eq.push(sel);
+  return eq.indexOf(usada)>=0;
+}
 function getUltimaSesion(ej){
   var ejC=(ej||'').replace(/&#39;/g,"'");
   var _eqU=ejNombresEquiv(ejC);
-  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqU,ejC)).sort(cmpClaveSetDesc);
+  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqU,ejC)).filter(function(k){
+    var _s0=(ST.sets[k]||[]).filter(Boolean)[0];
+    return varUsadaEsLaActual((_s0&&_s0.v)||ejC,ejC); // [vEXT_032] solo sesiones hechas con la variante seleccionada
+  }).sort(cmpClaveSetDesc);
   if(!keys.length) return null;
   // Excluir el dia actual
   const keysNoHoy=keys.filter(k=>!k.startsWith(diaDayPrefix(ST.dia))&&!k.startsWith(legacyDayPrefix(ST.dia)));
@@ -3298,6 +3310,9 @@ function getHistorialEjInline(ejNombre,limit){
       var ejBaseClean=(e.ejBase||ejClean).replace(/^p\d+_s\d+_d\d+_/,'').replace(/^p\d+_d\d+_/,'').replace(/^d\d+_/,'');
       if(_eqI.indexOf(ejClean)<0&&_eqI.indexOf(ejBaseClean)<0) return;
       var sv=(e.sets||[]).filter(function(s){return s&&(s.p>0||s.r>0||s.t>0);});
+      // [vEXT_032] solo el historial de la variante seleccionada ahora
+      var _usada=(sv[0]&&sv[0].v)||ejClean;
+      if(!varUsadaEsLaActual(_usada,ejNombre)) return;
       if(sv.length) result.push({fecha:fecha,sets:sv,dec:e.dec||null});
     });
   });
@@ -3311,6 +3326,7 @@ function getHistorialEjInline(ejNombre,limit){
     matchKeys.slice(0,lim).forEach(function(k){
       var sv=(ST.sets[k]||[]).filter(Boolean);
       if(!sv.length) return;
+      if(!varUsadaEsLaActual(sv[0].v||ejNombre,ejNombre)) return; // [vEXT_032]
       var _dm=k.match(/_d(\d+)_/);
       if(!_dm) return; // clave con formato desconocido, ignorar
       var diaStr=_dm[1];
@@ -3627,6 +3643,9 @@ const renders={
                   +'</div>'+comHtml;
               }).join('')
               +'</div>';
+          } else if(getVarianteActual(ejR)!==ejR){
+            // [vEXT_032] variante elegida sin sesiones anteriores
+            histInlineHtml='<div style="margin:.2rem 0 .4rem;padding:.3rem .5rem;background:var(--bg2);border-radius:8px;border-left:2px solid var(--border2);font-size:11px;color:var(--text3)">Sin historial de esta variante</div>';
           }
           var ejQ=ej.replace(/'/g,"\\'");
           var ejSafe=ej.replace(/'/g,'&#39;');
@@ -9412,7 +9431,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_031';
+const APP_VERSION='vEXT_032';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

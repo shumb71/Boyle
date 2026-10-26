@@ -3846,7 +3846,17 @@
       "minutos_activos": 0,
       "fc_reposo": 51,
       "estres_medio": 17
+    },
+    "2026-10-26": {
+      "fecha": "2026-10-26",
+      "pasos": null,
+      "calorias_dia": null,
+      "calorias_activas": null,
+      "distancia_km": 0.0,
+      "minutos_activos": null,
+      "fc_reposo": null,
+      "estres_medio": null
     }
   },
-  "actualizado": "2026-10-25"
+  "actualizado": "2026-10-26"
 }

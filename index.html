@@ -609,7 +609,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_028', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_031', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -1830,7 +1830,7 @@ const REPS_FASE={
       "Hang Clean":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
       "Front Plank":[{"s": 1, "r": "2×20s"}, {"s": 2, "r": "2×25s"}, {"s": 3, "r": "2×30s"}],
       "Trap Bar Deadlift":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
-      "Chin-up / Pull-up":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Chin-up / Pull-up":[{"s": 1, "r": 8}, {"s": 2, "r": 10}, {"s": 3, "r": 12}],
       "Split Squat (Bottoms-up KB)":[{"s": 1, "r": "8/lado"}, {"s": 2, "r": "8/lado"}, {"s": 3, "r": "8/lado"}],
       "DB Row":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
       "In-line Chop":[{"s": 1, "r": "2×8"}, {"s": 2, "r": "2×8"}, {"s": 3, "r": "2×8"}],
@@ -1840,7 +1840,7 @@ const REPS_FASE={
       "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
       "Half-kneeling Overhead Press":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
       "Supine Floor Slide":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
-      "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 10}, {"s": 3, "r": 12}],
       "Half-kneeling push-pull":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
       "Suitcase Carry":[{"s": 1, "r": "25y/lado"}, {"s": 2, "r": "25y/lado"}, {"s": 3, "r": "25y/lado"}],
     },
@@ -1848,7 +1848,7 @@ const REPS_FASE={
       "Hang Clean":[{"s": 1, "r": 5}, {"s": 2, "r": 5}, {"s": 3, "r": 5}],
       "Front Plank":[{"s": 1, "r": "2×20s"}, {"s": 2, "r": "2×25s"}, {"s": 3, "r": "2×30s"}],
       "Rear-foot-elevated Split Squat":[{"s": 1, "r": "8/lado"}, {"s": 2, "r": "8/lado"}, {"s": 3, "r": "8/lado"}],
-      "Ring Row":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Ring Row":[{"s": 1, "r": 8}, {"s": 2, "r": 10}, {"s": 3, "r": 12}],
       "Single-leg RDL (Straight-leg DL)":[{"s": 1, "r": "8/lado"}, {"s": 2, "r": "8/lado"}, {"s": 3, "r": "8/lado"}],
       "X-pull-down":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
       "In-line Lift":[{"s": 1, "r": "2×8"}, {"s": 2, "r": "2×8"}, {"s": 3, "r": "2×8"}],
@@ -1856,7 +1856,7 @@ const REPS_FASE={
     D4:{
       "Dumbbell Incline Bench":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
       "Spiderman pos. lat stretch":[{"s": 1, "r": "2×5r"}, {"s": 2, "r": "2×5r"}, {"s": 3, "r": "2×5r"}],
-      "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 8}, {"s": 3, "r": 8}],
+      "Push-up progression":[{"s": 1, "r": 8}, {"s": 2, "r": 10}, {"s": 3, "r": 12}],
       "Squat Holds":[{"s": 1, "r": 6}, {"s": 2, "r": 6}, {"s": 3, "r": 6}],
       "Half-kneeling Windmill":[{"s": 1, "r": "3/lado"}, {"s": 2, "r": "4/lado"}, {"s": 3, "r": "4/lado"}],
       "Half-kneeling antirotation hold":[{"s": 1, "r": "3×20s"}, {"s": 2, "r": "3×25s"}, {"s": 3, "r": "3×25s"}],
@@ -6637,7 +6637,11 @@ function renderAvisoSalto(dB){
   var tieneComplejo=ejs.some(function(e){return SALTO.indexOf(e)>=0;});
   if(!tieneComplejo){el.style.display='none';return;}
   el.style.display='block';
+  // Día rojo (Programación SHU 2026): si el semáforo de hoy no está en verde, sin saltos → trineo
+  var svSalto=semaforo((ST.sliders&&ST.sliders.d)||0,(ST.sliders&&ST.sliders.f)||0);
+  var diaCargado=svSalto.i!=='🟢';
   el.innerHTML='<div style="background:var(--orange-bg);border-radius:var(--rs);padding:.6rem .75rem;border-left:3px solid var(--orange)">'
+    +(diaCargado?'<div style="font-size:12px;font-weight:700;color:var(--red-text);margin-bottom:3px">'+svSalto.i+' Día cargado (semáforo): hoy sin saltos, usa el empuje de Trineo</div>':'')
     +'<div style="font-size:12px;font-weight:700;color:var(--orange-text);margin-bottom:3px">⚠️ Complejo con salto en la sesión de hoy</div>'
     +'<div style="font-size:12px;color:var(--orange-text);opacity:.85;line-height:1.45">Recuerda que tienes variantes sin impacto disponibles: <strong>empuje de Trineo</strong> o el ejercicio <strong>sin el salto</strong>. Puedes cambiarlas desde el botón de variantes de cada ejercicio.</div>'
     +'</div>';
@@ -6668,6 +6672,8 @@ function renderFaseBanner(){
   if(lblFase){lblFase.style.color=faseTexts[fase]||'var(--blue-text)';lblFase.textContent=faseNoms[fase]||fase;}
   var semTxt='Sem '+semEnFase+' de 3';
   if(faseTempo[fase]) semTxt+=' · '+faseTempo[fase];
+  // Semana 12 = test por repeticiones (sin 1RM): la última serie "+" al máximo técnico
+  if(parseInt(ST.sem)===12) semTxt+=' · TEST: última serie "+" al máximo técnico (sin 1RM)';
   if(lblSemFase){lblSemFase.style.color=faseTexts[fase]||'var(--blue-text)';lblSemFase.textContent=semTxt;}
   var base=REPS_FASE[fase]&&REPS_FASE[fase].base;
   if(lblReps){
@@ -9406,7 +9412,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_030';
+const APP_VERSION='vEXT_031';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

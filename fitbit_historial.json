@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-28T12:18:50.477175+00:00",
+  "actualizado": "2026-10-28T20:07:25.639570+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2332,7 +2332,7 @@
     "2026-10-24": {
       "pasos": 7513,
       "distancia_km": 5.59,
-      "minutos_activos": 346,
+      "minutos_activos": 317,
       "calorias_dia": 2510.22,
       "fc_reposo": 51.0,
       "actividadesFitbit": [
@@ -2450,8 +2450,19 @@
       "sueno_rem_min": 121
     },
     "2026-10-28": {
-      "calorias_dia": 1338.62,
+      "calorias_dia": 2340.48,
       "actividadesFitbit": [
+        {
+          "id": "251196018613531176",
+          "tipo": "RACKET_SPORTS",
+          "nombre": "Deportes de raqueta",
+          "inicio": "2026-10-28T11:40:01.200Z",
+          "fin": "2026-10-28T12:02:23.200Z",
+          "duracion_min": 22,
+          "calorias": 178,
+          "fc_media": 107,
+          "fc_max": null
+        },
         {
           "id": "3726813337390686640",
           "tipo": "WALKING",
@@ -2464,18 +2475,18 @@
           "fc_max": null
         }
       ],
-      "pasos": 3426,
-      "distancia_km": 2.56,
-      "minutos_activos": 134,
+      "pasos": 5812,
+      "distancia_km": 4.34,
+      "minutos_activos": 297,
       "fc_reposo": 52.0,
       "hrv": 41.8,
       "spo2": 95.4,
       "fr_respiratoria": 13.8,
+      "peso_kg": 86.9,
       "sueno_total_min": 423,
       "sueno_profundo_min": 89,
       "sueno_ligero_min": 237,
-      "sueno_rem_min": 97,
-      "peso_kg": 86.9
+      "sueno_rem_min": 97
     }
   }
 }

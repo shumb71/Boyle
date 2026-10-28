@@ -586,9 +586,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .ej-hist-pill{background:var(--bg3);border-radius:20px;padding:3px 10px;font-size:11px;font-family:monospace;color:var(--text2)}
 .ej-hist-pill.best{background:var(--blue-bg);color:var(--blue-text)}
 /* GRAF */
-.graf-wrap{height:80px;display:flex;align-items:flex-end;gap:4px;padding:.5rem 0}
-.graf-bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
-.graf-bar{background:var(--blue);border-radius:3px 3px 0 0;width:100%;transition:height .3s;min-height:3px}
+.graf-wrap{height:104px;display:flex;align-items:flex-end;gap:4px;padding:.5rem 0}
+.graf-bar-wrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;min-width:0}
+.graf-bar{background:var(--blue);border-radius:3px 3px 0 0;width:100%;flex:none;transition:height .3s;min-height:3px}
+.graf-val{font-size:9px;color:var(--text2);margin-bottom:2px;white-space:nowrap}
 .graf-lbl{font-size:9px;color:var(--text3);margin-top:3px;text-align:center}
 @keyframes timerPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.3)}}
 </style>
@@ -609,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_033', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_034', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -3278,12 +3279,15 @@ function getUltimaSesion(ej){
 // Obtener historial completo de un ejercicio
 function getHistorialEj(ej){
   var _eqH=ejNombresEquiv(ej);
-  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqH,ej)).sort(cmpClaveSetDesc);
+  const keys=Object.keys(ST.sets).filter(k=>claveEsDeEj(k,_eqH,ej)).filter(function(k){
+    var _s0=(ST.sets[k]||[]).filter(Boolean)[0];
+    return varUsadaEsLaActual((_s0&&_s0.v)||ej,ej); // [vEXT_034] solo la variante seleccionada
+  }).sort(cmpClaveSetDesc);
   return keys.map(k=>{
     const _i=infoClaveSet(k);
     const dia=_i.dia, sem=_i.sem, fecha=fechaDeClaveSet(k);
     const etiqueta=etiquetaSesionSet({dia:dia,sem:sem,fecha:fecha});
-    const corta=fecha?((+fecha.slice(8,10))+'/'+(+fecha.slice(5,7))):('D'+dia);
+    const corta=fecha?((+fecha.slice(8,10))+'/'+(+fecha.slice(5,7))):(sem?('S'+sem):('D'+dia));
     const sets=(ST.sets[k]||[]).filter(Boolean);
     const maxPeso=sets.length?Math.max(...sets.map(s=>s.p)):0;
     // [vEXT_027] decisión ↑ = ↓ de esa sesión (misma clave que ST.sets)
@@ -3341,20 +3345,25 @@ function getHistorialEjInline(ejNombre,limit){
 }
 function abrirHistEj(ej){
   const hist=getHistorialEj(ej);
-  document.getElementById('mo-hist-title').textContent=ej;
+  const _varSel=getVarianteActual(ej);
+  document.getElementById('mo-hist-title').textContent=_varSel;
   const listEl=document.getElementById('mo-hist-list');
   const grafEl=document.getElementById('mo-hist-graf');
   if(!hist.length){
-    listEl.innerHTML='<div class="empty">Sin historial aun</div>';
+    listEl.innerHTML='<div class="empty">'+(_varSel!==ej?'Sin historial de esta variante':'Sin historial aun')+'</div>';
     grafEl.innerHTML='';
   }else{
-    // Grafica de pesos maximos
+    // Grafica de pesos maximos (alturas en px: con % las barras se quedaban en 3px)
     const maxPeso=Math.max(...hist.map(h=>h.maxPeso));
-    grafEl.innerHTML='<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Peso maximo por sesion (kg)</div><div class="graf-wrap">'+
-      hist.slice(0,10).reverse().map(h=>{
-        const pct=maxPeso>0?Math.round((h.maxPeso/maxPeso)*100):0;
-        return`<div class="graf-bar-wrap"><div class="graf-bar" style="height:${pct}%"></div><div class="graf-lbl">${h.corta}</div></div>`;
-      }).join('')+'</div>';
+    if(maxPeso>0){
+      grafEl.innerHTML='<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Peso maximo por sesion (kg) · ultimas '+Math.min(10,hist.length)+'</div><div class="graf-wrap">'+
+        hist.slice(0,10).reverse().map(h=>{
+          const px=Math.max(3,Math.round((h.maxPeso/maxPeso)*56));
+          return`<div class="graf-bar-wrap"><div class="graf-val">${h.maxPeso}</div><div class="graf-bar" style="height:${px}px"></div><div class="graf-lbl">${h.corta}</div></div>`;
+        }).join('')+'</div>';
+    }else{
+      grafEl.innerHTML='<div style="font-size:11px;color:var(--text3)">Sin peso registrado en este ejercicio</div>';
+    }
     // Lista
     listEl.innerHTML=hist.map(h=>`
       <div class="ej-hist-row">
@@ -9431,7 +9440,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_033';
+const APP_VERSION='vEXT_034';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -9547,7 +9556,8 @@ function exportar(){
   Object.entries(ST.sets).sort(function(a,b){
     var pa=parseKey(a[0]), pb=parseKey(b[0]);
     if(!pa||!pb) return 0;
-    return pa.dia-pb.dia;
+    // [vEXT_034] cronológico: programa, semana y día del ciclo
+    return (pa.programa<pb.programa?-1:pa.programa>pb.programa?1:0)||((pa.sem||0)-(pb.sem||0))||(pa.dia-pb.dia);
   }).forEach(function([key,sets]){
     var info=parseKey(key);
     if(!info) return;
@@ -9555,7 +9565,10 @@ function exportar(){
     // recurre al historial de esa fecha como antes.
     var fechaSes, fase, sem;
     if(info.sem!=null){
-      fechaSes=fechaMapSem[info.dia+'_'+info.sem]||fechaMap[info.dia]||'—';
+      // [vEXT_034] la fecha sale de la propia clave (programa + semana + día) con la misma función que usa el
+      // calendario; antes el mapa solo guardaba una fecha por posición y se repetía la de otro ciclo.
+      // Si no se puede saber con seguridad, '—' (mejor sin fecha que con una equivocada).
+      fechaSes=fechaDeClaveSet(key)||'—';
       sem=info.sem;
       fase=getFaseActual(info.sem);
     } else {

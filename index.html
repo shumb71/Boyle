@@ -609,7 +609,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_032', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_033', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -1116,9 +1116,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="ph"><h1>Calendario</h1><div id="fb-dot-cal" style="width:9px;height:9px;border-radius:50%;background:#adadad;flex-shrink:0;align-self:center;margin-left:auto" title="Firebase sync"></div></div>
     <!-- Buscador de sesiones/ejercicios -->
     <div class="card" style="padding:.75rem 1rem">
-      <div class="card-lbl" style="margin-bottom:.5rem">🔍 Buscar sesión o ejercicio</div>
+      <div class="card-lbl" style="margin-bottom:.5rem">🔍 Buscar sesión, ejercicio o comentario</div>
       <div style="display:flex;gap:6px">
-        <input type="text" id="cal-search-input" placeholder="Ej: S5D3, D2, o nombre de ejercicio..."
+        <input type="text" id="cal-search-input" placeholder="Ej: S5D3, D2, ejercicio o texto de un comentario..."
           style="flex:1;padding:9px 12px;border:.5px solid var(--border2);border-radius:var(--rs);font-size:14px;background:var(--bg);color:var(--text);outline:none"
           onkeydown="if(event.key==='Enter')buscarEnCalendario()">
         <button onclick="buscarEnCalendario()" style="border:none;background:var(--blue);color:#fff;border-radius:var(--rs);padding:0 16px;font-size:14px;font-weight:700;cursor:pointer">Buscar</button>
@@ -9431,7 +9431,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_032';
+const APP_VERSION='vEXT_033';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -10441,13 +10441,16 @@ function buscarEnCalendario(){
     resultados.sort(function(a,b){return a.fecha<b.fecha?-1:(a.fecha>b.fecha?1:0);});
   }
 
+  // [vEXT_033] También comentarios: de series, nota del día y notas generales
+  var comentarios=esCodigo?[]:buscarComentarios(q);
   resEl.style.display='block';
-  if(!resultados.length){
+  if(!resultados.length&&!comentarios.length){
     resEl.innerHTML='<div class="empty">Sin resultados para "'+q.replace(/</g,'&lt;')+'"</div>'
       +'<button onclick="cerrarBusquedaCalendario()" style="width:100%;padding:9px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:.5rem">Cerrar</button>';
     return;
   }
-  var html='<div class="card-lbl">Resultados ('+resultados.length+')</div>';
+  var html='<div class="card-lbl">Resultados ('+(resultados.length+comentarios.length)+')</div>';
+  if(resultados.length&&comentarios.length) html+='<div style="font-size:11px;color:var(--text3);margin:.2rem 0">🏋️ Sesiones y ejercicios ('+resultados.length+')</div>';
   resultados.slice().reverse().forEach(function(r){
     var h=r.h||{};
     var nomBoyle=h.diaBoyleReal?(BOYLE_DIAS[h.diaBoyleReal]?BOYLE_DIAS[h.diaBoyleReal].n:h.diaBoyleReal):'—';
@@ -10471,8 +10474,92 @@ function buscarEnCalendario(){
     }
     html+='</div>';
   });
+  // [vEXT_033] Sección de comentarios encontrados
+  if(comentarios.length){
+    html+='<div style="font-size:11px;color:var(--text3);margin:.8rem 0 .2rem">💬 Comentarios ('+comentarios.length+')</div>';
+    comentarios.forEach(function(c){
+      var icono=c.tipo==='nota'?'📝':c.tipo==='dia'?'📅':'🏋️';
+      var accion=c.tipo==='nota'?'irANotasDesdeBusqueda()':(c.fecha?"irAFechaDesdeBusqueda('"+c.fecha+"')":'');
+      html+='<div '+(accion?'onclick="'+accion+'" ':'')+'style="padding:.6rem 0;border-bottom:.5px solid var(--border);'+(accion?'cursor:pointer':'')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
+        +'<span style="font-size:13px;font-weight:700;color:var(--text)">'+_escBusq(c.fechaTxt)+'</span>'
+        +'<span style="font-size:11px;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;text-align:right">'+icono+' '+_escBusq(c.etq)+'</span></div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5">'+_snippetBusq(c.texto,q)+'</div></div>';
+    });
+  }
   html+='<button onclick="cerrarBusquedaCalendario()" style="width:100%;padding:9px;border:none;background:var(--bg3);color:var(--text2);border-radius:var(--rs);font-size:13px;cursor:pointer;margin-top:.5rem">Cerrar resultados</button>';
   resEl.innerHTML=html;
+}
+
+// [vEXT_033] Búsqueda de comentarios (sin distinguir mayúsculas ni tildes)
+function _normBusq(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function _escBusq(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Texto recortado alrededor de la coincidencia, con la coincidencia resaltada
+function _snippetBusq(texto,q){
+  var t=String(texto==null?'':texto).replace(/\s+/g,' ').trim();
+  var tn=_normBusq(t), qn=_normBusq(q.trim());
+  var i=tn.length===t.length?tn.indexOf(qn):-1;
+  if(i<0||!qn) return _escBusq(t.length>160?t.slice(0,160)+'…':t);
+  var ini=0, fin=t.length;
+  if(t.length>160){ ini=Math.max(0,i-50); fin=Math.min(t.length,i+qn.length+90); }
+  return (ini>0?'…':'')+_escBusq(t.slice(ini,i))
+    +'<mark style="background:var(--orange-bg,#ffe08a);color:inherit;border-radius:3px;padding:0 1px">'+_escBusq(t.slice(i,i+qn.length))+'</mark>'
+    +_escBusq(t.slice(i+qn.length,fin))+(fin<t.length?'…':'');
+}
+function buscarComentarios(q){
+  var qn=_normBusq((q||'').trim());
+  if(!qn) return [];
+  var out=[], vistos={};
+  function coincide(t){ return !!t&&_normBusq(t).indexOf(qn)>=0; }
+  function firmaSet(s){ return [s.n,s.p,s.r,s.rpe,s.t,s.dist].join('|'); }
+  var hist=ST.historialFechas||{};
+  // 1) Comentarios de series de sesiones con fecha
+  Object.keys(hist).forEach(function(f){
+    var h=hist[f]; if(!h) return;
+    (h.ejerciciosRealizados||[]).forEach(function(e){
+      (e.sets||[]).forEach(function(s,si){
+        if(!s||!coincide(s.n)) return;
+        vistos[firmaSet(s)]=true;
+        out.push({fecha:f,fechaTxt:f,tipo:'serie',etq:(e.ej||'Ejercicio')+' · S'+(si+1),texto:s.n});
+      });
+    });
+  });
+  // 2) Comentarios de series que solo están en ST.sets (sin fecha fiable): se muestran sin fecha
+  Object.keys(ST.sets||{}).forEach(function(k){
+    var p=parseSetKey(k); if(!p) return;
+    (ST.sets[k]||[]).forEach(function(s,si){
+      if(!s||!coincide(s.n)||vistos[firmaSet(s)]) return;
+      vistos[firmaSet(s)]=true;
+      var inf=infoClaveSet(k);
+      out.push({fecha:null,fechaTxt:'Sin fecha · '+(inf.sem?'S'+inf.sem+' · ':'')+'Día '+inf.dia,tipo:'serie',etq:(p.esFinisher?'🔥 ':'')+p.ej+' · S'+(si+1),texto:s.n});
+    });
+  });
+  // 3) Nota del día (ST.notaDia y la copia guardada en la sesión; sin repetir si son iguales)
+  var nd=ST.notaDia||{}, fechasNota={};
+  Object.keys(nd).forEach(function(f){ fechasNota[f]=true; });
+  Object.keys(hist).forEach(function(f){ if(hist[f]&&hist[f].nota) fechasNota[f]=true; });
+  Object.keys(fechasNota).forEach(function(f){
+    var textos=[];
+    [nd[f],hist[f]&&hist[f].nota].forEach(function(t){ if(coincide(t)&&textos.indexOf(t)<0) textos.push(t); });
+    textos.forEach(function(t){ out.push({fecha:f,fechaTxt:f,tipo:'dia',etq:'Nota del día',texto:t}); });
+  });
+  // 4) Notas generales
+  (ST.notasGenerales||[]).forEach(function(n){
+    if(!n||!coincide(n.texto)) return;
+    var f=''; try{ f=new Date(n.fecha).toLocaleDateString('sv-SE'); }catch(e){}
+    out.push({fecha:f||null,fechaTxt:f||'Nota',tipo:'nota',etq:'Nota'+(n.tag?' · '+n.tag:''),texto:n.texto});
+  });
+  // Más recientes primero; los que no tienen fecha, al final
+  out.sort(function(a,b){ return (a.fecha?1:0)!==(b.fecha?1:0)?(a.fecha?-1:1):((b.fecha||'')<(a.fecha||'')?-1:((b.fecha||'')>(a.fecha||'')?1:0)); });
+  return out;
+}
+// Las notas generales viven en su propia pantalla: se abre ya filtrada por lo buscado
+function irANotasDesdeBusqueda(){
+  var q=((document.getElementById('cal-search-input')||{}).value||'').trim();
+  cerrarBusquedaCalendario();
+  goTo('notas');
+  var b=document.getElementById('notas-buscar');
+  if(b){ b.value=q; renderNotas(); }
 }
 
 function cerrarBusquedaCalendario(){

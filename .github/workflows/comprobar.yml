@@ -1,0 +1,20 @@
+name: Comprobar JS y versión
+
+# Se ejecuta en cada PR: avisa de errores de sintaxis o de marcas de versión desiguales
+# ANTES de hacer merge. No toca ningún archivo ni usa secretos.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: node --check de cada script y versiones coherentes
+        run: python3 .github/scripts/comprobar_js.py

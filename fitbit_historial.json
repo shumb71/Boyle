@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-10-29T09:32:21.525667+00:00",
+  "actualizado": "2026-10-29T18:09:53.657237+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2369,7 +2369,7 @@
     "2026-10-25": {
       "pasos": 5653,
       "distancia_km": 4.24,
-      "minutos_activos": 254,
+      "minutos_activos": 216,
       "calorias_dia": 2659.5,
       "fc_reposo": 52.0,
       "actividadesFitbit": [
@@ -2489,20 +2489,32 @@
       "sueno_rem_min": 97
     },
     "2026-10-29": {
-      "pasos": 199,
-      "distancia_km": 0.15,
-      "minutos_activos": 14,
-      "calorias_dia": 796.09,
-      "actividadesFitbit": [],
+      "pasos": 6464,
+      "distancia_km": 4.84,
+      "minutos_activos": 264,
+      "calorias_dia": 2296.53,
+      "actividadesFitbit": [
+        {
+          "id": "4184890807583955960",
+          "tipo": "STRENGTH_TRAINING",
+          "nombre": "Fortalecimiento muscular",
+          "inicio": "2026-10-29T10:21:29Z",
+          "fin": "2026-10-29T11:31:07Z",
+          "duracion_min": 70,
+          "calorias": 365,
+          "fc_media": 110,
+          "fc_max": null
+        }
+      ],
       "fc_reposo": 51.0,
       "hrv": 45.8,
       "spo2": 94.4,
       "fr_respiratoria": 14.4,
+      "peso_kg": 87.2,
       "sueno_total_min": 447,
       "sueno_profundo_min": 86,
       "sueno_ligero_min": 249,
-      "sueno_rem_min": 112,
-      "peso_kg": 87.2
+      "sueno_rem_min": 112
     }
   }
 }

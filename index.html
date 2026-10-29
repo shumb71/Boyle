@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_034', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_035', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -1668,21 +1668,21 @@ function getGruposDia(fase,dB){
 
 // VARIANTES DE EJERCICIOS (sistema Boyle: baseline → progression → regression)
 const VARIANTES={
-  "Hang Clean":["Hang Clean desde pos. 1","High Pull","KB Swing / DB Snatch","Hang Clean desde pos. 2","Power Clean (desde suelo)"],
-  "Hang Clean (65-75%)":["Hang Clean 65-75%","KB Swing","Hang Clean desde pos. 2"],
+  "Hang Clean":["Hang Clean desde pos. 1","High Pull","KB Swing / DB Snatch","Trap Bar Jump (70-80% del vertical)","DB Jump Squat","Hang Clean desde pos. 2","Power Clean (desde suelo)"],
+  "Hang Clean (65-75%)":["Hang Clean 65-75%","KB Swing","Trap Bar Jump (70-80% del vertical)","DB Jump Squat","Hang Clean desde pos. 2"],
   "Front Plank":["Front Plank","Front Plank rodillas","Hard-style Front Plank","Stability Ball Roll-out","Ab Wheel"],
   "Hard-style Front Plank":["Hard-style Front Plank","Front Plank","Stability Ball Roll-out"],
   "Stability Ball Roll-out":["Stability Ball Roll-out","Front Plank / Body Saw","Ab Wheel de pie"],
   "Trap Bar Deadlift":["Trap Bar Deadlift","Single-leg RDL","Hip Thrust / Puente glúteo","Trap Bar + Hurdle Jump"],
   "Trap Bar Deadlift + Hurdle Jump":["Trap Bar + empuje de Trineo (sin salto)","Trap Bar Deadlift solo","Trap Bar + Hurdle Jump"],
   "Single-leg RDL (Straight-leg DL)":["Single-leg RDL","SLDL con apoyo (toe touch)","SLDL con KB/mancuerna pesada"],
-  "Split Squat (Bottoms-up KB)":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Terminal Knee Extension (banda)","Split Squat KB bottoms-up","RFESS","One-leg Squat"],
-  "Rear-foot-elevated Split Squat":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Terminal Knee Extension (banda)","Step-up bajo controlado","Split Squat (sin elevar pie)","RFESS","One-leg Squat"],
-  "One-leg Squat":["Step-up bajo controlado","Wall Sit","Split Squat a cajón","RFESS","One-leg Squat","Pistol squat asistido"],
+  "Split Squat (Bottoms-up KB)":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Terminal Knee Extension (banda)","Split Squat KB bottoms-up","RFESS","One-leg Squat"],
+  "Rear-foot-elevated Split Squat":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Terminal Knee Extension (banda)","Step-up bajo controlado","Split Squat (sin elevar pie)","RFESS","One-leg Squat"],
+  "One-leg Squat":["Step-up bajo controlado","Wall Sit","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Split Squat a cajón","RFESS","One-leg Squat","Pistol squat asistido"],
   "RFESS + Hurdle Hops":["RFESS + empuje de Trineo (sin salto)","RFESS solo","RFESS + Hurdle Hops"],
   "Toe Touch Squat with medicine ball":["Toe Touch Squat (med ball)","Sentadilla a cajón","Goblet Squat (rango parcial)"],
   "Squat Holds":["Squat Holds (isométrico)","Wall Sit"],
-  "Chin-up / Pull-up":["Chin-up / Pull-up","Chin-up asistido (banda)","Ring Row / Lat pulldown","Chin-up lastrado"],
+  "Chin-up / Pull-up":["Chin-up / Pull-up","Dominada agarre paralelo","Chin-up asistido (banda)","X-pull-down (cable/goma)","Ring Row / Lat pulldown","Chin-up lastrado"],
   "Chin-up + Med Ball Slam":["Chin-up + slam ligero","Chin-up + Med Ball Slam"],
   "Ring Row":["Ring Row","TRX Row más vertical","Ring Row pies elevados"],
   "Ring Row + Med Ball Slam":["Ring Row + slam ligero","Ring Row + Med Ball Slam"],
@@ -1713,21 +1713,21 @@ const VARIANTES={
 };
 // Tipo de cada variante para los distintivos (regresion/base/progresion/alt_rodilla/alt)
 const VAR_TIPO={
-  "Hang Clean":{"Hang Clean desde pos. 1":"base","High Pull":"regresion","KB Swing / DB Snatch":"regresion","Hang Clean desde pos. 2":"progresion","Power Clean (desde suelo)":"progresion"},
-  "Hang Clean (65-75%)":{"Hang Clean 65-75%":"base","KB Swing":"regresion","Hang Clean desde pos. 2":"progresion"},
+  "Hang Clean":{"Hang Clean desde pos. 1":"base","High Pull":"regresion","KB Swing / DB Snatch":"regresion","Trap Bar Jump (70-80% del vertical)":"alt","DB Jump Squat":"alt","Hang Clean desde pos. 2":"progresion","Power Clean (desde suelo)":"progresion"},
+  "Hang Clean (65-75%)":{"Hang Clean 65-75%":"base","KB Swing":"regresion","Trap Bar Jump (70-80% del vertical)":"alt","DB Jump Squat":"alt","Hang Clean desde pos. 2":"progresion"},
   "Front Plank":{"Front Plank":"base","Front Plank rodillas":"regresion","Hard-style Front Plank":"progresion","Stability Ball Roll-out":"progresion","Ab Wheel":"progresion"},
   "Hard-style Front Plank":{"Hard-style Front Plank":"base","Front Plank":"regresion","Stability Ball Roll-out":"progresion"},
   "Stability Ball Roll-out":{"Stability Ball Roll-out":"base","Front Plank / Body Saw":"regresion","Ab Wheel de pie":"progresion"},
   "Trap Bar Deadlift":{"Trap Bar Deadlift":"base","Single-leg RDL":"regresion","Hip Thrust / Puente glúteo":"regresion","Trap Bar + Hurdle Jump":"progresion"},
   "Trap Bar Deadlift + Hurdle Jump":{"Trap Bar + empuje de Trineo (sin salto)":"alt_rodilla","Trap Bar Deadlift solo":"alt_rodilla","Trap Bar + Hurdle Jump":"base"},
   "Single-leg RDL (Straight-leg DL)":{"Single-leg RDL":"base","SLDL con apoyo (toe touch)":"regresion","SLDL con KB/mancuerna pesada":"progresion"},
-  "Split Squat (Bottoms-up KB)":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Split Squat KB bottoms-up":"base","RFESS":"progresion","One-leg Squat":"progresion"},
-  "Rear-foot-elevated Split Squat":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Step-up bajo controlado":"alt_rodilla","Split Squat (sin elevar pie)":"regresion","RFESS":"base","One-leg Squat":"progresion"},
-  "One-leg Squat":{"Step-up bajo controlado":"alt_rodilla","Wall Sit":"alt_rodilla","Split Squat a cajón":"regresion","RFESS":"regresion","One-leg Squat":"base","Pistol squat asistido":"progresion"},
+  "Split Squat (Bottoms-up KB)":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Split Squat KB bottoms-up":"base","RFESS":"progresion","One-leg Squat":"progresion"},
+  "Rear-foot-elevated Split Squat":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Step-up bajo controlado":"alt_rodilla","Split Squat (sin elevar pie)":"regresion","RFESS":"base","One-leg Squat":"progresion"},
+  "One-leg Squat":{"Step-up bajo controlado":"alt_rodilla","Wall Sit":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Split Squat a cajón":"regresion","RFESS":"regresion","One-leg Squat":"base","Pistol squat asistido":"progresion"},
   "RFESS + Hurdle Hops":{"RFESS + empuje de Trineo (sin salto)":"alt_rodilla","RFESS solo":"alt_rodilla","RFESS + Hurdle Hops":"base"},
   "Toe Touch Squat with medicine ball":{"Toe Touch Squat (med ball)":"base","Sentadilla a cajón":"regresion","Goblet Squat (rango parcial)":"progresion"},
   "Squat Holds":{"Squat Holds (isométrico)":"base","Wall Sit":"alt_rodilla"},
-  "Chin-up / Pull-up":{"Chin-up / Pull-up":"base","Chin-up asistido (banda)":"regresion","Ring Row / Lat pulldown":"regresion","Chin-up lastrado":"progresion"},
+  "Chin-up / Pull-up":{"Chin-up / Pull-up":"base","Dominada agarre paralelo":"alt","X-pull-down (cable/goma)":"alt","Chin-up asistido (banda)":"regresion","Ring Row / Lat pulldown":"regresion","Chin-up lastrado":"progresion"},
   "Chin-up + Med Ball Slam":{"Chin-up + slam ligero":"regresion","Chin-up + Med Ball Slam":"base"},
   "Ring Row":{"Ring Row":"base","TRX Row más vertical":"regresion","Ring Row pies elevados":"progresion"},
   "Ring Row + Med Ball Slam":{"Ring Row + slam ligero":"regresion","Ring Row + Med Ball Slam":"base"},
@@ -9440,7 +9440,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_034';
+const APP_VERSION='vEXT_035';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

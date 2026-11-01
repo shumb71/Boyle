@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-01T12:50:06.377182+00:00",
+  "actualizado": "2026-11-01T19:24:06.067793+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2438,7 +2438,7 @@
       ],
       "pasos": 8223,
       "distancia_km": 6.14,
-      "minutos_activos": 82,
+      "minutos_activos": 18,
       "fc_reposo": 52.0,
       "hrv": 44.5,
       "fr_respiratoria": 14,
@@ -2560,11 +2560,22 @@
       "sueno_rem_min": 125
     },
     "2026-11-01": {
-      "pasos": 2271,
-      "distancia_km": 1.73,
-      "minutos_activos": 109,
-      "calorias_dia": 1346.32,
+      "pasos": 2852,
+      "distancia_km": 2.16,
+      "minutos_activos": 182,
+      "calorias_dia": 2082.58,
       "actividadesFitbit": [
+        {
+          "id": "4390935016188511984",
+          "tipo": "STATIONARY_BIKE",
+          "nombre": "Bicicleta estática",
+          "inicio": "2026-11-01T17:24:13.200Z",
+          "fin": "2026-11-01T17:55:58.200Z",
+          "duracion_min": 32,
+          "calorias": 168,
+          "fc_media": 95,
+          "fc_max": null
+        },
         {
           "id": "3054074525504442872",
           "tipo": "STRENGTH_TRAINING",

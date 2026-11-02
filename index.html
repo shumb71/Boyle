@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_037', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_038', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -1677,7 +1677,7 @@ function getGruposDia(fase,dB){
 
 // VARIANTES DE EJERCICIOS (sistema Boyle: baseline → progression → regression)
 const VARIANTES={
-  "Hang Clean":["Hang Clean desde pos. 1","High Pull","KB Swing / DB Snatch","Trap Bar Jump (70-80% del vertical)","DB Jump Squat","Hang Clean desde pos. 2","Power Clean (desde suelo)"],
+  "Hang Clean":["Hang Clean desde pos. 1","High Pull","KB Swing / DB Snatch","Trap Bar Jump (70-80% del vertical)","DB Jump Squat","Hang Clean desde pos. 2"],
   "Hang Clean (65-75%)":["Hang Clean 65-75%","KB Swing","Trap Bar Jump (70-80% del vertical)","DB Jump Squat","Hang Clean desde pos. 2"],
   "Front Plank":["Front Plank","Front Plank rodillas","Hard-style Front Plank","Stability Ball Roll-out","Ab Wheel"],
   "Hard-style Front Plank":["Hard-style Front Plank","Front Plank","Stability Ball Roll-out"],
@@ -1695,14 +1695,14 @@ const VARIANTES={
   "Chin-up + Med Ball Slam":["Chin-up + slam ligero","Chin-up + Med Ball Slam"],
   "Ring Row":["Ring Row","TRX Row más vertical","Ring Row pies elevados"],
   "Ring Row + Med Ball Slam":["Ring Row + slam ligero","Ring Row + Med Ball Slam"],
-  "DB Row":["DB Row","TRX Row / Seated cable row","Pendlay Row pesado"],
+  "DB Row":["DB Row","TRX Row / Seated cable row","Landmine Row"],
   "X-pull-down":["X-pull-down con cable/goma","Lat pulldown","Straight-arm pulldown"],
   "Bench Press":["Bench Press","DB Bench / Floor Press","Push-up","Bench + Med Ball / Close-grip"],
   "Bench Press + Med Ball":["Bench + Med Ball","Bench Press","Close-grip Bench"],
   "Dumbbell Incline Bench":["DB Incline Bench","Incline Push-up","Incline + Med Ball"],
   "Dumbbell Incline Bench + Med Ball":["DB Incline + Med Ball","DB Incline Bench"],
-  "Half-kneeling Overhead Press":["Half-kneeling OHP (KB)","Seated DB Press","Standing Barbell OHP"],
-  "Standing Overhead Press":["Standing Barbell OHP","Half-kneeling OHP (KB)","Push Press","Half-kneeling Overhead Press","High Split Press"],
+  "Half-kneeling Overhead Press":["Half-kneeling OHP (KB)","Seated DB Press","Landmine Press (half-kneeling)","Standing Barbell OHP"],
+  "Standing Overhead Press":["Standing Barbell OHP","Half-kneeling OHP (KB)","Landmine Press (half-kneeling)","Push Press","Half-kneeling Overhead Press","High Split Press"],
   "Push-up progression":["Push-up suelo","Push-up inclinado / rodillas","Push-up pies elevados","Push-up lastrado"],
   "In-line Chop":["In-line Chop","Half-kneeling Chop","In-line Iso Hold Chop","Dynamic Chop"],
   "In-line Lift":["In-line Lift","Half-kneeling Lift","In-line Iso Hold Lift","Dynamic Lift"],
@@ -1722,7 +1722,7 @@ const VARIANTES={
 };
 // Tipo de cada variante para los distintivos (regresion/base/progresion/alt_rodilla/alt)
 const VAR_TIPO={
-  "Hang Clean":{"Hang Clean desde pos. 1":"base","High Pull":"regresion","KB Swing / DB Snatch":"regresion","Trap Bar Jump (70-80% del vertical)":"alt","DB Jump Squat":"alt","Hang Clean desde pos. 2":"progresion","Power Clean (desde suelo)":"progresion"},
+  "Hang Clean":{"Hang Clean desde pos. 1":"base","High Pull":"regresion","KB Swing / DB Snatch":"regresion","Trap Bar Jump (70-80% del vertical)":"alt","DB Jump Squat":"alt","Hang Clean desde pos. 2":"progresion"},
   "Hang Clean (65-75%)":{"Hang Clean 65-75%":"base","KB Swing":"regresion","Trap Bar Jump (70-80% del vertical)":"alt","DB Jump Squat":"alt","Hang Clean desde pos. 2":"progresion"},
   "Front Plank":{"Front Plank":"base","Front Plank rodillas":"regresion","Hard-style Front Plank":"progresion","Stability Ball Roll-out":"progresion","Ab Wheel":"progresion"},
   "Hard-style Front Plank":{"Hard-style Front Plank":"base","Front Plank":"regresion","Stability Ball Roll-out":"progresion"},
@@ -1740,14 +1740,14 @@ const VAR_TIPO={
   "Chin-up + Med Ball Slam":{"Chin-up + slam ligero":"regresion","Chin-up + Med Ball Slam":"base"},
   "Ring Row":{"Ring Row":"base","TRX Row más vertical":"regresion","Ring Row pies elevados":"progresion"},
   "Ring Row + Med Ball Slam":{"Ring Row + slam ligero":"regresion","Ring Row + Med Ball Slam":"base"},
-  "DB Row":{"DB Row":"base","TRX Row / Seated cable row":"regresion","Pendlay Row pesado":"progresion"},
+  "DB Row":{"DB Row":"base","TRX Row / Seated cable row":"regresion","Landmine Row":"alt"},
   "X-pull-down":{"X-pull-down con cable/goma":"base","Lat pulldown":"alt","Straight-arm pulldown":"alt"},
   "Bench Press":{"Bench Press":"base","DB Bench / Floor Press":"regresion","Push-up":"regresion","Bench + Med Ball / Close-grip":"progresion"},
   "Bench Press + Med Ball":{"Bench + Med Ball":"base","Bench Press":"regresion","Close-grip Bench":"progresion"},
   "Dumbbell Incline Bench":{"DB Incline Bench":"base","Incline Push-up":"regresion","Incline + Med Ball":"progresion"},
   "Dumbbell Incline Bench + Med Ball":{"DB Incline + Med Ball":"base","DB Incline Bench":"regresion"},
-  "Half-kneeling Overhead Press":{"Half-kneeling OHP (KB)":"base","Seated DB Press":"regresion","Standing Barbell OHP":"progresion"},
-  "Standing Overhead Press":{"Standing Barbell OHP":"base","Half-kneeling OHP (KB)":"regresion","Push Press":"progresion","Half-kneeling Overhead Press":"alt","High Split Press":"alt"},
+  "Half-kneeling Overhead Press":{"Half-kneeling OHP (KB)":"base","Seated DB Press":"regresion","Landmine Press (half-kneeling)":"alt","Standing Barbell OHP":"progresion"},
+  "Standing Overhead Press":{"Standing Barbell OHP":"base","Half-kneeling OHP (KB)":"regresion","Push Press":"progresion","Landmine Press (half-kneeling)":"alt","Half-kneeling Overhead Press":"alt","High Split Press":"alt"},
   "Push-up progression":{"Push-up suelo":"base","Push-up inclinado / rodillas":"regresion","Push-up pies elevados":"progresion","Push-up lastrado":"progresion"},
   "In-line Chop":{"In-line Chop":"base","Half-kneeling Chop":"regresion","In-line Iso Hold Chop":"progresion","Dynamic Chop":"progresion"},
   "In-line Lift":{"In-line Lift":"base","Half-kneeling Lift":"regresion","In-line Iso Hold Lift":"progresion","Dynamic Lift":"progresion"},
@@ -1769,6 +1769,299 @@ const VAR_TIPO={
 // ya no puede ocultar variantes nuevas del código — se añaden las que falten al aplicarlo.
 const VARIANTES_BASE=JSON.parse(JSON.stringify(VARIANTES));
 const VAR_TIPO_BASE=JSON.parse(JSON.stringify(VAR_TIPO));
+
+// [vEXT_038] Texto propio de cada variante (cue técnico + aviso). Al elegir una variante se muestra ESTE texto,
+// no el del ejercicio del programa. Orden de búsqueda: VAR_INFO → EJ_INFO[variante] → texto del base → genérico.
+const VAR_INFO={
+ "Hang Clean desde pos. 1": {
+  "tecnica": "Barra por encima de las rodillas (colgante). Rodillas algo flexionadas, pecho ligeramente por detrás de la barra, brazos rectos y codos hacia fuera. Salta, encoge los hombros y captura en cuarto de sentadilla frontal con los codos arriba. Es una herramienta de potencia, no de fuerza."
+ },
+ "Hang Clean 65-75%": {
+  "tecnica": "Mismo gesto con el 65-75% de tu carga de cargada: rápido y limpio, sin pelear con la barra."
+ },
+ "Hang Clean desde pos. 2": {
+  "tecnica": "La barra parte más abajo, hacia las rodillas: más recorrido y más exigente. Misma técnica que en pos. 1 y espalda tensa todo el tiempo."
+ },
+ "High Pull": {
+  "tecnica": "Como la cargada pero sin capturar: extensión explosiva de cadera y tirón de codos hacia arriba y fuera. Versión más sencilla, sin la parte de muñeca y hombro."
+ },
+ "KB Swing / DB Snatch": {
+  "tecnica": "KB swing: la kettlebell sale de la extensión de cadera, no de los brazos; espalda neutra y glúteos apretados arriba, sin hiperextender la lumbar. DB snatch: la mancuerna sube desde entre las piernas en un solo movimiento."
+ },
+ "KB Swing": {
+  "tecnica": "La kettlebell sale de la extensión de cadera, no de los brazos. Espalda neutra, glúteos apretados arriba y sin hiperextender la lumbar."
+ },
+ "Trap Bar Jump (70-80% del vertical)": {
+  "tecnica": "Salto con la trap bar cargada hasta que tu salto sea el 70-80% de tu mejor vertical. Aterriza suave y estable.",
+  "alerta": "⚠️ Impacto: con la rodilla molesta, usa una alternativa sin salto."
+ },
+ "DB Jump Squat": {
+  "tecnica": "Mancuernas a los lados, salto vertical desde cuarto de sentadilla y aterrizaje amortiguando con la cadera atrás.",
+  "alerta": "⚠️ Impacto: con la rodilla molesta, usa una alternativa sin salto."
+ },
+ "Front Plank rodillas": {
+  "tecnica": "Apoyada en rodillas, cuerpo recto de rodillas a cabeza, glúteos y abdomen apretados. Regresión para sumar tiempo con buena forma."
+ },
+ "Front Plank / Body Saw": {
+  "tecnica": "Plancha con los pies en sliders y balanceo adelante y atrás desde los hombros. Cuerpo rígido. Ve solo tan lejos como necesites para notar tensión delante; si la notas en la espalda, te has pasado. Son repeticiones (8-10-12), no tiempo."
+ },
+ "Ab Wheel": {
+  "tecnica": "Ejercicio avanzado con palanca larga. Glúteos apretados, exhala al rodar y que la zona media no se hunda. Antes van el rollout con balón y el body saw.",
+  "alerta": "⚠️ Boyle: empezar con rueda aumenta el riesgo de distensión o dolor de espalda. Si molesta la lumbar, vuelve al body saw."
+ },
+ "Ab Wheel de pie": {
+  "tecnica": "Versión más larga de la rueda: solo cuando el rollout de rodillas te sale perfecto. Glúteos apretados y zona media sin hundirse.",
+  "alerta": "⚠️ Muy exigente para la lumbar. Si molesta, vuelve al body saw o al rollout de rodillas."
+ },
+ "Half-kneeling Chop": {
+  "tecnica": "Una rodilla en el suelo, tira en diagonal de arriba abajo con el tronco quieto: la rotación sale de los brazos, no de la lumbar. Arrodillado te centras en la cadera y la zona media."
+ },
+ "Half-kneeling Lift": {
+  "tecnica": "Una rodilla en el suelo, sube en diagonal de abajo arriba con el tronco quieto. Core rígido, la rotación no sale de la lumbar."
+ },
+ "Pallof press isométrico": {
+  "tecnica": "Estira la banda o el cable lateral al frente y aguanta 2-3 s. El tronco resiste la rotación y los glúteos van apretados."
+ },
+ "Standing antirotation hold (tempo)": {
+  "tecnica": "Lo mismo de pie con polea lateral y tempo lento de 3 s en la salida y la vuelta."
+ },
+ "Pallof press caminando": {
+  "tecnica": "Con la banda sostenida al frente, da pasos laterales controlados sin que el tronco rote."
+ },
+ "Suitcase Carry unilateral": {
+  "tecnica": "Una KB o mancuerna en una mano, 25 m por lado, tronco erguido sin inclinarte hacia el lado cargado."
+ },
+ "Farmer Walk bilateral": {
+  "tecnica": "Dos KB o mancuernas, 25 m ida y vuelta, hombros atrás y abajo y pasos cortos y firmes."
+ },
+ "Farmer Carry bilateral": {
+  "tecnica": "Dos KB o mancuernas, 25 m ida y vuelta, hombros atrás y abajo y pasos cortos y firmes."
+ },
+ "Bottoms-up KB walk": {
+  "tecnica": "KB boca abajo a la altura del hombro, codo pegado y muñeca neutra. Peso ligero: exige estabilidad de hombro."
+ },
+ "Windmill sin peso": {
+  "tecnica": "Mirada en la mano de arriba, cadera hacia atrás y rotación del tronco. Sin peso para aprender el patrón."
+ },
+ "Windmill con KB ligera": {
+  "tecnica": "Mismo windmill con una KB ligera cuando el patrón sale limpio. Mirada en la mano de arriba."
+ },
+ "Wall Slide de pie": {
+  "tecnica": "Espalda y antebrazos pegados a la pared, desliza los brazos arriba sin separar las costillas ni arquear la lumbar."
+ },
+ "Spiderman lat stretch": {
+  "tecnica": "Zancada profunda, mano junto al pie y rota el pecho hacia arriba. Respira lento."
+ },
+ "Open book": {
+  "tecnica": "Tumbado de lado con rodillas flexionadas, abre el brazo de arriba hacia atrás siguiéndolo con la vista, rodillas juntas."
+ },
+ "World's greatest stretch": {
+  "tecnica": "Zancada con mano en el suelo, rotación torácica y extensión de la cadera de atrás."
+ },
+ "Split Squat a cajón (parcial)": {
+  "tecnica": "Split squat bajando la rodilla trasera a una almohadilla o cajón que limita el recorrido. Peso en el talón delantero y tronco erguido. Cada semana baja un poco más, hasta tocar suelo."
+ },
+ "Split Squat a cajón": {
+  "tecnica": "Split squat bajando la rodilla trasera a una almohadilla o cajón que limita el recorrido. Peso en el talón delantero y tronco erguido. Cada semana baja un poco más, hasta tocar suelo."
+ },
+ "Split Squat (sin elevar pie)": {
+  "tecnica": "Los dos pies en el suelo: la regresión de la búlgara. Boyle recomienda seguir con él hasta que moleste el dedo gordo del pie trasero, sin prisa por pasar a la búlgara."
+ },
+ "Split Squat isométrico (30-45-60 s)": {
+  "tecnica": "Aguanta abajo, rodilla trasera cerca del suelo y peso en el talón delantero. Sube el tiempo cada semana: 30 s, 45 s, 60 s. Sin movimiento."
+ },
+ "Split Squat KB bottoms-up": {
+  "tecnica": "Split squat con una kettlebell boca abajo en una mano: obliga a mantener el tronco quieto y el hombro estable. Peso ligero."
+ },
+ "RFESS": {
+  "tecnica": "Pie trasero en el banco con los cordones hacia abajo (no apoyes los dedos). Baja hasta que el muslo delantero quede paralelo. Boyle usa antes el split normal al menos 6 semanas, y la carga empieza en goblet."
+ },
+ "RFESS solo": {
+  "tecnica": "RFESS sin el salto: solo la parte de fuerza. Mismas series y reps que la versión con salto."
+ },
+ "RFESS + empuje de Trineo (sin salto)": {
+  "tecnica": "Tras la serie de RFESS, empuja el trineo 15-20 m con postura baja. Mantiene la potencia sin impacto en la rodilla."
+ },
+ "Step-up bajo controlado": {
+  "tecnica": "Cajón de 15-20 cm. Sube empujando con el talón de la pierna que sube y baja en 3 s.",
+  "alerta": "⚠️ En rodillas doloridas los step-ups pueden molestar: vigila."
+ },
+ "Pistol squat asistido": {
+  "tecnica": "Apoyo en anilla o TRX que vas soltando. Profundidad solo hasta donde controles, con el talón pegado.",
+  "alerta": "⚠️ Mucha flexión de rodilla y cadera: evítalo si molestan rodilla o lumbar."
+ },
+ "Wall Sit (isométrico)": {
+  "tecnica": "Espalda en la pared, muslos paralelos o algo más altos, peso en los talones. 30-45-60 s. Sin impacto ni movimiento: para cuando la rodilla protesta."
+ },
+ "Wall Sit": {
+  "tecnica": "Espalda en la pared, muslos paralelos o algo más altos, peso en los talones. 30-45-60 s. Sin impacto ni movimiento: para cuando la rodilla protesta."
+ },
+ "Sentadilla española (banda)": {
+  "tecnica": "Banda anclada por detrás de las rodillas; te sientas hacia atrás con las espinillas verticales. Carga el cuádriceps sin cizalla en la rodilla."
+ },
+ "Terminal Knee Extension (banda)": {
+  "tecnica": "Banda detrás de la rodilla: extiende hasta bloquear sin hiperextender y aprieta 1-2 s. Es activación, no fuerza."
+ },
+ "Sentadilla a cajón": {
+  "tecnica": "Cajón de unos 30 cm como medidor de profundidad (muslos paralelos). Toca y sube: no te sientes encima ni descanses."
+ },
+ "Goblet Squat (rango parcial)": {
+  "tecnica": "Mancuerna al pecho, bajando solo hasta donde la rodilla vaya cómoda y ganando rango cada semana. Boyle insiste en no quedarse en medias sentadillas: es un paso hasta llegar a muslos paralelos."
+ },
+ "Squat Holds (isométrico)": {
+  "tecnica": "Aguanta abajo con muslos paralelos, pecho alto y rodillas empujando hacia fuera. Cuenta segundos o respiraciones."
+ },
+ "Toe Touch Squat (med ball)": {
+  "tecnica": "Toca la punta del pie con el balón medicinal y sube con él por encima de la cabeza. Movilidad completa, lento y controlado."
+ },
+ "Single-leg RDL": {
+  "tecnica": "Rodilla ligeramente flexionada, cadera atrás y espalda neutra, con la cadera cuadrada. La pierna libre sale atrás como contrapeso. Baja solo hasta donde la espalda siga recta."
+ },
+ "SLDL con apoyo (toe touch)": {
+  "tecnica": "Apóyate en una pared o barra, o roza el suelo con el pie libre, para ganar equilibrio y centrarte en la cadera."
+ },
+ "SLDL con KB/mancuerna pesada": {
+  "tecnica": "Misma técnica con peso en una mano. Prueba la mano contraria a la pierna de apoyo, que suele ir más estable. Sube el peso cuando la cadera no se abra."
+ },
+ "Hip Thrust / Puente glúteo": {
+  "tecnica": "Espalda alta apoyada y pies bajo las rodillas. Sube apretando el glúteo hasta alinear rodilla, cadera y hombro, sin arquear la lumbar, y pausa 1-2 s. Boyle prefiere puentes a una pierna e isométricos."
+ },
+ "Trap Bar + Hurdle Jump": {
+  "tecnica": "Peso muerto con trap bar seguido de inmediato de un salto sobre valla. Fuerza más potencia. Aterriza suave y estable.",
+  "alerta": "⚠️ Impacto: con la rodilla molesta, usa una alternativa sin salto."
+ },
+ "Trap Bar + empuje de Trineo (sin salto)": {
+  "tecnica": "Peso muerto con trap bar y, en vez del salto, un empuje corto de trineo. Mantiene la potencia sin impacto."
+ },
+ "Trap Bar Deadlift solo": {
+  "tecnica": "Solo la serie de fuerza, sin el salto. Empuja el suelo, cadera y hombros suben a la vez y cierra con glúteos sin hiperextender."
+ },
+ "Dominada agarre paralelo": {
+  "tecnica": "Igual que el chin-up pero con las manos en neutro. Dificultad parecida y suele ir mejor a hombro y muñeca."
+ },
+ "Chin-up asistido (banda)": {
+  "tecnica": "Con la banda bajo el pie o la rodilla. Boyle dice que quien hace 5 asistidos con banda fuerte no necesita pull-downs. Baja cada vez a una banda más suave."
+ },
+ "Chin-up lastrado": {
+  "tecnica": "Cinturón con peso, solo cuando las reps sin lastre salen limpias. Cuando el programa pide series de 3, sube el peso y haz series de 3."
+ },
+ "Chin-up + slam ligero": {
+  "tecnica": "Tras el chin-up, slam con balón ligero (unos 3 kg). El golpe sale de la cadera, no de la lumbar."
+ },
+ "Ring Row / Lat pulldown": {
+  "tecnica": "Si hoy no sale el chin-up: ring row (tracción horizontal dura, baja el ángulo cada semana) o lat pulldown (tracción vertical más ligera, hacia el pecho alto con hombros abajo y atrás)."
+ },
+ "Ring Row": {
+  "tecnica": "Remo en suspensión: el ejercicio duro de tracción horizontal. Tres series de 8-10 y reduce el ángulo del cuerpo cada semana."
+ },
+ "Lat pulldown": {
+  "tecnica": "Tracción vertical más ligera, para cuando aún no llegas a chin-ups o hay problema de hombro. Tira hacia el pecho alto, hombros abajo y atrás, sin balancear el tronco."
+ },
+ "X-pull-down (cable/goma)": {
+  "tecnica": "Tira en diagonal hacia la cadera contraria con el tronco quieto. Activa el dorsal y el core rotatorio."
+ },
+ "X-pull-down con cable/goma": {
+  "tecnica": "Tira en diagonal hacia la cadera contraria con el tronco quieto. Activa el dorsal y el core rotatorio."
+ },
+ "Straight-arm pulldown": {
+  "tecnica": "Brazos casi rectos: baja la barra o cuerda hasta los muslos con los dorsales y las costillas abajo. Poco peso."
+ },
+ "TRX Row más vertical": {
+  "tecnica": "Cuerpo más inclinado hacia arriba: menos carga. Úsalo para ganar volumen o cuando falles reps. Ajusta el ángulo con los pies."
+ },
+ "Ring Row pies elevados": {
+  "tecnica": "Máxima dificultad: cuerpo paralelo al suelo y pies juntos sobre un banco, dedos hacia arriba. Tira del pecho hacia las asas con el torso recto."
+ },
+ "Ring Row + slam ligero": {
+  "tecnica": "Tras el remo, slam con balón ligero (unos 3 kg), igual que el del chin-up."
+ },
+ "TRX Row / Seated cable row": {
+  "tecnica": "Remo con las dos manos: tira de los codos atrás con las escápulas juntas. Pulgar abajo al empezar y arriba al terminar, así trabaja el manguito rotador."
+ },
+ "Landmine Row": {
+  "tecnica": "Con la barra anclada, bisagra de cadera con espalda neutra. Rema hacia el abdomen con las escápulas juntas, sin tirones de cuello. Si la lumbar protesta, apoya el pecho en un banco inclinado."
+ },
+ "DB Bench / Floor Press": {
+  "tecnica": "Las mancuernas dan más rango y reparto. En floor press los codos tocan el suelo y limitan el recorrido, lo que va bien para el hombro."
+ },
+ "Bench + Med Ball / Close-grip": {
+  "tecnica": "Press de banca con lanzamiento de balón desde el pecho (sin recogerlo en el aire) o con agarre cerrado: manos algo más cerradas que el ancho de hombros y codos pegados."
+ },
+ "Bench + Med Ball": {
+  "tecnica": "Tras el press, lanza el balón desde el pecho. Sin recogerlo en el aire."
+ },
+ "Close-grip Bench": {
+  "tecnica": "Manos algo más cerradas que el ancho de hombros y codos pegados. Más tríceps, menos hombro."
+ },
+ "DB Incline Bench": {
+  "tecnica": "Inclinación de 30-45°: más rango que con barra y menos estrés en el hombro."
+ },
+ "Incline Push-up": {
+  "tecnica": "Manos elevadas en banco o cajón: más fácil que en suelo. Baja la altura cada semana hasta llegar al suelo."
+ },
+ "Incline + Med Ball": {
+  "tecnica": "Press inclinado y lanzamiento de balón desde el pecho, sin recogerlo en el aire."
+ },
+ "DB Incline + Med Ball": {
+  "tecnica": "Press inclinado y lanzamiento de balón desde el pecho, sin recogerlo en el aire."
+ },
+ "Push-up": {
+  "tecnica": "Cuerpo recto como una plancha, codos a unos 45° y pecho al suelo con control."
+ },
+ "Push-up suelo": {
+  "tecnica": "Cuerpo recto como una plancha, codos a unos 45° y pecho al suelo con control."
+ },
+ "Push-up inclinado / rodillas": {
+  "tecnica": "Regresión: manos elevadas o apoyo en rodillas, para sacar las reps con técnica."
+ },
+ "Push-up pies elevados": {
+  "tecnica": "Más carga sobre pecho y hombros. Mantén el cuerpo recto, sin hundir la lumbar."
+ },
+ "Push-up lastrado": {
+  "tecnica": "Chaleco o disco en la espalda, solo cuando las reps sin peso salgan fáciles."
+ },
+ "Half-kneeling OHP (KB)": {
+  "tecnica": "Una rodilla en el suelo con la KB en la mano; aprieta el glúteo de la pierna de atrás, costillas abajo, y empuja sin arquear la lumbar. La forma redondeada de la KB da una rotación externa natural del hombro: a mucha gente a la que el press le molesta le resulta indoloro."
+ },
+ "Seated DB Press": {
+  "tecnica": "Sentado con respaldo: menos exigencia de equilibrio y de lumbar. Empuja sin arquear."
+ },
+ "Standing Barbell OHP": {
+  "tecnica": "De pie con glúteos y abdomen apretados; la barra sube pegada a la cara y no arquees la lumbar."
+ },
+ "Push Press": {
+  "tecnica": "Pequeño impulso de piernas y empuje. Permite más peso pero exige coordinación."
+ },
+ "Landmine Press (half-kneeling)": {
+  "tecnica": "Una rodilla en el suelo y barra anclada. Empuja en arco hacia delante y arriba con el glúteo de atrás apretado y las costillas abajo. Es amable con el hombro. Se progresa a de pie y a split."
+ },
+ "Half-kneeling push-pull con cable": {
+  "tecnica": "Un brazo empuja y el otro tira sin que el tronco rote. Antirrotación, con peso ligero."
+ },
+ "Seated cable row + press": {
+  "tecnica": "Sentado en polea: remo seguido de press, controlado y sin balancear el tronco."
+ },
+ "Standing push-pull": {
+  "tecnica": "De pie, mismo movimiento de empuje y tracción con el tronco quieto."
+ },
+ "Dynamic push-pull de pie": {
+  "tecnica": "Movimiento fluido y explosivo: la rotación sale de caderas y torácica. Pasas de antirrotación a rotación explosiva."
+ }
+};
+const VARIANTES_QUITADAS=['Pendlay Row pesado','Power Clean (desde suelo)'];
+function infoVariante(ej,base){
+  var v=getVarianteActual(ej);
+  if(!v||v===ej) return base;
+  var out=Object.assign({},base); delete out.tecnica; delete out.alerta;
+  var vi=VAR_INFO[v];
+  if(vi){ out.tecnica=vi.tecnica; if(vi.alerta) out.alerta=vi.alerta; return out; }
+  var tp=(VAR_TIPO[ej]&&VAR_TIPO[ej][v])||'';
+  if(tp==='base') return base;
+  var ei=EJ_INFO[v];
+  if(ei&&ei.tecnica){ out.tecnica=ei.tecnica; if(ei.alerta) out.alerta=ei.alerta; return out; }
+  out.tecnica='Variante de '+ej+'. Mismo patrón: ajusta carga y rango a cómo lo notes.';
+  return out;
+}
 
 
 // INFORMACION TECNICA DE EJERCICIOS
@@ -2140,7 +2433,7 @@ function abrirVariantes(ejOrig){
     imgsEl.style.display=ejImgs.length?'flex':'none';
   }
   if(infoEl){
-    var info=EJ_INFO[ejOrig]||{};
+    var info=infoVariante(ejOrig,EJ_INFO[ejOrig]||{});
     infoEl.innerHTML=info.tecnica?'<div style="font-size:12px;color:var(--text2);background:var(--bg3);border-radius:var(--rs);padding:.4rem .6rem;line-height:1.4">'+info.tecnica+'</div>':'';
   }
   document.getElementById('mo-var').classList.add('open');
@@ -3605,7 +3898,7 @@ const renders={
           var ejR=ej.replace(/&#39;/g,"'");
           var key=diaDayPrefix(ST.dia)+ejR||ST.sets[legacyDayPrefix(ST.dia)+ejR]?diaDayPrefix(ST.dia)+ejR:legacyDayPrefix(ST.dia)+ejR;
           var ss=ST.sets[key]||ST.sets[legacyDayPrefix(ST.dia)+ejR]||[];
-          var info=EJ_INFO[ej]||{};
+          var info=infoVariante(ej,EJ_INFO[ej]||{});
           var numSer,rpsLabel;
           var fase=getFaseActual(ST.sem);
           var semEnFase=getSemEnFase(ST.sem);
@@ -9456,7 +9749,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_037';
+const APP_VERSION='vEXT_038';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -10059,6 +10352,9 @@ function aplicarEjerciciosExterno(data){
         VAR_TIPO[nombre]=Object.assign({},e.variantes_tipo);
       }
       // [vEXT_037] añadir las variantes de fábrica que el catálogo externo no trae
+      // [vEXT_038] variantes retiradas a propósito: no volver a mostrarlas aunque la caché antigua las traiga
+      VARIANTES[nombre]=VARIANTES[nombre].filter(function(v){ return VARIANTES_QUITADAS.indexOf(v)<0; });
+      if(VAR_TIPO[nombre]) VARIANTES_QUITADAS.forEach(function(q){ delete VAR_TIPO[nombre][q]; });
       (VARIANTES_BASE[nombre]||[]).forEach(function(v){
         if(VARIANTES[nombre].indexOf(v)<0){
           VARIANTES[nombre].push(v);

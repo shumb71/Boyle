@@ -1,14 +1,14 @@
 {
-  "actualizado": "2026-11-01T19:24:06.067793+00:00",
+  "actualizado": "2026-11-02T00:22:49.699968+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
     "ultimo_dato": {
-      "pasos": "2026-11-01",
-      "fc_reposo": "2026-11-01",
+      "pasos": "2026-11-02",
+      "fc_reposo": "2026-11-02",
       "hrv": "2026-11-01",
-      "sueno_total_min": "2026-11-01",
-      "calorias_dia": "2026-11-01",
+      "sueno_total_min": "2026-11-02",
+      "calorias_dia": "2026-11-02",
       "peso_kg": "2026-10-30"
     }
   },
@@ -2477,7 +2477,7 @@
       ],
       "pasos": 6601,
       "distancia_km": 4.93,
-      "minutos_activos": 359,
+      "minutos_activos": 355,
       "fc_reposo": 52.0,
       "hrv": 41.8,
       "spo2": 95.4,
@@ -2560,15 +2560,15 @@
       "sueno_rem_min": 125
     },
     "2026-11-01": {
-      "pasos": 2852,
-      "distancia_km": 2.16,
-      "minutos_activos": 182,
-      "calorias_dia": 2082.58,
+      "pasos": 2986,
+      "distancia_km": 2.26,
+      "minutos_activos": 196,
+      "calorias_dia": 2383.7,
       "actividadesFitbit": [
         {
           "id": "4390935016188511984",
-          "tipo": "STATIONARY_BIKE",
-          "nombre": "Bicicleta estática",
+          "tipo": "TREADMILL_WALK",
+          "nombre": "Caminar en cinta de correr",
           "inicio": "2026-11-01T17:24:13.200Z",
           "fin": "2026-11-01T17:55:58.200Z",
           "duracion_min": 32,
@@ -2596,6 +2596,18 @@
       "sueno_profundo_min": 100,
       "sueno_ligero_min": 272,
       "sueno_rem_min": 126
+    },
+    "2026-11-02": {
+      "pasos": 22,
+      "distancia_km": 0.02,
+      "minutos_activos": 2,
+      "calorias_dia": 104.87,
+      "fc_reposo": 51.0,
+      "sueno_total_min": 65,
+      "sueno_profundo_min": 4,
+      "sueno_ligero_min": 61,
+      "sueno_rem_min": 0,
+      "actividadesFitbit": []
     }
   }
 }

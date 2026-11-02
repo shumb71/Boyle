@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_036', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_037', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -1765,6 +1765,11 @@ const VAR_TIPO={
   "Supine Floor Slide":{"Supine Floor Slide":"base","Wall Slide de pie":"regresion"},
   "Spiderman pos. lat stretch":{"Spiderman lat stretch":"base","Open book":"alt","World's greatest stretch":"progresion"},
 };
+// [vEXT_037] Copia de las variantes de fábrica: un catálogo externo en caché (ejercicios.json antiguo)
+// ya no puede ocultar variantes nuevas del código — se añaden las que falten al aplicarlo.
+const VARIANTES_BASE=JSON.parse(JSON.stringify(VARIANTES));
+const VAR_TIPO_BASE=JSON.parse(JSON.stringify(VAR_TIPO));
+
 
 // INFORMACION TECNICA DE EJERCICIOS
 // EJERCICIOS POR FASE (F1-F4) y DIA (D1-D4)
@@ -9451,7 +9456,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_036';
+const APP_VERSION='vEXT_037';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -10053,6 +10058,14 @@ function aplicarEjerciciosExterno(data){
       if(e.variantes_tipo&&typeof e.variantes_tipo==='object'){
         VAR_TIPO[nombre]=Object.assign({},e.variantes_tipo);
       }
+      // [vEXT_037] añadir las variantes de fábrica que el catálogo externo no trae
+      (VARIANTES_BASE[nombre]||[]).forEach(function(v){
+        if(VARIANTES[nombre].indexOf(v)<0){
+          VARIANTES[nombre].push(v);
+          var tp=VAR_TIPO_BASE[nombre]&&VAR_TIPO_BASE[nombre][v];
+          if(tp){ if(!VAR_TIPO[nombre]) VAR_TIPO[nombre]={}; if(!VAR_TIPO[nombre][v]) VAR_TIPO[nombre][v]=tp; }
+        }
+      });
     }
   });
 }

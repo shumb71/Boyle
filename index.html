@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_035', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_036', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -1161,6 +1161,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       </div>
     </div>
     <!-- Estadísticas mensuales Garmin -->
+    <!-- [vEXT_036] Gráfica de tonelaje -->
+    <div class="card" id="ton-card">
+      <div class="card-lbl">📈 Tonelaje</div>
+      <div id="ton-vista" style="display:flex;gap:6px;margin-bottom:.5rem"></div>
+      <div id="ton-dia" style="display:flex;gap:6px;margin-bottom:.6rem;flex-wrap:wrap"></div>
+      <div style="position:relative;height:230px"><canvas id="ton-chart"></canvas></div>
+      <div id="ton-resumen" style="font-size:11px;color:var(--text2);margin-top:.6rem;line-height:1.55"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.4">Solo cuenta peso × reps. Dominadas, flexiones, planchas y carries sin peso cuentan 0. En F2 el total baja (3×5 en vez de 3×8) pero el kg por rep sube.</div>
+    </div>
     <div class="card" id="cal-stats-card" style="display:none">
       <div class="card-lbl">📊 Resumen del mes</div>
       <div id="cal-stats"></div>
@@ -1678,7 +1687,7 @@ const VARIANTES={
   "Single-leg RDL (Straight-leg DL)":["Single-leg RDL","SLDL con apoyo (toe touch)","SLDL con KB/mancuerna pesada"],
   "Split Squat (Bottoms-up KB)":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Terminal Knee Extension (banda)","Split Squat KB bottoms-up","RFESS","One-leg Squat"],
   "Rear-foot-elevated Split Squat":["Split Squat a cajón (parcial)","Wall Sit (isométrico)","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Terminal Knee Extension (banda)","Step-up bajo controlado","Split Squat (sin elevar pie)","RFESS","One-leg Squat"],
-  "One-leg Squat":["Step-up bajo controlado","Wall Sit","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Split Squat a cajón","RFESS","One-leg Squat","Pistol squat asistido"],
+  "One-leg Squat":["Step-up bajo controlado","Wall Sit","Sentadilla española (banda)","Split Squat isométrico (30-45-60 s)","Split Squat a cajón","RFESS","Skater squat con almohadilla","Skater squat","One-leg Squat","Pistol squat asistido"],
   "RFESS + Hurdle Hops":["RFESS + empuje de Trineo (sin salto)","RFESS solo","RFESS + Hurdle Hops"],
   "Toe Touch Squat with medicine ball":["Toe Touch Squat (med ball)","Sentadilla a cajón","Goblet Squat (rango parcial)"],
   "Squat Holds":["Squat Holds (isométrico)","Wall Sit"],
@@ -1723,7 +1732,7 @@ const VAR_TIPO={
   "Single-leg RDL (Straight-leg DL)":{"Single-leg RDL":"base","SLDL con apoyo (toe touch)":"regresion","SLDL con KB/mancuerna pesada":"progresion"},
   "Split Squat (Bottoms-up KB)":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Split Squat KB bottoms-up":"base","RFESS":"progresion","One-leg Squat":"progresion"},
   "Rear-foot-elevated Split Squat":{"Split Squat a cajón (parcial)":"alt_rodilla","Wall Sit (isométrico)":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Terminal Knee Extension (banda)":"alt_rodilla","Step-up bajo controlado":"alt_rodilla","Split Squat (sin elevar pie)":"regresion","RFESS":"base","One-leg Squat":"progresion"},
-  "One-leg Squat":{"Step-up bajo controlado":"alt_rodilla","Wall Sit":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Split Squat a cajón":"regresion","RFESS":"regresion","One-leg Squat":"base","Pistol squat asistido":"progresion"},
+  "One-leg Squat":{"Step-up bajo controlado":"alt_rodilla","Wall Sit":"alt_rodilla","Sentadilla española (banda)":"alt_rodilla","Split Squat isométrico (30-45-60 s)":"alt_rodilla","Split Squat a cajón":"regresion","RFESS":"regresion","Skater squat con almohadilla":"regresion","Skater squat":"alt","One-leg Squat":"base","Pistol squat asistido":"progresion"},
   "RFESS + Hurdle Hops":{"RFESS + empuje de Trineo (sin salto)":"alt_rodilla","RFESS solo":"alt_rodilla","RFESS + Hurdle Hops":"base"},
   "Toe Touch Squat with medicine ball":{"Toe Touch Squat (med ball)":"base","Sentadilla a cajón":"regresion","Goblet Squat (rango parcial)":"progresion"},
   "Squat Holds":{"Squat Holds (isométrico)":"base","Wall Sit":"alt_rodilla"},
@@ -2036,6 +2045,8 @@ const EJ_INFO={
   'Bench Press':{tipo:'prog',tecnica:'Press banca barra o mancuernas. Bajada 3 seg (tempo). Pies en el suelo. Alternativa: mancuernas para mayor rango.'},
   'Standing Overhead Press':{tipo:'prog',tecnica:'De pie, core activo. Mancuernas o barra. No arquear la lumbar. Alternativa sentado si hay movilidad limitada. Alternativas válidas: Half-kneeling Overhead Press (más estabilidad de core, apoyo de rodilla) o High Split Press (zancada alta, sin flexión profunda de rodilla).'},
   'High Split Press':{tipo:'prog',tecnica:'Press de hombro (barra o mancuernas) en zancada dividida alta: pie trasero apoyado solo de puntera, rodilla casi extendida — sin bajar como en una zancada profunda. Añade estabilidad de cadera y core al press sin la carga articular de una zancada baja, buena opción por la rodilla.'},
+  'Skater squat':{tipo:'prog',reps:'c/lado',tecnica:'Sentadilla a una pierna con la otra pierna atrás, sin apoyarla. Tronco erguido, cadera atrás y abajo, rodilla trasera baja hacia el suelo con control (a un dedo o tocando suave). Menos flexión de tronco que el One-leg Squat, así que descarga la lumbar.',alerta:'⚠️ Más flexión de rodilla que el One-leg Squat a cajón: sube la profundidad poco a poco y con peso corporal. Si la lumbar o la rodilla molestan, usa la versión con almohadilla.'},
+  'Skater squat con almohadilla':{tipo:'prog',reps:'c/lado',tecnica:'Skater squat con un cojín o almohadilla bajo la rodilla trasera que limita el recorrido. Peso corporal, tronco erguido, bajada de 3 s y apoyo en una barra o pared si hace falta. Cuando domines el control, baja la altura del cojín hasta tocar suelo.',alerta:'Regresión del Skater squat. Úsala las primeras 2-4 semanas.'},
   'One-leg Squat':{tipo:'prog',reps:'c/lado',tecnica:'Progresión del Split Squat. Solo cuando RFESS está consolidado. Cadera atrás y abajo, rodilla estable. Asistencia en progresión.',alerta:'⚠️ Rotura menisco externo / condropatía: evitar flexión profunda con carga. Sustituir por Step-up cajón bajo o Wall Sit.'},
   'Rear-foot-elevated Split Squat':{tipo:'prog',reps:'c/lado',tecnica:'Pie trasero elevado. Bajada 3 seg. No dejar que la rodilla delantera supere el pie en exceso. Core muy activo.',alerta:'⚠️ Condropatía femoral medial: vigilar rodilla en valgo. Si dolor → Split Squat sin elevación.'},
   'Ring Row':{tipo:'prog',tecnica:'TRX o anillas. Cuerpo recto como tabla. Cuanto más horizontal el cuerpo, más difícil. 3 series mínimo. Progresión: piés elevados.'},
@@ -9440,7 +9451,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_035';
+const APP_VERSION='vEXT_036';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -10994,6 +11005,105 @@ function renderCumplimiento(year,month){
   card.style.display='block';
 }
 
+// ── [vEXT_036] TONELAJE: helpers y gráfica ────────────────────────────────────
+var _tonChart=null, _tonVista='ses', _tonDia='todos';
+function tonSesion(ses){
+  var ton=0, ser=0, reps=0;
+  ((ses&&ses.ejerciciosRealizados)||[]).forEach(function(e){
+    (e.sets||[]).filter(Boolean).forEach(function(st){
+      var p=Number(st.p)||0, r=Number(st.r)||0;
+      if((st.tipo==='reps'||!st.tipo)&&p>0&&r>0){ ton+=p*r; ser++; reps+=r; }
+    });
+  });
+  return {ton:ton, ser:ser, reps:reps, kgRep:reps?ton/reps:0};
+}
+function tonCorto(kg){
+  return kg>=1000 ? (kg/1000).toFixed(1).replace('.',',')+'t' : Math.round(kg)+'kg';
+}
+function tonFmt(n){ return Math.round(n).toLocaleString('es-ES'); }
+function tonFechaCorta(f){ return f.slice(8)+'/'+f.slice(5,7); }
+function tonSetVista(v){ _tonVista=v; renderTonelaje(); }
+function tonSetDia(d){ _tonDia=d; renderTonelaje(); }
+function tonColorFase(f){
+  var cs=getComputedStyle(document.body);
+  function v(n,d){ return (cs.getPropertyValue(n)||'').trim()||d; }
+  var m={F1:v('--blue','#185FA5'),F2:v('--orange','#E8833A'),F3:v('--green','#2E9E5B'),F4:v('--red','#C0392B')};
+  return m[f]||'#8a8a8a';
+}
+function tonSesiones(){
+  var hist=ST.historialFechas||{}, out=[];
+  Object.keys(hist).sort().forEach(function(f){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(f)) return;
+    var s=hist[f], t=tonSesion(s);
+    if(t.ton<=0) return;
+    var dB=s.diaBoyleReal||'';
+    if(_tonDia!=='todos'&&dB!==_tonDia) return;
+    var fase=(s.fase&&s.fase!=='undefined'&&s.fase!=='Anterior')?s.fase:'—';
+    out.push({f:f,fase:fase,dB:dB,t:t});
+  });
+  return out;
+}
+function tonBotones(){
+  function btn(act,txt,fn){
+    return '<button onclick="'+fn+'" style="flex:1;border:none;border-radius:var(--rs);padding:7px 4px;font-size:12px;font-weight:700;cursor:pointer;background:'+(act?'var(--blue)':'var(--bg3)')+';color:'+(act?'#fff':'var(--text)')+'">'+txt+'</button>';
+  }
+  var v=document.getElementById('ton-vista'), d=document.getElementById('ton-dia');
+  if(v) v.innerHTML=btn(_tonVista==='ses','Sesión',"tonSetVista('ses')")+btn(_tonVista==='sem','Semana',"tonSetVista('sem')")+btn(_tonVista==='fase','Fase',"tonSetVista('fase')");
+  if(d) d.innerHTML=['todos','D1','D2','D3','D4'].map(function(x){
+    return btn(_tonDia===x,x==='todos'?'Todos':x,"tonSetDia('"+x+"')");
+  }).join('');
+}
+function renderTonelaje(){
+  var cv=document.getElementById('ton-chart'), res=document.getElementById('ton-resumen');
+  if(!cv||!res) return;
+  tonBotones();
+  if(_tonChart){ try{_tonChart.destroy();}catch(e){} _tonChart=null; }
+  if(typeof Chart==='undefined'){ res.textContent='La gráfica necesita conexión la primera vez (Chart.js).'; return; }
+  var ses=tonSesiones();
+  if(!ses.length){ res.textContent='Aún no hay series con peso registradas'+(_tonDia!=='todos'?' para '+_tonDia:'')+'.'; return; }
+  var labels=[], bars=[], line=[], cols=[], barTitle='kg', txt='';
+  if(_tonVista==='ses'){
+    var u=ses.slice(-30);
+    u.forEach(function(x){ labels.push(tonFechaCorta(x.f)+(_tonDia==='todos'&&x.dB?' '+x.dB:'')); bars.push(Math.round(x.t.ton)); line.push(Math.round(x.t.kgRep*10)/10); cols.push(tonColorFase(x.fase)); });
+    var tot=u.reduce(function(a,x){return a+x.t.ton;},0), mx=u.reduce(function(a,x){return x.t.ton>a.t.ton?x:a;},u[0]);
+    txt='Últimas '+u.length+' sesiones · media '+tonFmt(tot/u.length)+' kg · máx '+tonFmt(mx.t.ton)+' kg ('+tonFechaCorta(mx.f)+')';
+  } else if(_tonVista==='sem'){
+    var g={}, orden=[];
+    ses.forEach(function(x){
+      var d=new Date(x.f+'T00:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7));
+      var k=calFechaKey(d.getFullYear(),d.getMonth(),d.getDate());
+      if(!g[k]){ g[k]={ton:0,reps:0,n:0,fase:x.fase}; orden.push(k); }
+      g[k].ton+=x.t.ton; g[k].reps+=x.t.reps; g[k].n++; g[k].fase=x.fase;
+    });
+    orden=orden.slice(-16);
+    orden.forEach(function(k){ var w=g[k]; labels.push(tonFechaCorta(k)); bars.push(Math.round(w.ton)); line.push(w.reps?Math.round(w.ton/w.reps*10)/10:null); cols.push(tonColorFase(w.fase)); });
+    var tw=orden.reduce(function(a,k){return a+g[k].ton;},0);
+    txt='Semanas (lunes) · '+orden.length+' semanas · media '+tonFmt(tw/orden.length)+' kg/semana';
+  } else {
+    var runs=[];
+    ses.forEach(function(x){
+      var r=runs[runs.length-1];
+      if(!r||r.fase!==x.fase){ r={fase:x.fase,ini:x.f,ton:0,reps:0,n:0}; runs.push(r); }
+      r.ton+=x.t.ton; r.reps+=x.t.reps; r.n++;
+    });
+    runs=runs.slice(-8);
+    barTitle='kg/sesión';
+    runs.forEach(function(r){ labels.push(r.fase+' '+tonFechaCorta(r.ini)); bars.push(Math.round(r.ton/r.n)); line.push(r.reps?Math.round(r.ton/r.reps*10)/10:null); cols.push(tonColorFase(r.fase)); });
+    txt=runs.map(function(r){ return '<b>'+r.fase+'</b> desde '+tonFechaCorta(r.ini)+': '+r.n+' ses · total '+tonFmt(r.ton)+' kg · media '+tonFmt(r.ton/r.n)+' kg · '+(r.reps?(r.ton/r.reps).toFixed(1).replace('.',','):'—')+' kg/rep'; }).join('<br>');
+  }
+  var fg=(getComputedStyle(document.body).getPropertyValue('--text2')||'#888').trim();
+  _tonChart=new Chart(cv,{data:{labels:labels,datasets:[
+    {type:'bar',label:barTitle==='kg'?'Tonelaje (kg)':'Media por sesión (kg)',data:bars,backgroundColor:cols,yAxisID:'y',order:2},
+    {type:'line',label:'kg por rep',data:line,borderColor:fg,backgroundColor:fg,pointRadius:2,borderWidth:1.5,spanGaps:true,yAxisID:'y2',order:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{ticks:{maxTicksLimit:10,color:fg,maxRotation:60,font:{size:9}}},
+      y:{min:0,ticks:{color:fg},title:{display:true,text:barTitle==='kg'?'kg':'kg/sesión',color:fg}},
+      y2:{position:'right',min:0,grid:{display:false},ticks:{color:fg},title:{display:true,text:'kg/rep',color:fg}}}}});
+  var fasesUsadas=[]; ses.forEach(function(x){ if(fasesUsadas.indexOf(x.fase)<0) fasesUsadas.push(x.fase); });
+  var leyenda=fasesUsadas.map(function(f){ return '<span style="color:'+tonColorFase(f)+'">●</span> '+f; }).join(' &nbsp; ');
+  res.innerHTML=(txt?txt+'<br>':'')+'Barras: '+(barTitle==='kg'?'tonelaje (kg)':'media por sesión (kg)')+' · Línea: kg por rep · '+leyenda;
+}
+
 renders.cal=function(){
   renderCalStats(calYear,calMonth);
   renderCumplimiento(calYear,calMonth);
@@ -11043,6 +11153,11 @@ renders.cal=function(){
       var badgeBg=histSes.confirmado?'var(--green-bg)':histSes.variacion?'var(--orange-bg)':'var(--blue-bg)';
       dots+=`<div style="font-size:8px;font-weight:700;color:${badgeColor};background:${badgeBg};border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3">${badge}</div>`;
     }
+    // [vEXT_036] Tonelaje de la sesión (peso × reps) → badge neutro
+    var _tonS=tonSesion(histSes);
+    if(_tonS.ton>0){
+      dots+=`<div style="font-size:8px;font-weight:700;color:var(--text2);background:var(--bg3);border-radius:4px;padding:1px 3px;margin:0 1px;line-height:1.3" title="Tonelaje">${tonCorto(_tonS.ton)}</div>`;
+    }
     // Total kcal registrado ese día (extras + comidas personalizadas) → badge naranja
     var nutDia=getResumenNutricionFecha(fecha);
     if(nutDia.tieneDatos){
@@ -11082,6 +11197,7 @@ renders.cal=function(){
     // Si hay día seleccionado, reseleccionar
     if(calDiaSeleccionado) calSelDia(calDiaSeleccionado);
   }
+  try{ renderTonelaje(); }catch(e){ console.warn('tonelaje',e); }
 };
 
 function renderGarminHoy(){

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-05T10:28:00.565792+00:00",
+  "actualizado": "2026-11-05T19:38:40.114421+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2460,7 +2460,7 @@
           "fin": "2026-10-28T12:02:23.200Z",
           "duracion_min": 22,
           "calorias": 178,
-          "fc_media": 107,
+          "fc_media": 108,
           "fc_max": null
         },
         {
@@ -2547,7 +2547,7 @@
     "2026-10-31": {
       "pasos": 4412,
       "distancia_km": 3.28,
-      "minutos_activos": 256,
+      "minutos_activos": 237,
       "calorias_dia": 2487.85,
       "fc_reposo": 52.0,
       "hrv": 23.8,
@@ -2680,12 +2680,24 @@
       "sueno_rem_min": 94
     },
     "2026-11-05": {
-      "calorias_dia": 959.11,
+      "calorias_dia": 2581.04,
       "fc_reposo": 50.0,
-      "actividadesFitbit": [],
-      "pasos": 1069,
-      "distancia_km": 0.8,
-      "minutos_activos": 52,
+      "actividadesFitbit": [
+        {
+          "id": "6649994398456686328",
+          "tipo": "TREADMILL",
+          "nombre": "Carrera en cinta",
+          "inicio": "2026-11-05T10:37:03Z",
+          "fin": "2026-11-05T11:35:03Z",
+          "duracion_min": 58,
+          "calorias": 464,
+          "fc_media": 95,
+          "fc_max": null
+        }
+      ],
+      "pasos": 10794,
+      "distancia_km": 8.0,
+      "minutos_activos": 325,
       "hrv": 37.75,
       "fr_respiratoria": 12,
       "sueno_total_min": 440,

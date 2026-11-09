@@ -4084,14 +4084,22 @@
     },
     "2026-11-09": {
       "fecha": "2026-11-09",
-      "pasos": 3658,
-      "calorias_dia": 1330.0,
-      "calorias_activas": 325.0,
-      "distancia_km": 2.87,
-      "minutos_activos": 56,
+      "pasos": 4670,
+      "calorias_dia": 1470.0,
+      "calorias_activas": 361.0,
+      "distancia_km": 3.61,
+      "minutos_activos": 67,
       "fc_reposo": 58,
       "estres_medio": 49,
       "actividades": [
+        {
+          "nombre": "Caminar",
+          "tipo": "walking",
+          "duracion_min": 12,
+          "calorias": 53.0,
+          "fc_media": 95.0,
+          "fc_max": 108.0
+        },
         {
           "nombre": "Fuerza",
           "tipo": "strength_training",

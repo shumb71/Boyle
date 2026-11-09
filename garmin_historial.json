@@ -4055,42 +4055,68 @@
     "2026-11-06": {
       "fecha": "2026-11-06",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-11-07": {
       "fecha": "2026-11-07",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-11-08": {
       "fecha": "2026-11-08",
       "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
+      "calorias_dia": 2099.0,
+      "calorias_activas": 0.0,
       "distancia_km": 0.0,
-      "minutos_activos": null,
+      "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": null
+      "estres_medio": -1
     },
     "2026-11-09": {
       "fecha": "2026-11-09",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 3658,
+      "calorias_dia": 1330.0,
+      "calorias_activas": 325.0,
+      "distancia_km": 2.87,
+      "minutos_activos": 56,
+      "fc_reposo": 58,
+      "estres_medio": 49,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 67,
+          "calorias": 311.0,
+          "fc_media": 96.0,
+          "fc_max": 136.0
+        },
+        {
+          "nombre": "Caminar",
+          "tipo": "walking",
+          "duracion_min": 33,
+          "calorias": 140.0,
+          "fc_media": 90.0,
+          "fc_max": 100.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 67,
+        "calorias": 311.0,
+        "fc_media": 96.0,
+        "fc_max": 136.0
+      }
     }
   },
   "actualizado": "2026-11-09"

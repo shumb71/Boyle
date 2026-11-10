@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-10T06:24:15.093746+00:00",
+  "actualizado": "2026-11-10T16:51:22.465687+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2697,7 +2697,7 @@
       ],
       "pasos": 11048,
       "distancia_km": 8.19,
-      "minutos_activos": 294,
+      "minutos_activos": 66,
       "hrv": 37.75,
       "fr_respiratoria": 12,
       "sueno_total_min": 440,
@@ -2813,19 +2813,42 @@
       "sueno_rem_min": 96
     },
     "2026-11-10": {
-      "pasos": 41,
-      "distancia_km": 0.03,
-      "minutos_activos": 5,
-      "calorias_dia": 549.63,
+      "pasos": 5169,
+      "distancia_km": 3.84,
+      "minutos_activos": 179,
+      "calorias_dia": 1951.82,
       "fc_reposo": 49.0,
       "hrv": 43.8,
       "spo2": 94.9,
       "fr_respiratoria": 15.6,
+      "actividadesFitbit": [
+        {
+          "id": "8618838921347761856",
+          "tipo": "STRENGTH_TRAINING",
+          "nombre": "Fortalecimiento muscular",
+          "inicio": "2026-11-10T09:36:01Z",
+          "fin": "2026-11-10T10:16:21Z",
+          "duracion_min": 40,
+          "calorias": 157,
+          "fc_media": 91,
+          "fc_max": null
+        },
+        {
+          "id": "7177467864694904760",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-10T08:49:37.200Z",
+          "fin": "2026-11-10T09:08:52.200Z",
+          "duracion_min": 19,
+          "calorias": 116,
+          "fc_media": 74,
+          "fc_max": null
+        }
+      ],
       "sueno_total_min": 369,
       "sueno_profundo_min": 109,
       "sueno_ligero_min": 181,
-      "sueno_rem_min": 79,
-      "actividadesFitbit": []
+      "sueno_rem_min": 79
     }
   }
 }

@@ -4084,13 +4084,13 @@
     },
     "2026-11-09": {
       "fecha": "2026-11-09",
-      "pasos": 4670,
-      "calorias_dia": 1470.0,
-      "calorias_activas": 361.0,
-      "distancia_km": 3.61,
+      "pasos": 6247,
+      "calorias_dia": 2518.0,
+      "calorias_activas": 419.0,
+      "distancia_km": 4.91,
       "minutos_activos": 67,
       "fc_reposo": 58,
-      "estres_medio": 49,
+      "estres_medio": 42,
       "actividades": [
         {
           "nombre": "Caminar",
@@ -4128,13 +4128,47 @@
     },
     "2026-11-10": {
       "fecha": "2026-11-10",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 3613,
+      "calorias_dia": 1323.0,
+      "calorias_activas": 254.0,
+      "distancia_km": 2.65,
+      "minutos_activos": 15,
+      "fc_reposo": 76,
+      "estres_medio": 42,
+      "actividades": [
+        {
+          "nombre": "Caminar",
+          "tipo": "walking",
+          "duracion_min": 14,
+          "calorias": 55.0,
+          "fc_media": 85.0,
+          "fc_max": 98.0
+        },
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 70,
+          "calorias": 256.0,
+          "fc_media": 87.0,
+          "fc_max": 141.0
+        },
+        {
+          "nombre": "Caminar",
+          "tipo": "walking",
+          "duracion_min": 19,
+          "calorias": 68.0,
+          "fc_media": 79.0,
+          "fc_max": 95.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 70,
+        "calorias": 256.0,
+        "fc_media": 87.0,
+        "fc_max": 141.0
+      }
     }
   },
   "actualizado": "2026-11-10"

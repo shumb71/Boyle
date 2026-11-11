@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-11T13:44:33.472878+00:00",
+  "actualizado": "2026-11-11T21:46:12.679505+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2722,7 +2722,7 @@
       ],
       "pasos": 9446,
       "distancia_km": 6.99,
-      "minutos_activos": 227,
+      "minutos_activos": 145,
       "fc_reposo": 50.0,
       "hrv": 36.6,
       "spo2": 93.4,
@@ -2845,17 +2845,17 @@
           "fc_max": null
         }
       ],
+      "peso_kg": 86.7,
       "sueno_total_min": 369,
       "sueno_profundo_min": 109,
       "sueno_ligero_min": 181,
-      "sueno_rem_min": 79,
-      "peso_kg": 86.7
+      "sueno_rem_min": 79
     },
     "2026-11-11": {
-      "pasos": 4582,
-      "distancia_km": 3.39,
-      "minutos_activos": 139,
-      "calorias_dia": 1797.71,
+      "pasos": 6462,
+      "distancia_km": 4.79,
+      "minutos_activos": 266,
+      "calorias_dia": 2746.83,
       "fc_reposo": 50.0,
       "hrv": 41.6,
       "fr_respiratoria": 15.2,
@@ -2894,11 +2894,11 @@
           "fc_max": null
         }
       ],
+      "peso_kg": 87.1,
       "sueno_total_min": 538,
       "sueno_profundo_min": 126,
       "sueno_ligero_min": 306,
-      "sueno_rem_min": 106,
-      "peso_kg": 87.1
+      "sueno_rem_min": 106
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-11T05:09:56.687442+00:00",
+  "actualizado": "2026-11-11T13:44:33.472878+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -9,7 +9,7 @@
       "hrv": "2026-11-11",
       "sueno_total_min": "2026-11-11",
       "calorias_dia": "2026-11-11",
-      "peso_kg": "2026-11-09"
+      "peso_kg": "2026-11-11"
     }
   },
   "dias": {
@@ -2722,7 +2722,7 @@
       ],
       "pasos": 9446,
       "distancia_km": 6.99,
-      "minutos_activos": 457,
+      "minutos_activos": 227,
       "fc_reposo": 50.0,
       "hrv": 36.6,
       "spo2": 93.4,
@@ -2848,21 +2848,57 @@
       "sueno_total_min": 369,
       "sueno_profundo_min": 109,
       "sueno_ligero_min": 181,
-      "sueno_rem_min": 79
+      "sueno_rem_min": 79,
+      "peso_kg": 86.7
     },
     "2026-11-11": {
-      "pasos": 22,
-      "distancia_km": 0.02,
-      "minutos_activos": 2,
-      "calorias_dia": 452.95,
+      "pasos": 4582,
+      "distancia_km": 3.39,
+      "minutos_activos": 139,
+      "calorias_dia": 1797.71,
       "fc_reposo": 50.0,
-      "hrv": 48.3,
+      "hrv": 41.6,
       "fr_respiratoria": 15.2,
-      "sueno_total_min": 230,
-      "sueno_profundo_min": 66,
-      "sueno_ligero_min": 140,
-      "sueno_rem_min": 24,
-      "actividadesFitbit": []
+      "actividadesFitbit": [
+        {
+          "id": "2035651609614251104",
+          "tipo": "KICKBOXING",
+          "nombre": "Kick-boxing",
+          "inicio": "2026-11-11T11:42:14Z",
+          "fin": "2026-11-11T12:10:28Z",
+          "duracion_min": 28,
+          "calorias": 309,
+          "fc_media": 121,
+          "fc_max": null
+        },
+        {
+          "id": "6116410940812839344",
+          "tipo": "TREADMILL",
+          "nombre": "Carrera en cinta",
+          "inicio": "2026-11-11T10:45:01Z",
+          "fin": "2026-11-11T11:21:18Z",
+          "duracion_min": 36,
+          "calorias": 276,
+          "fc_media": 86,
+          "fc_max": null
+        },
+        {
+          "id": "6863219506773137864",
+          "tipo": "TREADMILL",
+          "nombre": "Carrera en cinta",
+          "inicio": "2026-11-11T10:41:08Z",
+          "fin": "2026-11-11T10:41:13Z",
+          "duracion_min": 0,
+          "calorias": null,
+          "fc_media": 68,
+          "fc_max": null
+        }
+      ],
+      "sueno_total_min": 538,
+      "sueno_profundo_min": 126,
+      "sueno_ligero_min": 306,
+      "sueno_rem_min": 106,
+      "peso_kg": 87.1
     }
   }
 }

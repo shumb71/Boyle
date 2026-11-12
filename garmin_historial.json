@@ -4128,13 +4128,13 @@
     },
     "2026-11-10": {
       "fecha": "2026-11-10",
-      "pasos": 3613,
-      "calorias_dia": 1323.0,
-      "calorias_activas": 254.0,
-      "distancia_km": 2.65,
+      "pasos": 4138,
+      "calorias_dia": 2357.0,
+      "calorias_activas": 258.0,
+      "distancia_km": 3.08,
       "minutos_activos": 15,
-      "fc_reposo": 76,
-      "estres_medio": 42,
+      "fc_reposo": 63,
+      "estres_medio": 32,
       "actividades": [
         {
           "nombre": "Caminar",
@@ -4172,23 +4172,46 @@
     },
     "2026-11-11": {
       "fecha": "2026-11-11",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 437,
+      "calorias_dia": 2104.0,
+      "calorias_activas": 5.0,
+      "distancia_km": 0.36,
+      "minutos_activos": 0,
+      "fc_reposo": 47,
+      "estres_medio": 17
     },
     "2026-11-12": {
       "fecha": "2026-11-12",
-      "pasos": null,
-      "calorias_dia": null,
-      "calorias_activas": null,
-      "distancia_km": 0.0,
-      "minutos_activos": null,
-      "fc_reposo": null,
-      "estres_medio": null
+      "pasos": 9227,
+      "calorias_dia": 2509.0,
+      "calorias_activas": 687.0,
+      "distancia_km": 7.67,
+      "minutos_activos": 47,
+      "fc_reposo": 45,
+      "estres_medio": 16,
+      "sueno_total_min": 436,
+      "sueno_profundo_min": 66,
+      "sueno_ligero_min": 304,
+      "sueno_rem_min": 66,
+      "sueno_puntuacion": 84,
+      "actividades": [
+        {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 112,
+          "calorias": 764.0,
+          "fc_media": 114.0,
+          "fc_max": 193.0
+        }
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 112,
+        "calorias": 764.0,
+        "fc_media": 114.0,
+        "fc_max": 193.0
+      }
     }
   },
   "actualizado": "2026-11-12"

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-13T14:06:36.753680+00:00",
+  "actualizado": "2026-11-13T21:14:25.231679+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -9,7 +9,7 @@
       "hrv": "2026-11-13",
       "sueno_total_min": "2026-11-13",
       "calorias_dia": "2026-11-13",
-      "peso_kg": "2026-11-12"
+      "peso_kg": "2026-11-13"
     }
   },
   "dias": {
@@ -2700,10 +2700,10 @@
       "minutos_activos": 51,
       "hrv": 37.75,
       "fr_respiratoria": 12,
-      "sueno_total_min": 440,
-      "sueno_profundo_min": 39,
-      "sueno_ligero_min": 324,
-      "sueno_rem_min": 77
+      "sueno_total_min": 60,
+      "sueno_profundo_min": 11,
+      "sueno_ligero_min": 49,
+      "sueno_rem_min": 0
     },
     "2026-11-06": {
       "calorias_dia": 2808.59,
@@ -2762,7 +2762,7 @@
     "2026-11-08": {
       "pasos": 5159,
       "distancia_km": 3.85,
-      "minutos_activos": 199,
+      "minutos_activos": 126,
       "calorias_dia": 2419.22,
       "fc_reposo": 51.0,
       "hrv": 33.65,
@@ -2950,19 +2950,32 @@
       "sueno_rem_min": 73
     },
     "2026-11-13": {
-      "pasos": 4417,
-      "distancia_km": 3.27,
-      "minutos_activos": 174,
-      "calorias_dia": 1586.28,
+      "pasos": 5478,
+      "distancia_km": 4.07,
+      "minutos_activos": 429,
+      "calorias_dia": 2962.47,
       "fc_reposo": 52.0,
       "hrv": 31.85,
       "spo2": 95,
       "fr_respiratoria": 14.2,
-      "actividadesFitbit": [],
+      "actividadesFitbit": [
+        {
+          "id": "5017623201540091504",
+          "tipo": "STRENGTH_TRAINING",
+          "nombre": "Entrenamiento de fuerza",
+          "inicio": "2026-11-13T18:03:27Z",
+          "fin": "2026-11-13T19:41:51Z",
+          "duracion_min": 98,
+          "calorias": 793,
+          "fc_media": 106,
+          "fc_max": null
+        }
+      ],
       "sueno_total_min": 338,
       "sueno_profundo_min": 55,
       "sueno_ligero_min": 219,
-      "sueno_rem_min": 64
+      "sueno_rem_min": 64,
+      "peso_kg": 86.8
     }
   }
 }

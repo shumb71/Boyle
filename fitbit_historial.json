@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-13T05:35:33.739123+00:00",
+  "actualizado": "2026-11-13T14:06:36.753680+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2715,7 +2715,7 @@
           "inicio": "2026-11-06T12:10:46.800Z",
           "fin": "2026-11-06T12:26:48.800Z",
           "duracion_min": 16,
-          "calorias": 83,
+          "calorias": 84,
           "fc_media": 81,
           "fc_max": null
         }
@@ -2742,7 +2742,7 @@
           "inicio": "2026-11-07T20:30:04.800Z",
           "fin": "2026-11-07T21:02:04.800Z",
           "duracion_min": 32,
-          "calorias": 215,
+          "calorias": 216,
           "fc_media": 78,
           "fc_max": null
         }
@@ -2762,7 +2762,7 @@
     "2026-11-08": {
       "pasos": 5159,
       "distancia_km": 3.85,
-      "minutos_activos": 292,
+      "minutos_activos": 199,
       "calorias_dia": 2419.22,
       "fc_reposo": 51.0,
       "hrv": 33.65,
@@ -2788,7 +2788,7 @@
           "inicio": "2026-11-09T09:37:22.800Z",
           "fin": "2026-11-09T10:26:42.800Z",
           "duracion_min": 49,
-          "calorias": 237,
+          "calorias": 238,
           "fc_media": 100,
           "fc_max": null
         },
@@ -2927,7 +2927,7 @@
           "inicio": "2026-11-12T16:58:32.200Z",
           "fin": "2026-11-12T17:14:00.200Z",
           "duracion_min": 15,
-          "calorias": 92,
+          "calorias": 93,
           "fc_media": 88,
           "fc_max": null
         },
@@ -2938,7 +2938,7 @@
           "inicio": "2026-11-12T16:16:00.400Z",
           "fin": "2026-11-12T16:51:35.400Z",
           "duracion_min": 36,
-          "calorias": 127,
+          "calorias": 128,
           "fc_media": 77,
           "fc_max": null
         }
@@ -2950,19 +2950,19 @@
       "sueno_rem_min": 73
     },
     "2026-11-13": {
-      "pasos": 1066,
-      "distancia_km": 0.79,
-      "minutos_activos": 32,
-      "calorias_dia": 602.25,
+      "pasos": 4417,
+      "distancia_km": 3.27,
+      "minutos_activos": 174,
+      "calorias_dia": 1586.28,
       "fc_reposo": 52.0,
       "hrv": 31.85,
       "spo2": 95,
       "fr_respiratoria": 14.2,
+      "actividadesFitbit": [],
       "sueno_total_min": 338,
       "sueno_profundo_min": 55,
       "sueno_ligero_min": 219,
-      "sueno_rem_min": 64,
-      "actividadesFitbit": []
+      "sueno_rem_min": 64
     }
   }
 }

@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_038', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_039', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -752,6 +752,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div id="e-alerta-recuperacion" style="display:none;margin-bottom:.75rem"></div>
     <!-- AVISO COMPLEJO CON SALTO -->
     <div id="e-aviso-salto" style="display:none;margin-bottom:.75rem"></div>
+    <div id="e-salto-vertical" style="display:none;margin-bottom:.75rem"></div>
     <!-- CALENTAMIENTO EXPANDIBLE -->
     <div class="card" id="e-warmup-card">
       <div onclick="toggleSection('warmup')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.1rem 0">
@@ -898,9 +899,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   <!-- PROGRAMA COMPLETO (12 semanas, override por dia) -->
   <div class="screen" id="s-programa-completo">
     <div class="ph"><h1>Programa completo</h1><span style="font-size:13px;color:var(--text2)">12 semanas</span></div>
+    <div id="pc-selector"></div>
     <div class="card">
+      <div id="pc-cab">
       <div class="card-lbl" style="margin-bottom:.4rem">Proyeccion desde hoy</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:.75rem">Fechas estimadas segun tu ciclo de turnos. Toca un dia para ver o editar sus ejercicios — el cambio se guarda solo para esa fecha concreta.</div>
+      </div>
       <div id="pc-list"></div>
     </div>
   </div>
@@ -1306,6 +1310,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="card-lbl">&#128197; Recuperar historial</div>
       <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Marca en el calendario los días pasados que entrenaste (según el índice guardado). No toca los que ya están registrados; los antiguos saldrán sin desglose de ejercicios.</div>
       <button class="bkbtn" onclick="recuperarEntrenosPasados()"><i class="ti ti-calendar-plus"></i> Recuperar entrenos pasados</button>
+    </div>
+
+    <div class="card" style="border:.5px solid rgba(91,143,255,.3)">
+      <div class="card-lbl" style="color:var(--blue)">📘 Programa activo</div>
+      <div class="info-box ib" style="font-size:12px"><i class="ti ti-info-circle"></i> Elige con qué programa entrenas. Cambiar no borra nada: el historial se conserva y el otro programa sigue disponible para consultarlo en Programa completo.</div>
+      <div id="selector-programa"></div>
     </div>
 
     <div class="card">
@@ -3020,6 +3030,546 @@ const PROG=[
   {s:7,n:3,r:5,p:null,pa:'3 min'},{s:8,n:3,r:5,p:null,pa:'3 min'},{s:9,n:3,r:5,p:null,pa:'3 min'},
   {s:10,n:3,r:5,p:null,pa:'3-4 min'},{s:11,n:3,r:5,p:null,pa:'3-4 min'},{s:12,n:3,r:5,p:null,pa:'3-4 min'},
 ];
+// ══════════════════════════════════════════════════════════
+// PROGRAMA BOYLE 2026 [vEXT_039] — 3.ª edición, tablas 13.4-13.6 (programa de 4 días)
+// ══════════════════════════════════════════════════════════
+// Convive con el programa de siempre ("Boyle 2016", el de las tablas 11.2-11.5). Cuál está
+// activo lo decide ST.programaActivo ('2016' por defecto | '2026'), desde Config.
+//
+// Cómo funciona: el resto de la app lee EJS_FASES / REPS_FASE / GRUPOS_DIA_FASE / PROG por
+// referencia, así que cambiar de programa = volver a dejar esos objetos "de fábrica" y, si
+// toca, volcar encima el programa 2026 con el mismo adaptador que ya usa programa.json
+// (aplicarProgramaExterno). No se duplica ninguna pantalla.
+//
+// Decisiones de Jou (nov 2026):
+//  · Orden de días: D1 Pierna A (libro: día 2) → D2 Empuje A (libro: día 1) → D3 Pierna B
+//    (libro: día 4) → D4 Empuje B (libro: día 3). El contenido de cada sesión es el del libro.
+//  · Fase 4 = fase 2 repetida con más carga (el libro deja la fase 4 abierta).
+//  · Saltos de los complejos tal cual el libro. Hang Clean de base, alternativas en Variantes.
+//  · Carries opcionales al final de D2/D4 (no son del libro). Spiderman y Floor Slide pasan
+//    al calentamiento de D2/D4.
+var PROG_NOMBRES={'2016':'Boyle 2016','2026':'Boyle 2026'};
+function esProg2026(){ return !!(ST&&ST.programaActivo==='2026'); }
+
+// Notas del libro por fase/día/ejercicio y ejercicios que llevan salto (para el aviso de rodilla).
+var NOTAS_PROG={}, SALTO_PROG={};
+function getNotaProg(ej,fase,dia){
+  var e=(ej||'').replace(/&#39;/g,"'");
+  return (NOTAS_PROG[fase]&&NOTAS_PROG[fase][dia]&&NOTAS_PROG[fase][dia][e])||'';
+}
+function notaProgHtml(ej,fase,dia){
+  var n=getNotaProg(ej,fase,dia);
+  if(!n) return '';
+  return '<div style="font-size:11px;color:var(--blue-text);background:var(--blue-bg);border-radius:6px;padding:3px 8px;margin-bottom:5px;line-height:1.4">&#128214; '+n+'</div>';
+}
+
+const PROGRAMA_BOYLE_2026=(function(){
+  // E(nombre, s1, s2, s3, nota, salto) — cada semana: reps, o [reps, series].
+  // Reps separadas por comas = una entrada por serie ("8,8,20s" = dos series de 8 y un iso de 20 s).
+  function E(nombre,s1,s2,s3,nota,salto){
+    function w(x,i){ var o={semana:i+1}; if(Array.isArray(x)){ o.r=x[0]; if(x[1]) o.n=x[1]; } else { o.r=x; } return o; }
+    var e={nombre:nombre,reps:[w(s1,0),w(s2,1),w(s3,2)]};
+    if(nota) e.nota=nota;
+    if(salto) e.salto=true;
+    return e;
+  }
+  function B(etiqueta,tipo,descanso,ejs){ return {etiqueta:etiqueta,tipo:tipo,descanso_seg:descanso,ejercicios:ejs}; }
+  // Fase 1: 2 series la semana 1, 3 las semanas 2 y 3
+  function f1(r1,r2,r3){ return [[r1,2],[r2||r1,3],[r3||r2||r1,3]]; }
+  function E1(nombre,r1,r2,r3,nota){ var s=f1(r1,r2,r3); return E(nombre,s[0],s[1],s[2],nota); }
+  // Resto de fases: 3 series
+  function E3(nombre,r1,r2,r3,nota,salto){ return E(nombre,[r1,3],[r2||r1,3],[r3||r2||r1,3],nota,salto); }
+  var OPC='Opcional: no está en el programa del libro.';
+  var CARRY_S=B('OPCIONAL — Carry','par',90,[E('Suitcase Carry',['25y/lado',2],['25y/lado',2],['25y/lado',2],OPC)]);
+  var CARRY_F=B('OPCIONAL — Carry','par',90,[E('Farmer Carry',['25y',2],['25y',2],['25y',2],OPC)]);
+  var N_SKATER='Si ya hiciste skater en el Día 1 (como alternativa al Trap Bar), hoy toca Slide Board Reverse Lunge (en ⚙ Variantes).';
+  var N_ISO5='Isométrico: cada repetición son 5 s aguantando.';
+
+  var F1={dias:{
+    D1:{bloques:[
+      B('PAR 1 — Cadera + Tracción vertical','par',120,[
+        E1('Trap Bar Deadlift',8,8,8,'Regresión: peso muerto con kettlebell (en ⚙ Variantes).'),
+        E('Chin-up / Pull-up','8,15s','8,8,20s','8,8,30s','Última serie: 1 sola repetición, aguantando arriba los segundos marcados.')]),
+      B('PAR 2 — Rodilla + Tracción horizontal','par',90,[
+        E('Goblet Split Squat','8,20s','8,8,25s','8,8,30s','Por lado. Última serie: 1 sola repetición, aguantando abajo los segundos marcados.'),
+        E1('DB Row','8/lado','8/lado','10/lado')]),
+      B('TRISET 3 — Prehab','triset',60,[
+        E1('Leg Curl con balón (peanut)',8,8,10),
+        E1('Rotación ext/int de hombro (banda)',8,8,10),
+        E1('Aro Pilates — aductores',8,8,10,'Pies apoyados en el suelo.')]),
+    ]},
+    D2:{bloques:[
+      B('PAR 1 — Potencia + Core','par',90,[
+        E1('Hang Clean',5,5,5,'Alternativa del libro: Trap Bar Jump con reset (para y recolócate entre salto y salto). Está en ⚙ Variantes.'),
+        E1('Front Plank','15s','20s','30s')]),
+      B('TRISET 2 — Empuje horizontal','triset',120,[
+        E1('Bench Press',8,8,8,'Barra o mancuernas.'),
+        E('Band pull-aparts',[8,2],[8,2],[8,2]),
+        E1('Side Plank (respiraciones)','8 resp/lado','8 resp/lado','10 resp/lado','Se cuenta en respiraciones: 3 s cogiendo aire, 3 s soltando.')]),
+      B('TRISET 3 — Empuje vertical + Cadera + Core','triset',90,[
+        E1('Half-kneeling Overhead Press',8,8,8,'Alterno: un brazo cada vez.'),
+        E('Flexión de cadera sentado (iso)',['5 rep de 5s/lado',1],['6 rep de 5s/lado',1],['7 rep de 5s/lado',1],N_ISO5),
+        E1('Half-kneeling Chop','8/lado','8/lado','10/lado')]),
+      CARRY_S,
+    ]},
+    D3:{bloques:[
+      B('PAR 1 — Rodilla + Tracción horizontal','par',120,[
+        E1('Skater squat','8/lado','8/lado','8/lado',N_SKATER),
+        E('Ring Row','8,15s','8,8,15s','8,8,20s','Última serie: 1 sola repetición, aguantando arriba los segundos marcados.')]),
+      B('PAR 2 — Cadera + Tracción vertical','par',90,[
+        E1('Single-leg RDL (Straight-leg DL)','8/lado','8/lado','8/lado','Progresión: primero sin peso alcanzando con la mano (reaching), luego 1 mancuerna.'),
+        E1('X-pull-down',8,8,10,'Half-kneeling (media rodilla).')]),
+      B('TRISET 3 — Prehab','triset',60,[
+        E('Isos glúteo-isquio',['4 rep de 5s',2],['5 rep de 5s',3],['6 rep de 5s',3],'Cada repetición son 5 s aguantando.'),
+        E1('Gemelo con mancuerna (cajón)',8,8,10,'Sobre un cajón de 15 cm, 1 mancuerna y la otra mano apoyada.'),
+        E1('Lateral squat press-out',5,5,6)]),
+    ]},
+    D4:{bloques:[
+      B('PAR 1 — Potencia + Core','par',90,[
+        E1('Hang Clean',5,5,5,'Alternativas del libro: DB Snatch o Trap Bar Jump con reset. Están en ⚙ Variantes.'),
+        E1('Front Plank','15s','20s','30s')]),
+      B('TRISET 2 — Empuje inclinado','triset',120,[
+        E1('Dumbbell Incline Bench',8,8,8),
+        E('Band pull-aparts',[8,2],[8,2],[8,2]),
+        E1('Side Plank (respiraciones)','8 resp/lado','8 resp/lado','10 resp/lado','Se cuenta en respiraciones: 3 s cogiendo aire, 3 s soltando.')]),
+      B('TRISET 3 — Flexiones + Aductores + Core','triset',90,[
+        E1('Push-up progression',8,8,8),
+        E('Aro Pilates — aductores',['5 rep de 5s',1],['6 rep de 5s',1],['7 rep de 5s',1],'Isométrico: cada repetición son 5 s apretando.'),
+        E1('Half-kneeling Lift','8/lado','8/lado','10/lado')]),
+      CARRY_F,
+    ]},
+  }};
+
+  // Fase 2 (y fase 4, que la repite con más carga)
+  function fase2(){ return {dias:{
+    D1:{bloques:[
+      B('PAR 1 — Cadera + Tracción vertical (complejos)','par',120,[
+        E3('Trap Bar Deadlift',5,5,5,'Complejo: nada más soltar, 5 jump squats sin peso. Alternativa del libro: skater squat.',true),
+        E3('Chin-up / Pull-up',5,5,5,'Complejo: tras cada serie, 5 slams de balón por encima de la cabeza.')]),
+      B('PAR 2 — Rodilla + Tracción horizontal','par',90,[
+        E3('One-leg Squat','5/lado','5/lado','5/lado','Si en el split squat cargas menos de 23 kg, sigue con split squat (en ⚙ Variantes); no pases aún a una pierna.'),
+        E3('DB Row','5/lado','5/lado','5/lado')]),
+      B('TRISET 3 — Isquios + Lateral + Core','triset',60,[
+        E3('Slide Board Leg Curl','3/lado','4/lado','5/lado','Sales con una pierna y vuelves con las dos (1 out, 2 in).'),
+        E3('Goblet Lateral Squat','4/lado','5/lado','6/lado','En slide board.'),
+        E3('Press-out antirrotación (half-kneeling)','8/lado','10/lado','12/lado','Con banda.')]),
+    ]},
+    D2:{bloques:[
+      B('PAR 1 — Potencia + Core','par',90,[
+        E('Hang Clean','5,3,3','5,3,3','5,3,3','Alternativa del libro: Trap Bar Jump continuo (saltos seguidos, sin parar). Está en ⚙ Variantes.'),
+        E3('Bear Plank Shoulder Tap','4/lado','5/lado','6/lado')]),
+      B('TRISET 2 — Empuje horizontal (complejo)','triset',120,[
+        E('Bench Press','5,3+,3','5,3+,3','5,3+,3','Complejo: tras cada serie, 5 lanzamientos de pecho con balón medicinal. La serie con «+» es a tope: ese número o más.'),
+        E3('Band pull-aparts',8,8,8),
+        E3('Off-bench Obliques Hold','20s','25s','30s')]),
+      B('TRISET 3 — Empuje vertical + Cadera + Core','triset',90,[
+        E3('Standing Overhead Press',5,5,5,'Con mancuernas, alterno: un brazo cada vez.'),
+        E3('Flexión de cadera de pie (banda)',8,8,10,'El libro usa polea Keiser; con banda vale.'),
+        E3('Dynamic Chop','8/lado','10/lado','12/lado','De pie.')]),
+      CARRY_S,
+    ]},
+    D3:{bloques:[
+      B('PAR 1 — Rodilla + Tracción horizontal (complejos)','par',120,[
+        E('Skater squat','5,3,3','5,3,3','5,3,3','Por lado. Complejo: tras cada serie, 5 split-squat jumps sin peso. Si ya hiciste skater en el Día 1, hoy Slide Board Reverse Lunge.',true),
+        E3('Ring Row',5,5,5,'Complejo: tras cada serie, 5 slams de balón por encima de la cabeza.')]),
+      B('PAR 2 — Cadera + Tracción vertical','par',90,[
+        E3('Single-leg RDL (Straight-leg DL)','5/lado','5/lado','5/lado','1 o 2 mancuernas.'),
+        E3('Pull-down agarre ancho',5,5,5)]),
+      B('TRISET 3 — Isquios + Lateral + Core','triset',60,[
+        E3('Isos de isquios con foam roller','3 rep de 10s','4 rep de 10s','5 rep de 10s','A dos piernas, talones flotando. Regresión: Slide Board Leg Curl.'),
+        E3('Goblet Lateral Lunge','4/lado','5/lado','6/lado'),
+        E3('Press-out antirrotación (half-kneeling)','8/lado','10/lado','12/lado','Con banda.')]),
+    ]},
+    D4:{bloques:[
+      B('PAR 1 — Potencia + Core','par',90,[
+        E3('Hang Clean',5,5,5,'Alternativas del libro: DB Snatch o Trap Bar Jump con reset. Están en ⚙ Variantes.'),
+        E3('Bear Plank Shoulder Tap','4/lado','5/lado','6/lado')]),
+      B('TRISET 2 — Empuje inclinado (complejo)','triset',120,[
+        E('Dumbbell Incline Bench','5,3+,3','5,3+,3','5,3+,3','Complejo: tras cada serie, 5 lanzamientos de pecho con balón medicinal. La serie con «+» es a tope: ese número o más.'),
+        E3('Band pull-aparts',8,8,8),
+        E3('Off-bench Obliques Hold','20s','25s','30s')]),
+      B('TRISET 3 — Flexiones + Cadera + Core','triset',90,[
+        E3('Push-up progression',5,5,5,'Excéntrico: 5 segundos de bajada.'),
+        E3('Flexión de cadera de pie (banda)',8,8,10,'El libro usa polea Keiser; con banda vale.'),
+        E3('Dynamic Lift','8/lado','10/lado','12/lado','De pie.')]),
+      CARRY_F,
+    ]},
+  }}; }
+
+  var F3={dias:{
+    D1:{bloques:[
+      B('PAR 1 — Cadera + Tracción vertical','par',120,[
+        E3('Trap Bar Deadlift',5,5,5,'Alternativa del libro: skater squat.'),
+        E3('Chin-up / Pull-up',5,5,5)]),
+      B('PAR 2 — Rodilla + Tracción horizontal','par',90,[
+        E3('Split Squat (2 mancuernas)','5/lado','5/lado','5/lado','Con menos de 23 kg, cógela en goblet (una sola mancuerna al pecho). A partir de 23 kg, una en cada mano.'),
+        E3('DB Row','5/lado','5/lado','5/lado')]),
+      B('TRISET 3 — Isquios + Aductores + Core','triset',60,[
+        E3('Slide Board Leg Curl',8,10,12),
+        E3('Aro Pilates — aductores',8,10,12,'Dos posiciones: caderas a 45° y a 90°.'),
+        E3('Body Saw',8,10,12)]),
+    ]},
+    D2:{bloques:[
+      B('PAR 1 — Potencia + Core','par',90,[
+        E('Hang Clean','5,3,3','5,3,3','5,3,3','Alternativa del libro: Trap Bar Jump continuo (saltos seguidos, sin parar). Está en ⚙ Variantes.'),
+        E3('Hollow Body Hold','20s','25s','30s')]),
+      B('TRISET 2 — Empuje horizontal','triset',120,[
+        E('Bench Press','5,5+,5','5,5+,5','5,5+,5','La serie con «+» es a tope: ese número o más.'),
+        E3('Band pull-aparts',8,8,8,'El libro pone «8 × 20 sec»: 8 repeticiones en unos 20 segundos.'),
+        E3('Side Plank con aducción activa','5/lado','6/lado','8/lado','Pierna de arriba apoyada en un cajón de 46 cm.')]),
+      B('TRISET 3 — Empuje vertical + Cadera + Core','triset',90,[
+        E3('Half-kneeling Overhead Press',5,5,5,'Con 1 mancuerna.'),
+        E('Flexión de cadera tumbado (banda)',[8,2],[8,3],[10,3],'El libro usa polea Keiser; con banda vale.'),
+        E3('Standing Static Chop','8/lado','10/lado','12/lado')]),
+      CARRY_S,
+    ]},
+    D3:{bloques:[
+      B('PAR 1 — Rodilla + Tracción horizontal','par',120,[
+        E3('Skater squat','5/lado','5/lado','5/lado',N_SKATER),
+        E3('Ring Row',5,5,5)]),
+      B('PAR 2 — Cadera + Tracción vertical','par',90,[
+        E3('Single-leg RDL (Straight-leg DL)','5/lado','5/lado','5/lado','1 o 2 mancuernas.'),
+        E3('X-pull-down',5,5,5,'Half-kneeling, alterno: un brazo cada vez.')]),
+      B('TRISET 3 — Isquios + Lateral + Core','triset',60,[
+        E3('Excéntricos de isquios',5,6,7,'Regresión: Slide Board Leg Curl.'),
+        E3('Goblet Lateral Squat','5/lado','6/lado','7/lado'),
+        E3('Body Saw',8,10,12)]),
+    ]},
+    D4:{bloques:[
+      B('PAR 1 — Potencia + Core','par',90,[
+        E3('Hang Clean',5,5,5,'Alternativas del libro: DB Snatch o Trap Bar Jump con reset. Están en ⚙ Variantes.'),
+        E3('Hollow Body Hold','20s','25s','30s')]),
+      B('TRISET 2 — Empuje inclinado','triset',120,[
+        E('Dumbbell Incline Bench','5,5+,5','5,5+,5','5,5+,5','La serie con «+» es a tope: ese número o más.'),
+        E3('Band pull-aparts',8,8,8,'El libro pone «8 × 20 sec»: 8 repeticiones en unos 20 segundos.'),
+        E3('Side Plank con aducción activa','5/lado','6/lado','8/lado','Pierna de arriba apoyada en un cajón de 46 cm.')]),
+      B('TRISET 3 — Flexiones + Cadera + Core','triset',90,[
+        E3('Push-up progression',5,5,5,'Sin lastre en el libro. Si 5 se te quedan cortas: Push-up lastrado (en ⚙ Variantes).'),
+        E('Flexión de cadera tumbado (banda)',[8,2],[8,3],[10,3],'El libro usa polea Keiser; con banda vale.'),
+        E3('Standing Static Lift','8/lado','10/lado','12/lado')]),
+      CARRY_F,
+    ]},
+  }};
+
+  return {
+    version:'BOYLE_2026',
+    // Series/reps de cabecera por semana (las reales salen de cada ejercicio). El libro no fija % ni pausas.
+    semanas_globales:[
+      {n:2,r:8,p:null,pa:'90 seg'},{n:3,r:8,p:null,pa:'90 seg'},{n:3,r:8,p:null,pa:'2 min'},
+      {n:3,r:5,p:null,pa:'2 min'},{n:3,r:5,p:null,pa:'2 min'},{n:3,r:5,p:null,pa:'2-3 min'},
+      {n:3,r:5,p:null,pa:'3 min'},{n:3,r:5,p:null,pa:'3 min'},{n:3,r:5,p:null,pa:'3 min'},
+      {n:3,r:5,p:null,pa:'3-4 min'},{n:3,r:5,p:null,pa:'3-4 min'},{n:3,r:5,p:null,pa:'3-4 min'}],
+    fases:{F1:F1,F2:fase2(),F3:F3,F4:fase2()}
+  };
+})();
+
+// Textos del programa 2026 (fases y días) — sustituyen a los de fábrica solo mientras está activo.
+var META_2026={
+  fases:[
+    {id:'F1',n:'Fase 1 — Acumulación',desc:'Series de 8 (potencia ×5). Semana 1 con 2 series; semanas 2 y 3 con 3. Isométrico en la última serie de chin-up, ring row y split squat.',sems:'Sem 1-3',color:'var(--blue)'},
+    {id:'F2',n:'Fase 2 — Intensificación + complejos',desc:'3 series de 5 (hang clean, banca y skater: 5-3-3). Complejos: fuerza y, pegado, 5 saltos o lanzamientos.',sems:'Sem 4-6',color:'var(--orange)'},
+    {id:'F3',n:'Fase 3 — Fuerza 3×5',desc:'3×5 en lo principal, sin complejos. Sube el volumen del prehab (8-10-12).',sems:'Sem 7-9',color:'var(--green)'},
+    {id:'F4',n:'Fase 4 — Intensificación II',desc:'Fase 2 repetida con más carga (decisión propia: el libro deja la fase 4 abierta como segunda intensificación). Semana 12: test por repeticiones.',sems:'Sem 10-12',color:'var(--red-text)'},
+  ],
+  nom:{F1:'Acumulación',F2:'Intensificación + complejos',F3:'Fuerza 3×5',F4:'Intensificación II'},
+  corto:{F1:'Acum.',F2:'Intensif.',F3:'Fuerza',F4:'Intensif. II'},
+  ses:{
+    D1:'Dia 1 — Pierna A + Traccion (libro: dia 2)',
+    D2:'Dia 2 — Potencia + Empuje A (libro: dia 1)',
+    D3:'Dia 3 — Pierna B + Traccion (libro: dia 4)',
+    D4:'Dia 4 — Potencia + Empuje B (libro: dia 3)',
+    Descanso:'Descanso',Mov:'Movilidad suave'
+  },
+  rpe:{F1:'6-7',F2:'7-8',F3:'7-8',F4:'7-8'},
+  dias:{
+    D1:{tipo:'Pierna A + Tracción',desc:'Cadera dominante (trap bar) · Tracción vertical · Rodilla unilateral · Tracción horizontal · Prehab de isquios, hombro y aductores. Es el día 2 del libro.',notas:'Boyle 2026: los días de pierna llevan los tirones; el prehab va al final.'},
+    D2:{tipo:'Potencia + Empuje A',desc:'Explosivo (cargada) · Core · Empuje horizontal · Empuje vertical · Flexores de cadera · Antirrotación. Es el día 1 del libro. Carry opcional al final.',notas:'Boyle 2026: salto vertical al empezar (3 saltos, apunta el mejor).'},
+    D3:{tipo:'Pierna B + Tracción',desc:'Rodilla unilateral (skater) · Tracción horizontal · Cadera unilateral (SLDL) · Tracción vertical · Prehab de isquios y lateral. Es el día 4 del libro.',notas:'Boyle 2026: si ya hiciste skater en el Día 1, hoy slide board reverse lunge.'},
+    D4:{tipo:'Potencia + Empuje B',desc:'Explosivo (cargada) · Core · Empuje inclinado · Flexiones · Aductores / flexores de cadera · Antirrotación. Es el día 3 del libro. Carry opcional al final.',notas:'Boyle 2026: salto vertical al empezar, manos en las caderas.'},
+  }
+};
+// Nombres de fase según el programa activo. def = diccionario de fábrica (2016).
+function faseNoms26(def,conPrefijo,corto){
+  if(!esProg2026()) return def;
+  var src=corto?META_2026.corto:META_2026.nom, o={};
+  ['F1','F2','F3','F4'].forEach(function(f){ o[f]=(conPrefijo?f+' — ':'')+src[f]; });
+  return o;
+}
+
+// --- Fábrica 2016: foto de los datos originales, hecha la primera vez, antes de tocar nada ---
+var _FAB16=null;
+function _clon(x){ return JSON.parse(JSON.stringify(x)); }
+function _reemplazar(obj,nuevo){ Object.keys(obj).forEach(function(k){ delete obj[k]; }); Object.assign(obj,_clon(nuevo)); }
+function snapshotFabrica(){
+  if(_FAB16) return;
+  var dias={};
+  ['D1','D2','D3','D4'].forEach(function(d){ var x=BOYLE_DIAS[d]; dias[d]={tipo:x.tipo,desc:x.desc,notas:x.notas}; });
+  _FAB16=_clon({ejs:EJS_FASES,reps:REPS_FASE,prog:PROG,fases:BOYLE_FASES,ses:SES_NOM,rpe:RPE_FASE,dias:dias});
+}
+// Deja en memoria el programa activo: fábrica 2016 (+ programa.json si lo hay) o Boyle 2026.
+function aplicarProgramaActivo(){
+  snapshotFabrica();
+  _reemplazar(EJS_FASES,_FAB16.ejs);
+  _reemplazar(REPS_FASE,_FAB16.reps);
+  _FAB16.prog.forEach(function(w,i){ if(PROG[i]) _reemplazar(PROG[i],w); });
+  _reemplazar(GRUPOS_DIA_FASE,{});
+  _reemplazar(NOTAS_PROG,{});
+  _reemplazar(SALTO_PROG,{});
+  var meta=esProg2026()?META_2026:_FAB16;
+  BOYLE_FASES.length=0;
+  _clon(meta.fases).forEach(function(f){ BOYLE_FASES.push(f); });
+  _reemplazar(SES_NOM,meta.ses);
+  _reemplazar(RPE_FASE,meta.rpe);
+  ['D1','D2','D3','D4'].forEach(function(d){ Object.assign(BOYLE_DIAS[d],_clon(meta.dias[d])); });
+  if(esProg2026()){
+    aplicarProgramaExterno(PROGRAMA_BOYLE_2026);
+  } else if(ST.programaExternoCache&&validarProgramaExterno(ST.programaExternoCache)){
+    aplicarProgramaExterno(ST.programaExternoCache);
+  }
+}
+// Ejecuta fn con otro programa cargado en memoria y vuelve a dejar el activo (solo para consultar).
+function conProgramaTemporal(id,fn){
+  var act=ST.programaActivo||'2016';
+  if(id===act) return fn();
+  var res='';
+  try{ ST.programaActivo=id; aplicarProgramaActivo(); res=fn(); }
+  finally{ ST.programaActivo=act; aplicarProgramaActivo(); }
+  return res;
+}
+// Cambiar el programa activo (desde Config). El historial no se toca.
+function setProgramaActivo(id){
+  if(!PROG_NOMBRES[id]) return;
+  var act=ST.programaActivo||'2016';
+  if(act===id) return;
+  var msg='¿Poner '+PROG_NOMBRES[id]+' como programa activo?\n\n'
+    +'Tu historial de entrenos, pesos y series NO se toca. Lo normal es cambiar al empezar un ciclo nuevo '
+    +'(más abajo, "Nuevo ciclo"); si cambias a mitad, la semana en curso seguirá siendo la '+(ST.sem||1)+'.\n\n'
+    +'Los cambios que hayas hecho a mano en sesiones de '+PROG_NOMBRES[act]+' se guardan aparte y vuelven si regresas a él.';
+  if(!confirm(msg)) return;
+  if(!ST.progGuardado) ST.progGuardado={};
+  ST.progGuardado[act]={sesionCustom:ST.sesionCustom||{},programaCustom:ST.programaCustom||{}};
+  var g=ST.progGuardado[id]||{};
+  ST.sesionCustom=g.sesionCustom||{};
+  ST.programaCustom=g.programaCustom||{};
+  ST.programaActivo=id;
+  _pcVista=null;
+  aplicarProgramaActivo();
+  save();
+  try{ renders.hoy(); }catch(e){}
+  try{ renders.entreno(); }catch(e){}
+  try{ renderSelectorPrograma(); }catch(e){}
+  try{ renderProgramaExtStatus(); }catch(e){}
+  var t=document.getElementById('fb-toast');
+  if(t){t.textContent='✅ Programa activo: '+PROG_NOMBRES[id];t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},3000);}
+}
+function renderSelectorPrograma(){
+  var el=document.getElementById('selector-programa');
+  if(!el) return;
+  var act=ST.programaActivo||'2016';
+  var desc={'2016':'El de siempre: 2.ª edición, tablas 11.2-11.5. Potencia y pierna en D1/D3, empuje en D2/D4.',
+            '2026':'3.ª edición, tablas 13.4-13.6. Pierna y tirón en D1/D3, potencia y empuje en D2/D4, prehab al final.'};
+  el.innerHTML=['2016','2026'].map(function(id){
+    var on=id===act;
+    return '<div onclick="setProgramaActivo(\''+id+'\')" style="cursor:pointer;padding:.6rem .75rem;margin-bottom:.4rem;border-radius:var(--rs);border:1px solid '+(on?'var(--blue)':'var(--border2)')+';background:'+(on?'var(--blue-bg)':'var(--bg2)')+'">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-size:13px;font-weight:700;color:'+(on?'var(--blue-text)':'var(--text)')+'">'+PROG_NOMBRES[id]+'</span>'
+      +(on?'<span style="font-size:10px;font-weight:700;color:#fff;background:var(--blue);border-radius:20px;padding:2px 8px">ACTIVO</span>':'<span style="font-size:11px;color:var(--text3)">Tocar para activar</span>')
+      +'</div><div style="font-size:11px;color:var(--text3);line-height:1.4;margin-top:3px">'+desc[id]+'</div></div>';
+  }).join('');
+}
+
+// --- Objetivo de series/reps de un ejercicio (lo usan la sesión de hoy y la tabla de consulta) ---
+function getRepsExplicito(ej,fase,semEnFase,diaKey){
+  var d=REPS_FASE[fase]&&REPS_FASE[fase][diaKey];
+  if(!d||!d[ej]) return null;
+  return d[ej][Math.min(semEnFase-1,d[ej].length-1)]||null;
+}
+function calcObjetivoEj(ejR,info,fase,semEnFase,diaKey,pr){
+  var repsTarget=getRepsTarget(ejR,fase,semEnFase,diaKey);
+  // En Boyle 2026 manda siempre la tabla del libro, también en los ejercicios "fijos" (planchas, chops...)
+  var tabla26=esProg2026()&&!!getRepsExplicito(ejR,fase,semEnFase,diaKey);
+  var numSer,rpsLabel,lista=false;
+  if(info.tipo==='fijo'&&!tabla26){numSer=parseInt(info.series)||3;rpsLabel=info.reps||'--';}
+  else if(repsTarget){
+    var rVal=repsTarget.r!==undefined?repsTarget.r:pr.r;
+    // Si el esquema trae varios valores separados por coma (ej. "5,5,5,5+"), ese es
+    // el número real de series a registrar esa semana, aunque no coincida con PROG.n
+    // (los ejercicios principales a veces añaden una serie extra a mitad de fase).
+    var esLista=(typeof rVal==='string'&&rVal.indexOf(',')>=0);
+    numSer=esLista?rVal.split(',').length:((repsTarget.n>0)?repsTarget.n:pr.n);
+    rpsLabel=(info.reps&&!tabla26)?(rVal+' '+info.reps):String(rVal);
+    if(tabla26&&esLista){ lista=true; rpsLabel=String(rVal).split(',').join(' · '); }
+  }
+  else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
+  return {numSer:numSer,rpsLabel:rpsLabel,lista:lista};
+}
+// Objetivo de UNA serie concreta en Boyle 2026 ("8", "20s"...), para precargar el formulario.
+function getObjetivoSerie26(ej,serie){
+  var e=getRepsExplicito(ej,getFaseActual(ST.sem),getSemEnFase(ST.sem),getDiaBoyle()||'D1');
+  if(!e||e.r===undefined) return '';
+  var r=String(e.r);
+  if(r.indexOf(',')>=0){ var p=r.split(','); return (p[Math.min(serie,p.length-1)]||'').trim(); }
+  return r.trim();
+}
+
+// --- Tabla de consulta del programa cargado en memoria: 4 fases × 4 días, series y reps por semana ---
+function htmlTablaPrograma(){
+  var out='';
+  ['F1','F2','F3','F4'].forEach(function(fase,fi){
+    var bf=BOYLE_FASES[fi]||{};
+    out+='<details style="margin-bottom:.5rem;border:.5px solid var(--border);border-radius:var(--rs);padding:.1rem .6rem"'+(getFaseActual(ST.sem)===fase?' open':'')+'>'
+      +'<summary style="cursor:pointer;padding:.45rem 0;font-size:13px;font-weight:700;color:'+(bf.color||'var(--text)')+'">'+(bf.n||fase)
+      +' <span style="font-weight:400;font-size:11px;color:var(--text3)">'+(bf.sems||'')+'</span></summary>';
+    if(bf.desc) out+='<div style="font-size:12px;color:var(--text2);line-height:1.45;margin-bottom:.5rem">'+bf.desc+'</div>';
+    ['D1','D2','D3','D4'].forEach(function(dia){
+      var ejs=(EJS_FASES[fase]&&EJS_FASES[fase][dia])||[];
+      var grupos=getGruposDia(fase,dia)||[{lbl:'',n:ejs.length}];
+      out+='<div style="font-size:12px;font-weight:700;color:var(--text);background:var(--bg3);border-radius:6px;padding:4px 8px;margin:.5rem 0 .2rem">'+(SES_NOM[dia]||dia)+'</div>';
+      var ix=0;
+      grupos.forEach(function(g,gi){
+        var sl=(gi===grupos.length-1)?ejs.slice(ix):ejs.slice(ix,ix+g.n); ix+=g.n;
+        if(!sl.length) return;
+        if(g.lbl) out+='<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-top:.35rem">'+g.lbl+'</div>';
+        sl.forEach(function(ej){
+          var info=EJ_INFO[ej]||{};
+          var sem=[1,2,3].map(function(s){
+            var o=calcObjetivoEj(ej,info,fase,s,dia,PROG[(fi*3+s-1)%12]);
+            return o.lista?o.rpsLabel:(o.numSer+'×'+o.rpsLabel);
+          });
+          var txt=(sem[0]===sem[1]&&sem[1]===sem[2])?sem[0]:sem.join('  /  ');
+          var nota=getNotaProg(ej,fase,dia);
+          out+='<div style="padding:.3rem 0;border-bottom:.5px solid var(--border)">'
+            +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">'
+            +'<span style="font-size:12px;font-weight:600;color:var(--text)">'+ej+'</span>'
+            +'<span style="font-size:11px;color:var(--text2);text-align:right;white-space:nowrap">'+txt+'</span></div>'
+            +(nota?'<div style="font-size:11px;color:var(--blue-text);line-height:1.4;margin-top:2px">&#128214; '+nota+'</div>':'')
+            +'</div>';
+        });
+      });
+    });
+    out+='</details>';
+  });
+  return '<div style="font-size:11px;color:var(--text3);margin-bottom:.4rem">Series×reps por semana de la fase (S1 / S2 / S3). Un solo valor = igual las tres semanas.</div>'+out;
+}
+// Conmutador de la pantalla "Programa completo": ver el programa activo o consultar el otro.
+var _pcVista=null;
+function pcSetVista(id){ _pcVista=id; renderProgramaCompleto(); }
+function renderPcSelector(vista,act){
+  var el=document.getElementById('pc-selector');
+  if(!el) return;
+  el.innerHTML='<div style="display:flex;gap:6px;margin-bottom:.75rem">'+['2016','2026'].map(function(id){
+    var on=id===vista;
+    return '<button onclick="pcSetVista(\''+id+'\')" style="flex:1;border:none;border-radius:20px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'
+      +PROG_NOMBRES[id]+(id===act?' · activo':'')+'</button>';
+  }).join('')+'</div>';
+}
+
+// --- Salto vertical semanal (Boyle 2026): un dato por semana y día de potencia (D2 y D4) ---
+function _claveSalto(dB){ return getProgramaPrefix()+'s'+(ST.sem||1)+'_'+dB; }
+// La clave (semana + día) va fijada en el propio campo: si el valor se confirma tarde, cae en su semana.
+function setSaltoVertical(v,clave){
+  if(!clave) return;
+  if(!ST.saltoVertical) ST.saltoVertical={};
+  var n=parseFloat(String(v).replace(',','.'));
+  if(n>0) ST.saltoVertical[clave]=n; else delete ST.saltoVertical[clave];
+  save();
+}
+function renderSaltoVertical(dB){
+  var el=document.getElementById('e-salto-vertical');
+  if(!el) return;
+  if(!esProg2026()||(dB!=='D2'&&dB!=='D4')){ el.style.display='none'; el.innerHTML=''; return; }
+  var sv=ST.saltoVertical||{}, k=_claveSalto(dB);
+  var prev=Object.keys(sv).filter(function(x){ return x!==k&&sv[x]>0&&/^p\d{8}_s\d+_D\d$/.test(x); }).sort(function(a,b){
+    var A=a.match(/^p(\d{8})_s(\d+)_D(\d)$/), B=b.match(/^p(\d{8})_s(\d+)_D(\d)$/);
+    return (A[1]-B[1])||(A[2]-B[2])||(A[3]-B[3]);
+  }).slice(-4);
+  var fase=getFaseActual(ST.sem);
+  var como=(fase==='F3'&&dB==='D4')?'Test de 4 saltos: apunta el mejor.':('3 saltos, apunta el mejor.'+(dB==='D4'?' Manos en las caderas.':''));
+  el.style.display='block';
+  el.innerHTML='<div style="background:var(--bg2);border:.5px solid var(--border2);border-radius:var(--rs);padding:.55rem .75rem">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">Salto vertical · Sem '+(ST.sem||1)+'</div>'
+    +'<div style="font-size:11px;color:var(--text3);line-height:1.4">'+como+' Antes de empezar las series.</div></div>'
+    +'<input type="number" inputmode="decimal" step="0.5" min="0" value="'+(sv[k]||'')+'" placeholder="cm" onchange="setSaltoVertical(this.value,\''+k+'\')"'
+    +' style="width:64px;border:.5px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:700;text-align:center">'
+    +'<span style="font-size:11px;color:var(--text3)">cm</span></div>'
+    +(prev.length?'<div style="font-size:11px;color:var(--text3);margin-top:4px">Anteriores: '+prev.map(function(x){ var m=x.match(/_s(\d+)_(D\d)$/); return 'S'+m[1]+' '+m[2]+': <strong style="color:var(--text2)">'+sv[x]+'</strong>'; }).join(' · ')+'</div>':'')
+    +'</div>';
+}
+
+// --- Catálogo: ejercicios nuevos de Boyle 2026 (sin ficha de técnica todavía: llegan en la siguiente versión) ---
+// soloCheck = prehab que solo se marca como hecho (sin series ni peso).
+(function(){
+  var nuevos={
+    'Goblet Split Squat':{tipo:'prog'},'Split Squat (2 mancuernas)':{tipo:'prog'},
+    'Leg Curl con balón (peanut)':{tipo:'prog'},'Slide Board Leg Curl':{tipo:'prog'},
+    'Gemelo con mancuerna (cajón)':{tipo:'prog'},
+    'Goblet Lateral Squat':{tipo:'prog'},'Goblet Lateral Lunge':{tipo:'prog'},
+    'Pull-down agarre ancho':{tipo:'prog'},
+    'Side Plank (respiraciones)':{tipo:'prog'},'Side Plank con aducción activa':{tipo:'prog'},
+    'Bear Plank Shoulder Tap':{tipo:'prog'},'Off-bench Obliques Hold':{tipo:'prog'},'Hollow Body Hold':{tipo:'prog'},
+    'Body Saw':{tipo:'prog'},'Press-out antirrotación (half-kneeling)':{tipo:'prog'},
+    'Half-kneeling Chop':{tipo:'prog'},'Half-kneeling Lift':{tipo:'prog'},
+    'Standing Static Chop':{tipo:'prog'},'Standing Static Lift':{tipo:'prog'},
+    'Band pull-aparts':{tipo:'prog',soloCheck:true},
+    'Rotación ext/int de hombro (banda)':{tipo:'prog',soloCheck:true},
+    'Aro Pilates — aductores':{tipo:'prog',soloCheck:true},
+    'Flexión de cadera sentado (iso)':{tipo:'prog',soloCheck:true},
+    'Flexión de cadera de pie (banda)':{tipo:'prog',soloCheck:true},
+    'Flexión de cadera tumbado (banda)':{tipo:'prog',soloCheck:true},
+    'Isos glúteo-isquio':{tipo:'prog',soloCheck:true},
+    'Lateral squat press-out':{tipo:'prog',soloCheck:true},
+    'Isos de isquios con foam roller':{tipo:'prog',soloCheck:true},
+    'Excéntricos de isquios':{tipo:'prog',soloCheck:true},
+  };
+  Object.keys(nuevos).forEach(function(k){ if(!EJ_INFO[k]) EJ_INFO[k]=nuevos[k]; });
+  var vars={
+    'Skater squat':['Skater squat','Skater squat con almohadilla','Slide Board Reverse Lunge'],
+    'Goblet Split Squat':['Goblet Split Squat','Split Squat a cajón (parcial)','Split Squat isométrico (30-45-60 s)','Sentadilla española (banda)'],
+    'Split Squat (2 mancuernas)':['Split Squat (2 mancuernas)','Goblet Split Squat','RFESS'],
+    'Pull-down agarre ancho':['Pull-down agarre ancho','X-pull-down (cable/goma)','Chin-up asistido (banda)'],
+    'Half-kneeling Chop':['Half-kneeling Chop','In-line Chop','Dynamic Chop'],
+    'Half-kneeling Lift':['Half-kneeling Lift','In-line Lift','Dynamic Lift'],
+    'Standing Static Chop':['Standing Static Chop','Dynamic Chop','Half-kneeling Chop'],
+    'Standing Static Lift':['Standing Static Lift','Dynamic Lift','Half-kneeling Lift'],
+    'Slide Board Leg Curl':['Slide Board Leg Curl','Leg Curl con balón (peanut)'],
+    'Isos de isquios con foam roller':['Isos de isquios con foam roller','Slide Board Leg Curl'],
+    'Excéntricos de isquios':['Excéntricos de isquios','Slide Board Leg Curl'],
+  };
+  var tipos={
+    'Skater squat':{'Skater squat':'base','Skater squat con almohadilla':'regresion','Slide Board Reverse Lunge':'alt'},
+    'Goblet Split Squat':{'Goblet Split Squat':'base','Split Squat a cajón (parcial)':'regresion','Split Squat isométrico (30-45-60 s)':'alt_rodilla','Sentadilla española (banda)':'alt_rodilla'},
+    'Split Squat (2 mancuernas)':{'Split Squat (2 mancuernas)':'base','Goblet Split Squat':'regresion','RFESS':'progresion'},
+    'Pull-down agarre ancho':{'Pull-down agarre ancho':'base','X-pull-down (cable/goma)':'alt','Chin-up asistido (banda)':'progresion'},
+    'Half-kneeling Chop':{'Half-kneeling Chop':'base','In-line Chop':'progresion','Dynamic Chop':'progresion'},
+    'Half-kneeling Lift':{'Half-kneeling Lift':'base','In-line Lift':'progresion','Dynamic Lift':'progresion'},
+    'Standing Static Chop':{'Standing Static Chop':'base','Dynamic Chop':'progresion','Half-kneeling Chop':'regresion'},
+    'Standing Static Lift':{'Standing Static Lift':'base','Dynamic Lift':'progresion','Half-kneeling Lift':'regresion'},
+    'Slide Board Leg Curl':{'Slide Board Leg Curl':'base','Leg Curl con balón (peanut)':'regresion'},
+    'Isos de isquios con foam roller':{'Isos de isquios con foam roller':'base','Slide Board Leg Curl':'regresion'},
+    'Excéntricos de isquios':{'Excéntricos de isquios':'base','Slide Board Leg Curl':'regresion'},
+  };
+  Object.keys(vars).forEach(function(k){
+    if(!VARIANTES[k]) VARIANTES[k]=vars[k].slice();
+    if(!VARIANTES_BASE[k]) VARIANTES_BASE[k]=vars[k].slice();
+    if(!VAR_TIPO[k]) VAR_TIPO[k]=tipos[k];
+    if(!VAR_TIPO_BASE[k]) VAR_TIPO_BASE[k]=_clon(tipos[k]);
+  });
+  // Variantes que el libro nombra en ejercicios que ya existían
+  function addVar(ej,v,tp){
+    if(!VARIANTES[ej]||VARIANTES[ej].indexOf(v)>=0) return;
+    VARIANTES[ej].push(v);
+    if(VARIANTES_BASE[ej]&&VARIANTES_BASE[ej].indexOf(v)<0) VARIANTES_BASE[ej].push(v);
+    if(!VAR_TIPO[ej]) VAR_TIPO[ej]={};
+    VAR_TIPO[ej][v]=tp;
+    if(!VAR_TIPO_BASE[ej]) VAR_TIPO_BASE[ej]={};
+    VAR_TIPO_BASE[ej][v]=tp;
+  }
+  addVar('Trap Bar Deadlift','KB Deadlift','regresion');
+  addVar('One-leg Squat','Goblet Split Squat','regresion');
+  addVar('Standing Overhead Press','DB OH Press alterno de pie','alt');
+})();
+
 const COMIDAS={
   Manana:[{h:'06:15',n:'Desayuno pre-turno',d:'Avena 60g + proteina 30g + leche + platano',k:510,p:42,hc:65,g:7},{h:'10:00',n:'Media manana',d:'Yogur griego 0% 200g + nueces 15g + manzana',k:300,p:22,hc:25,g:9},{h:'14:30',n:'Pre-entreno',d:'Arroz 80g + pollo 160g + verduras + AOVE',k:530,p:42,hc:62,g:9},{h:'18:30',n:'Post-entreno',d:'Proteina 35g + platano + leche 200ml',k:380,p:40,hc:38,g:4},{h:'21:00',n:'Cena ligera',d:'Salmon o merluza 180g + ensalada + 2 huevos',k:420,p:48,hc:12,g:18}],
   Tarde:[{h:'08:00',n:'Pre-entreno',d:'Avena 60g + proteina 25g + platano + cafe',k:460,p:35,hc:65,g:5},{h:'12:00',n:'Post-entreno',d:'Proteina 35g + leche 200ml + fruta',k:360,p:40,hc:32,g:4},{h:'13:30',n:'Comida pre-turno',d:'Pasta 80g + pechuga 160g + verduras + AOVE',k:550,p:44,hc:70,g:9},{h:'19:00',n:'Merienda trabajo',d:'Yogur griego 200g + nueces 15g + fruta',k:300,p:22,hc:22,g:9},{h:'23:15',n:'Cena al llegar',d:'Requesón 200g + 2 huevos + pepino + AOVE',k:350,p:38,hc:8,g:14}],
@@ -3127,7 +3677,7 @@ function semaforo(d,f){
   return{cls:'sem sv',i:'🟢',t:'Verde — Entrena normal',s:'Fatiga y dolor dentro del rango'};
 }
 
-let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'Boyle',protocoloDia:{},enfCheck:{},enfCustom:{},enfRemoved:{},protocolosExtCache:null,protocolosExtActualizado:null,circuitos:[],circuitosSesiones:{}};
+let ST={dia:1,sem:1,sets:{},nut:{},sliders:{d:0,f:1,s:3},cicloAnclaje:null,programaInicio:'2026-06-12',ejs:{D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]},eval:[],cfgSes:'D1',diaBoyle:{},sesionCustom:{},restTimes:{},nutTipo:"auto",ejsCustom:{},ejsImgs:{},historialFechas:{},warmupCheck:{},warmupCustom:{},warmupRemoved:{},planDia:{},notaDia:{},programaCustom:{},notasGenerales:[],alimentosCustom:{},nutricionExtra:{},nutricionComidaAlimentos:{},boxeoBloque:'B1',boxeoChecklist:{},boxeoSesiones:[],boxeoLibreItems:[],espacioReducido:false,githubToken:'',actividadesFitbitOcultas:[],ultimoBackupLocal:null,programaExternoCache:null,ejerciciosExternoCache:null,programaExternoActualizado:null,ejerciciosExternoActualizado:null,ciclosCompletados:[],repoPrograma:'Boyle',protocoloDia:{},enfCheck:{},enfCustom:{},enfRemoved:{},protocolosExtCache:null,protocolosExtActualizado:null,circuitos:[],circuitosSesiones:{},programaActivo:'2016',progGuardado:{},saltoVertical:{}};
 function fmtFechaLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function hoyLocal(){return fmtFechaLocal(new Date());}
 
@@ -3163,6 +3713,7 @@ function getConfigFields(){
     ciclosCompletados:ST.ciclosCompletados||[],
     repoPrograma:ST.repoPrograma||'Boyle',
     circuitos:ST.circuitos||[],circuitosSesiones:ST.circuitosSesiones||{},
+    programaActivo:ST.programaActivo||'2016',progGuardado:ST.progGuardado||{},saltoVertical:ST.saltoVertical||{},
     _v:2,_lastKnownSesiones:ST._lastKnownSesiones||0,
   };
 }
@@ -3203,8 +3754,11 @@ function aplicarConfigRemoto(data){
     'alimentosCustom','nutricionExtra','nutricionComidaAlimentos',
     'boxeoBloque','boxeoChecklist','boxeoSesiones','boxeoLibreItems',
     'espacioReducido','actividadesFitbitOcultas','turnoReal','objPeso','ultimoBackupLocal','ciclosCompletados','repoPrograma',
-    'circuitos','circuitosSesiones'];
+    'circuitos','circuitosSesiones','programaActivo','progGuardado','saltoVertical'];
+  var _progAntes=ST.programaActivo||'2016';
   campos.forEach(function(k){if(data[k]!==undefined) ST[k]=data[k];});
+  // [vEXT_039] si el programa activo llega cambiado desde otro dispositivo, cargarlo en memoria
+  if((ST.programaActivo||'2016')!==_progAntes){ try{ aplicarProgramaActivo(); }catch(e){ console.warn('programaActivo remoto:',e); } }
   if(data._v) ST._v=data._v;
   ST._localSaveTime=Date.now();
 }
@@ -3323,7 +3877,7 @@ function parseSetKey(key){
 var _fbLoadReady=false; // bloquea save() hasta que Firebase haya cargado
 let mEj=null,mSer=null;
 
-function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.protocoloDia)ST.protocoloDia={};if(!ST.enfCheck)ST.enfCheck={};if(!ST.enfCustom)ST.enfCustom={};if(!ST.enfRemoved)ST.enfRemoved={};if(!ST.repoPrograma||ST.repoPrograma==='entreno-pro')ST.repoPrograma='Boyle';if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosSesiones)ST.circuitosSesiones={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
+function load(){try{const x=localStorage.getItem('jose_v9');if(x){const p=JSON.parse(x);ST=Object.assign(ST,p);if(!ST.ejs||!ST.ejs.D1)ST.ejs={D1:[...EJS_DEF.D1],D2:[...EJS_DEF.D2],D3:[...EJS_DEF.D3],D4:[...EJS_DEF.D4]};if(!ST.eval)ST.eval=[];if(!ST.diaBoyle)ST.diaBoyle={};if(!ST.sesionCustom)ST.sesionCustom={};if(!ST.restTimes)ST.restTimes={};if(!ST.nutTipo)ST.nutTipo="auto";if(!ST.ejsCustom)ST.ejsCustom={};if(!ST.ejsImgs)ST.ejsImgs={};if(!ST.variantesCustom)ST.variantesCustom={};if(!ST.historialFechas)ST.historialFechas={};if(!ST.warmupCheck)ST.warmupCheck={};if(!ST.warmupCustom)ST.warmupCustom={};if(!ST.warmupRemoved)ST.warmupRemoved={};if(!ST.protocoloDia)ST.protocoloDia={};if(!ST.enfCheck)ST.enfCheck={};if(!ST.enfCustom)ST.enfCustom={};if(!ST.enfRemoved)ST.enfRemoved={};if(!ST.repoPrograma||ST.repoPrograma==='entreno-pro')ST.repoPrograma='Boyle';if(!ST.planDia)ST.planDia={};if(!ST.notaDia)ST.notaDia={};if(!ST.cicloAnclaje)ST.cicloAnclaje=null;if(!ST.programaInicio)ST.programaInicio='2026-06-12';if(!ST.programaCustom)ST.programaCustom={};if(!ST.notasGenerales)ST.notasGenerales=[];if(!ST.alimentosCustom)ST.alimentosCustom={};if(!ST.nutricionExtra)ST.nutricionExtra={};if(!ST.nutricionComidaAlimentos)ST.nutricionComidaAlimentos={};if(!ST.boxeoBloque)ST.boxeoBloque='B1';if(!ST.boxeoChecklist)ST.boxeoChecklist={};if(!ST.boxeoSesiones)ST.boxeoSesiones=[];if(!ST.boxeoLibreItems)ST.boxeoLibreItems=[];if(ST.espacioReducido===undefined)ST.espacioReducido=false;if(ST.githubToken===undefined)ST.githubToken='';if(!ST.actividadesFitbitOcultas)ST.actividadesFitbitOcultas=[];if(ST.ultimoBackupLocal===undefined)ST.ultimoBackupLocal=null;if(ST.programaExternoCache===undefined)ST.programaExternoCache=null;if(ST.ejerciciosExternoCache===undefined)ST.ejerciciosExternoCache=null;if(ST.programaExternoActualizado===undefined)ST.programaExternoActualizado=null;if(ST.ejerciciosExternoActualizado===undefined)ST.ejerciciosExternoActualizado=null;if(!ST.ciclosCompletados)ST.ciclosCompletados=[];if(!ST.repoPrograma)ST.repoPrograma='entreno-pro';if(!ST.circuitos)ST.circuitos=[];if(!ST.circuitosSesiones)ST.circuitosSesiones={};if(ST.programaActivo!=='2026')ST.programaActivo='2016';if(!ST.progGuardado)ST.progGuardado={};if(!ST.saltoVertical)ST.saltoVertical={};try{aplicarCacheProgramaExternoSiExiste();}catch(e){}
     // Migrar sets legacy al nuevo formato con prefijo de programa
     (function(){
       var prefix=getProgramaPrefix();
@@ -3878,6 +4432,7 @@ const renders={
       document.getElementById('e-vol').textContent='0';
       document.getElementById('e-ser').textContent='0/0';
       document.getElementById('e-hist').innerHTML='<div class="empty">Sin historial</div>';
+      try{ renderSaltoVertical(null); }catch(e){}
       renderEnf(dB||'Mov','e-enf','e-enf-card');
       try{ renderFaseBanner(); }catch(e){}
       try{ actualizarWarmupBadge(); }catch(e){}
@@ -3904,21 +4459,18 @@ const renders={
           var semEnFase=getSemEnFase(ST.sem);
           var diaBoyleKey=getDiaBoyle()||'D1';
           var repsTarget=getRepsTarget(ejR,fase,semEnFase,diaBoyleKey);
-          if(info.tipo==='fijo'){numSer=parseInt(info.series)||3;rpsLabel=info.reps||'--';}
-          else if(repsTarget){
-            var rVal=repsTarget.r!==undefined?repsTarget.r:pr.r;
-            // Si el esquema trae varios valores separados por coma (ej. "5,5,5,5+"), ese es
-            // el número real de series a registrar esa semana, aunque no coincida con PROG.n
-            // (los ejercicios principales a veces añaden una serie extra a mitad de fase).
-            numSer=(typeof rVal==='string'&&rVal.indexOf(',')>=0)?rVal.split(',').length:((repsTarget.n>0)?repsTarget.n:pr.n);
-            rpsLabel=info.reps?(rVal+' '+info.reps):String(rVal);
-          }
-          else{numSer=pr.n;rpsLabel=info.reps?pr.r+' '+info.reps:String(pr.r);}
+          var _obj=calcObjetivoEj(ejR,info,fase,semEnFase,diaBoyleKey,pr); // [vEXT_039]
+          numSer=_obj.numSer; rpsLabel=_obj.rpsLabel;
+          // [vEXT_039] prehab de Boyle 2026: solo se marca como hecho (sin series) mientras no tenga datos
+          var soloChk=esProg2026()&&!!info.soloCheck&&!ss.filter(Boolean).length;
+          var _objTxt=_obj.lista?rpsLabel:(numSer+'x'+rpsLabel);
+          if(soloChk) numSer=0;
           // [vEXT_023] Series extra por ejercicio (en pares/trisets cualquiera del bloque puede llevar alguna más)
           var baseSer=numSer;
           var extraSer=(ST.setsExtra&&ST.setsExtra[diaDayPrefix(ST.dia)+ejR])||0;
           numSer+=extraSer;
           if(ss.length>numSer) numSer=ss.length; // las series ya registradas nunca se ocultan
+          if(soloChk) numSer=0;
           tot+=numSer;
           var ult=getUltimaSesion(ej);
           var ejDone=ejEstaHecho(ej);
@@ -3984,6 +4536,7 @@ const renders={
           if(extraSer>0&&numSer>baseSer&&!ss[numSer-1]){
             pillsArr.push('<span class="pill ctl" data-ej="'+ejSafe+'" onclick="quitarSerieExtra(this)" title="Quitar la última serie extra">&#8722;</span>');
           }
+          if(soloChk) pillsArr=['<span style="font-size:11px;color:var(--text3)">Prehab: toca el círculo de la izquierda para marcarlo hecho.</span>'];
           var ejQ=ej.replace(/'/g,"\'");
           var varBtn=getVariantesEj(ej).length>1?('<button data-ej="'+ejSafe+'" onclick="abrirVariantes2(this)" style="border:none;background:var(--bg3);color:var(--text2);border-radius:20px;padding:2px 8px;font-size:11px;cursor:pointer">&#9881;</button>'):'';  
           return '<div style="padding:.5rem 0;border-bottom:.5px solid var(--border)">'
@@ -3996,10 +4549,11 @@ const renders={
             +'</div>'
             +varBtn
             +'<button data-ej="'+ejSafe+'" onclick="quitarEjSesion2(this)" style="border:none;background:transparent;color:var(--text3);cursor:pointer;padding:2px;font-size:15px;line-height:1"><i class="ti ti-x"></i></button>'
-            +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+baseSer+(numSer>baseSer?'+'+(numSer-baseSer):'')+'x'+rpsLabel+'</span>'
-            +(info.tipo!=='fijo'&&getRpeObjetivo(fase)?'<span style="font-size:10px;color:var(--blue-text);background:var(--blue-bg);border-radius:20px;padding:1px 7px;white-space:nowrap">RPE '+getRpeObjetivo(fase)+'</span>':'')
+            +'<span style="font-size:11px;color:var(--text2);white-space:nowrap">'+((soloChk||_obj.lista)?_objTxt:(baseSer+(numSer>baseSer?'+'+(numSer-baseSer):'')+'x'+rpsLabel))+'</span>'
+            +(info.tipo!=='fijo'&&!info.soloCheck&&getRpeObjetivo(fase)?'<span style="font-size:10px;color:var(--blue-text);background:var(--blue-bg);border-radius:20px;padding:1px 7px;white-space:nowrap">RPE '+getRpeObjetivo(fase)+'</span>':'')
             +'<button data-ej="'+ejSafe+'" onclick="abrirHistEj2(this)" style="border:none;background:transparent;color:var(--blue);cursor:pointer;padding:2px;font-size:17px;line-height:1"><i class="ti ti-chart-line"></i></button>'
             +'</div>'
+            +notaProgHtml(ejR,fase,diaBoyleKey)
             +(histInlineHtml)
             +(info.tecnica?'<div style="font-size:11px;color:var(--text3);margin-bottom:5px;line-height:1.4">'+info.tecnica+'</div>':'')
             +(info.alerta?'<div style="font-size:11px;color:var(--orange);background:var(--orange-bg,var(--bg3));border-radius:6px;padding:3px 8px;margin-bottom:5px;line-height:1.4">'+info.alerta+'</div>':'')
@@ -4039,6 +4593,7 @@ const renders={
     document.getElementById('e-ser').textContent=done+'/'+tot;
     renderEnf(dB||'Mov','e-enf','e-enf-card');
     renderAvisoSalto(dB);
+    try{ renderSaltoVertical(dB); }catch(e){}
     renderFaseBanner();
     renderFinalizarStatus();
     actualizarWarmupBadge();
@@ -4194,7 +4749,7 @@ function renderBoyleFaseTabs(){
   var el=document.getElementById('boyle-fase-tabs');
   if(!el) return;
   var fases=['F1','F2','F3','F4'];
-  var faseNoms={F1:'F1 — Acum.',F2:'F2 — Intensif.',F3:'F3 — Complejos I',F4:'F4 — Complejos II'};
+  var faseNoms=faseNoms26({F1:'F1 — Acum.',F2:'F2 — Intensif.',F3:'F3 — Complejos I',F4:'F4 — Complejos II'},true,true);
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
@@ -4230,7 +4785,7 @@ function renderBoyleContenido(){
   // Historial de veces que se realizó este día
   var historialDia=getHistorialDiaBoyle(diaKey, fase);
   // Info de fase
-  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'};
+  var faseNoms=faseNoms26({F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'});
   var faseDesc={
     F1:'3 series × 8 reps (olímpicos × 5). Volumen alto, cargas moderadas: construir base.',
     F2:'3-5 series de 3 (press, chin-ups, olímpicos) y de 5 (tren inferior), al 70-80%. Menos volumen, más carga.',
@@ -4248,7 +4803,7 @@ function renderBoyleContenido(){
     +'<span style="font-size:13px;font-weight:700;color:'+faseTexts[fase]+'">'+fase+' — '+faseNoms[fase]+'</span>'
     +'<span style="font-size:11px;background:'+faseBgs[fase]+';color:'+faseTexts[fase]+';border-radius:20px;padding:2px 8px">Sem '+(getFaseActual('F1')===fase?ST.sem:'—')+'</span>'
     +'</div>'
-    +'<div style="font-size:12px;color:var(--text2);line-height:1.5">'+faseDesc[fase]+'</div>'
+    +'<div style="font-size:12px;color:var(--text2);line-height:1.5">'+(esProg2026()?((BOYLE_FASES[['F1','F2','F3','F4'].indexOf(fase)]||{}).desc||''):faseDesc[fase])+'</div>'
     +'</div>';
   // Historial de ejecuciones de este día
   if(historialDia.length){
@@ -4301,6 +4856,7 @@ function renderBoyleContenido(){
       +(esVariante?'<div style="font-size:11px;color:var(--blue-text);margin-top:1px">▶ usando: <strong>'+varActual+'</strong></div>':'')
       +(info.tecnica?'<div style="font-size:10px;color:var(--text3);line-height:1.3;margin-top:2px">'+info.tecnica.slice(0,90)+(info.tecnica.length>90?'...':'')+'</div>':'')
       +(mejorPeso?'<div style="font-size:10px;color:var(--blue-text);margin-top:2px">🏆 '+mejorPeso+'</div>':'')
+      +notaProgHtml(ej,fase,diaKey)
       +'</div>'
       +varBtn
       +'</div>'
@@ -4759,6 +5315,7 @@ var mTipoSet='reps'; // 'reps' | 'tiempo' | 'distancia'
 var EJ_TIPO_SET={
   'Front Plank':'tiempo','Hard-style Front Plank':'tiempo','Half-kneeling antirotation hold':'tiempo',
   'Standing antirotation hold':'tiempo','Squat Holds':'tiempo','Supine Floor Slide':'reps',
+  'Hollow Body Hold':'tiempo','Off-bench Obliques Hold':'tiempo',
   'Suitcase Carry':'distancia','Farmer Carry':'distancia','Farmer Walk bilateral':'distancia',
   'Trineo empuje pesado':'distancia','Trineo marcha (técnica sprint)':'distancia',
   'Trineo empuje ligero':'distancia','Trineo arrastre hacia atrás':'distancia',
@@ -4849,6 +5406,18 @@ function openMo(ej,serie){
   document.getElementById('m-d').value=prev?prev.dist||'':'';
   document.getElementById('m-rpe').value=prev?prev.rpe:7;
   document.getElementById('m-n').value='';
+  // [vEXT_039] Boyle 2026: si el objetivo de esta serie es un tiempo ("20s") se abre en segundos (isométrico:
+  // no cuenta para el tonelaje); si es un número, se precargan esas repeticiones.
+  try{
+    if(esProg2026()&&!setsRegistrados[serie]){
+      var _o26=getObjetivoSerie26(ejClean,serie);
+      if(/^\d+\s*s$/.test(_o26)){ setTipoSet('tiempo'); document.getElementById('m-t').value=parseInt(_o26,10); }
+      else if(/^\d+/.test(_o26)){
+        if(prev&&prev.tipo==='tiempo'&&(EJ_TIPO_SET[ejClean]||'reps')==='reps') setTipoSet('reps');
+        if(mTipoSet==='reps') document.getElementById('m-r').value=parseInt(_o26,10);
+      }
+    }
+  }catch(e){}
   var _igDec=document.getElementById('ig-dec');
   if(_igDec){ _igDec.style.display=(ejClean.indexOf('__fin__')===0)?'none':''; pintarDecBtns(); }
   // Última sesión
@@ -4907,7 +5476,9 @@ function guardar(){
     var pr=PROG[(ST.sem-1)%12];
     var info=EJ_INFO[ejClean]||{};
     var num;
-    if(info.tipo==='fijo'){
+    if(esProg2026()&&getRepsExplicito(ejClean,getFaseActual(ST.sem),getSemEnFase(ST.sem),getDiaBoyle()||'D1')){
+      num=calcObjetivoEj(ejClean,info,getFaseActual(ST.sem),getSemEnFase(ST.sem),getDiaBoyle()||'D1',pr).numSer; // [vEXT_039]
+    } else if(info.tipo==='fijo'){
       num=parseInt(info.series)||3;
     } else {
       var faseAll=getFaseActual(ST.sem), semEnFaseAll=getSemEnFase(ST.sem), diaBoyleAll=getDiaBoyle()||'D1';
@@ -5118,7 +5689,7 @@ function verDiaBoyle(d){
   var semEnFase=getSemEnFase(ST.sem);
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
-  var faseNoms={F1:'F1 — 3x8',F2:'F2 — 3-5x3-5 · 70-80%',F3:'F3 — Complejos I',F4:'F4 — Complejos II'};
+  var faseNoms=faseNoms26({F1:'F1 — 3x8',F2:'F2 — 3-5x3-5 · 70-80%',F3:'F3 — Complejos I',F4:'F4 — Complejos II'},true);
   var faseTempo={F1:'',F2:'',F3:'',F4:''};
   // Ejercicios de EJS_FASES para esta fase y dia
   var ejsFase=(EJS_FASES[fase]&&EJS_FASES[fase][d])||[];
@@ -5165,6 +5736,7 @@ function verDiaBoyle(d){
       html+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+ejReal+'</div>';
       if(ejReal!==ejBase) html+='<div style="font-size:10px;color:var(--text3)">patron: '+ejBase+'</div>';
       if(info.tecnica) html+='<div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4">'+info.tecnica+'</div>';
+      html+=notaProgHtml(ejReal,fase,d); // [vEXT_039]
       if(vars.length>0){
         html+='<div style="margin-top:3px;display:flex;flex-wrap:wrap;gap:3px">';
         vars.forEach(function(v,vi){
@@ -5268,11 +5840,22 @@ function getHistorialPorSemana(){
 function renderProgramaCompleto(){
   var el=document.getElementById('pc-list');
   if(!el) return;
+  // [vEXT_039] conmutador: el programa activo (proyección de siempre) o consulta del otro, sin cambiar nada
+  var _act=ST.programaActivo||'2016', _vista=_pcVista||_act;
+  renderPcSelector(_vista,_act);
+  var _cab=document.getElementById('pc-cab');
+  if(_cab) _cab.style.display=(_vista===_act)?'':'none';
+  if(_vista!==_act){
+    el.innerHTML='<div style="font-size:12px;color:var(--orange-text);background:var(--orange-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.75rem;line-height:1.45">'
+      +'Estás consultando <strong>'+PROG_NOMBRES[_vista]+'</strong>. Tu programa activo sigue siendo <strong>'+PROG_NOMBRES[_act]+'</strong>; se cambia en Config → Programa activo.</div>'
+      +conProgramaTemporal(_vista,htmlTablaPrograma);
+    return;
+  }
   var proyeccion=proyectarProgramaCompleto();
   var porSemana={};
   proyeccion.forEach(function(p){(porSemana[p.semana]=porSemana[p.semana]||[]).push(p);});
   var historialSemana=getHistorialPorSemana();
-  var faseNoms={F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'};
+  var faseNoms=faseNoms26({F1:'Acumulación',F2:'Intensificación',F3:'Fuerza + Complejos I',F4:'Fuerza + Complejos II'});
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var slotsOrden=['D1','D2','D3','D4'];
   function filaHecha(real,slotKey){
@@ -5349,6 +5932,7 @@ function renderProgramaCompleto(){
     }
     html+='</div>';
   }
+  html+='<details style="margin-top:.5rem"><summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--blue-text);padding:.4rem 0">Ver la tabla completa de '+PROG_NOMBRES[_act]+'</summary>'+htmlTablaPrograma()+'</details>';
   el.innerHTML=html;
 }
 var _pcFechaActual=null;
@@ -5772,7 +6356,7 @@ function cdSemRender(){
   if(lbl) lbl.textContent=_cdSemTemp;
   if(faseLbl){
     var fase=getFaseActual(_cdSemTemp);
-    var faseNoms={F1:'F1 — Acumulación',F2:'F2 — Intensificación',F3:'F3 — Complejos I',F4:'F4 — Complejos II'};
+    var faseNoms=faseNoms26({F1:'F1 — Acumulación',F2:'F2 — Intensificación',F3:'F3 — Complejos I',F4:'F4 — Complejos II'},true);
     var faseColors={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
     faseLbl.textContent=faseNoms[fase]||fase;
     faseLbl.style.color=faseColors[fase]||'var(--text2)';
@@ -6972,6 +7556,18 @@ function renderAvisoSalto(dB){
   var ejs=getEjs(dB)||[];
   var SALTO=['RFESS + Hurdle Hops','Trap Bar Deadlift + Hurdle Jump'];
   var tieneComplejo=ejs.some(function(e){return SALTO.indexOf(e)>=0;});
+  // [vEXT_039] Boyle 2026: el salto va pegado al ejercicio de fuerza (no es un ejercicio aparte)
+  var _f26=getFaseActual(ST.sem), _salto26=esProg2026()&&ejs.some(function(e){return ((SALTO_PROG[_f26]||{})[dB]||[]).indexOf(e)>=0;});
+  if(_salto26){
+    var sv26=semaforo((ST.sliders&&ST.sliders.d)||0,(ST.sliders&&ST.sliders.f)||0);
+    el.style.display='block';
+    el.innerHTML='<div style="background:var(--orange-bg);border-radius:var(--rs);padding:.6rem .75rem;border-left:3px solid var(--orange)">'
+      +(sv26.i!=='🟢'?'<div style="font-size:12px;font-weight:700;color:var(--red-text);margin-bottom:3px">'+sv26.i+' Día cargado (semáforo): hoy haz el ejercicio de fuerza sin los saltos</div>':'')
+      +'<div style="font-size:12px;font-weight:700;color:var(--orange-text);margin-bottom:3px">⚠️ Complejo con salto en la sesión de hoy</div>'
+      +'<div style="font-size:12px;color:var(--orange-text);opacity:.85;line-height:1.45">Empieza los saltos a media altura y sube solo si la rodilla no se queja. Si molesta, no se hacen: el ejercicio de fuerza se queda igual.</div>'
+      +'</div>';
+    return;
+  }
   if(!tieneComplejo){el.style.display='none';return;}
   el.style.display='block';
   // Día rojo (Programación SHU 2026): si el semáforo de hoy no está en verde, sin saltos → trineo
@@ -7000,6 +7596,7 @@ function renderFaseBanner(){
   var faseColors={F1:'var(--blue)',F2:'var(--orange)',F3:'var(--green)',F4:'var(--red-text)'};
   var faseBgs={F1:'var(--blue-bg)',F2:'var(--orange-bg)',F3:'var(--green-bg)',F4:'var(--red-bg)'};
   var faseTexts={F1:'var(--blue-text)',F2:'var(--orange-text)',F3:'var(--green-text)',F4:'var(--red-text)'};
+  if(esProg2026()){ faseNoms=faseNoms26(faseNoms,true); fasePct={F1:'',F2:'',F3:'',F4:''}; } // [vEXT_039]
   var banner=document.getElementById('e-fase-banner');
   var lblFase=document.getElementById('e-fase-lbl');
   var lblSemFase=document.getElementById('e-sem-fase-lbl');
@@ -7016,6 +7613,7 @@ function renderFaseBanner(){
   if(lblReps){
     lblReps.style.color=faseTexts[fase]||'var(--blue-text)';
     lblReps.textContent=(base?base.n+'×'+base.r:faseReps[fase]||'3×8')+(fasePct[fase]?' · '+fasePct[fase]:'');
+    if(esProg2026()){ var _pr26=PROG[(ST.sem-1)%12]; lblReps.textContent=_pr26.n+'×'+_pr26.r; } // [vEXT_039] S1 de F1 = 2 series
   }
 }
 
@@ -8310,6 +8908,10 @@ function protoResolver(tipo,dB){
       var isLinear=dB==='D1'||dB==='D3';
       var cal=dB==='Descanso'?(CAL_BOYLE.Descanso||[]):((CAL_BOYLE_FASES[fase]||CAL_BOYLE_FASES.F1)[isLinear?'linear':'lateral']||[]);
       fases=cal.map(function(f){return {fase:f.fase,tiempo:f.tiempo,items:f.items};});
+      // [vEXT_039] en Boyle 2026 salen de la sesión de empuje y se hacen aquí
+      if(esProg2026()&&(dB==='D2'||dB==='D4')) fases.push({fase:'Movilidad superior',tiempo:'3 min',items:[
+        {n:'Spiderman pos. lat stretch',d:'2×5 respiraciones por lado.',t:''},
+        {n:'Supine Floor Slide',d:'10 repeticiones.',t:''}]});
     } else {
       var enf=ENF[dB]||ENF.Mov||[];
       var totalMin=enf.reduce(function(a,e){var m=parseFloat(e.tm);return a+(isNaN(m)?0:m);},0);
@@ -9749,7 +10351,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_038';
+const APP_VERSION='vEXT_039';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){
@@ -10297,17 +10899,19 @@ function aplicarProgramaExterno(data){
       });
     }
   }catch(e){ console.warn('semanas_globales:',e); }
-  var nuevoEjs={}, nuevoReps={}, nuevoGrupos={};
+  var nuevoEjs={}, nuevoReps={}, nuevoGrupos={}, nuevoNotas={}, nuevoSalto={};
   ['F1','F2','F3','F4'].forEach(function(fase){
     var fd=data.fases[fase];
-    nuevoEjs[fase]={}; nuevoReps[fase]={}; nuevoGrupos[fase]={};
+    nuevoEjs[fase]={}; nuevoReps[fase]={}; nuevoGrupos[fase]={}; nuevoNotas[fase]={}; nuevoSalto[fase]={};
     ['D1','D2','D3','D4'].forEach(function(dia){
       var dd=fd.dias[dia];
-      var listaEjs=[], repsDia={}, gruposDia=[];
+      var listaEjs=[], repsDia={}, gruposDia=[], notasDia={}, saltoDia=[];
       (dd.bloques||[]).forEach(function(b){
         var ejsBloque=(b.ejercicios||[]).map(function(e){return e.nombre;});
         listaEjs=listaEjs.concat(ejsBloque);
         (b.ejercicios||[]).forEach(function(e){
+          if(e.nota) notasDia[e.nombre]=String(e.nota);   // [vEXT_039] aclaración del libro, visible en la sesión
+          if(e.salto) saltoDia.push(e.nombre);            // [vEXT_039] complejo con salto (aviso de rodilla)
           if(Array.isArray(e.reps)){
             repsDia[e.nombre]=e.reps.map(function(r){
               var o={s:r.semana,r:r.r};
@@ -10322,6 +10926,8 @@ function aplicarProgramaExterno(data){
       nuevoEjs[fase][dia]=listaEjs;
       nuevoReps[fase][dia]=repsDia;
       nuevoGrupos[fase][dia]=gruposDia;
+      nuevoNotas[fase][dia]=notasDia;
+      nuevoSalto[fase][dia]=saltoDia;
     });
     // Mantener Descanso/Mov de fábrica tal cual (el JSON externo solo cubre D1-D4)
     if(EJS_FASES[fase]){
@@ -10336,6 +10942,10 @@ function aplicarProgramaExterno(data){
   Object.assign(REPS_FASE,nuevoReps);
   Object.keys(GRUPOS_DIA_FASE).forEach(function(k){delete GRUPOS_DIA_FASE[k];});
   Object.assign(GRUPOS_DIA_FASE,nuevoGrupos);
+  Object.keys(NOTAS_PROG).forEach(function(k){delete NOTAS_PROG[k];});
+  Object.assign(NOTAS_PROG,nuevoNotas);
+  Object.keys(SALTO_PROG).forEach(function(k){delete SALTO_PROG[k];});
+  Object.assign(SALTO_PROG,nuevoSalto);
 }
 function aplicarEjerciciosExterno(data){
   Object.keys(data.ejercicios).forEach(function(nombre){
@@ -10416,6 +11026,7 @@ function renderCiclosCompletados(){
 }
 
 function renderProgramaExtStatus(){
+  try{ renderSelectorPrograma(); }catch(e){}
   var el=document.getElementById('programa-ext-status');
   if(!el) return;
   var inputEl=document.getElementById('repo-programa-input');
@@ -10434,8 +11045,8 @@ async function fetchProgramaExterno(manual){
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     var data=await resp.json();
     if(!validarProgramaExterno(data)){ console.warn('programa.json: estructura inválida, ignorado'); return; }
-    aplicarProgramaExterno(data);
     ST.programaExternoCache=data;
+    aplicarProgramaActivo(); // [vEXT_039] programa.json pertenece a Boyle 2016: solo se ve si ese es el activo
     ST.programaExternoActualizado=new Date().toISOString();
     save();
     try{ renders.entreno(); }catch(e){}
@@ -10474,9 +11085,7 @@ async function fetchEjerciciosExterno(manual){
 // primer render — para que la app abra directamente con el programa editado, sin esperar red.
 function aplicarCacheProgramaExternoSiExiste(){
   try{
-    if(ST.programaExternoCache&&validarProgramaExterno(ST.programaExternoCache)){
-      aplicarProgramaExterno(ST.programaExternoCache);
-    }
+    aplicarProgramaActivo(); // [vEXT_039] fábrica 2016 (+ programa.json en caché) o Boyle 2026, según ST.programaActivo
     if(ST.ejerciciosExternoCache&&validarEjerciciosExterno(ST.ejerciciosExternoCache)){
       aplicarEjerciciosExterno(ST.ejerciciosExternoCache);
     }
@@ -11839,7 +12448,7 @@ function importar(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=function(e){
-    try{const data=JSON.parse(e.target.result);ST=Object.assign(ST,data);if(!ST.ejs)ST.ejs={A:[...EJS_DEF.A],B:[...EJS_DEF.B],C:[...EJS_DEF.C]};if(!ST.eval)ST.eval=[];save();renders.config();alert('Datos importados correctamente');}
+    try{const data=JSON.parse(e.target.result);ST=Object.assign(ST,data);if(!ST.ejs)ST.ejs={A:[...EJS_DEF.A],B:[...EJS_DEF.B],C:[...EJS_DEF.C]};if(!ST.eval)ST.eval=[];try{aplicarProgramaActivo();}catch(e2){}save();renders.config();alert('Datos importados correctamente');}
     catch(err){alert('Error al importar el archivo.');}
   };
   reader.readAsText(file);input.value='';

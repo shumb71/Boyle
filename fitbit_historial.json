@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-16T10:45:06.745299+00:00",
+  "actualizado": "2026-11-16T21:44:10.665896+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -2903,7 +2903,7 @@
     "2026-11-12": {
       "pasos": 9950,
       "distancia_km": 7.4,
-      "minutos_activos": 346,
+      "minutos_activos": 196,
       "calorias_dia": 3064.45,
       "fc_reposo": 50.0,
       "hrv": 39,
@@ -3031,11 +3031,22 @@
       "sueno_rem_min": 141
     },
     "2026-11-16": {
-      "pasos": 1341,
-      "distancia_km": 1.0,
-      "minutos_activos": 138,
-      "calorias_dia": 1185.83,
+      "pasos": 5952,
+      "distancia_km": 4.46,
+      "minutos_activos": 423,
+      "calorias_dia": 2894.44,
       "actividadesFitbit": [
+        {
+          "id": "7984534133845514496",
+          "tipo": "BIKING",
+          "nombre": "Ciclismo",
+          "inicio": "2026-11-16T12:11:46.800Z",
+          "fin": "2026-11-16T12:22:59.800Z",
+          "duracion_min": 11,
+          "calorias": 123,
+          "fc_media": 98,
+          "fc_max": null
+        },
         {
           "id": "6870718650783523200",
           "tipo": "BIKING",

@@ -4298,13 +4298,23 @@
     },
     "2026-11-18": {
       "fecha": "2026-11-18",
-      "pasos": null,
-      "calorias_dia": 71.0,
-      "calorias_activas": 0.0,
-      "distancia_km": 0.0,
+      "pasos": 72,
+      "calorias_dia": 833.0,
+      "calorias_activas": 1.0,
+      "distancia_km": 0.06,
       "minutos_activos": 0,
       "fc_reposo": null,
-      "estres_medio": -1
+      "estres_medio": 44,
+      "actividades": [
+        {
+          "nombre": "Marbella Senderismo",
+          "tipo": "hiking",
+          "duracion_min": 82,
+          "calorias": 411.0,
+          "fc_media": 102.0,
+          "fc_max": 145.0
+        }
+      ]
     }
   },
   "actualizado": "2026-11-18"

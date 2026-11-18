@@ -1,15 +1,15 @@
 {
-  "actualizado": "2026-11-18T02:45:32.111575+00:00",
+  "actualizado": "2026-11-18T11:15:39.679721+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
     "ultimo_dato": {
       "pasos": "2026-11-18",
       "fc_reposo": "2026-11-18",
-      "hrv": "2026-11-17",
+      "hrv": "2026-11-18",
       "sueno_total_min": "2026-11-18",
       "calorias_dia": "2026-11-18",
-      "peso_kg": "2026-11-16"
+      "peso_kg": "2026-11-17"
     }
   },
   "dias": {
@@ -2980,7 +2980,7 @@
     "2026-11-14": {
       "pasos": 8269,
       "distancia_km": 6.17,
-      "minutos_activos": 438,
+      "minutos_activos": 301,
       "calorias_dia": 2721.91,
       "fc_reposo": 52.0,
       "hrv": 33.05,
@@ -3105,19 +3105,46 @@
       "sueno_total_min": 452,
       "sueno_profundo_min": 87,
       "sueno_ligero_min": 275,
-      "sueno_rem_min": 90
+      "sueno_rem_min": 90,
+      "peso_kg": 86.8
     },
     "2026-11-18": {
-      "pasos": 7,
-      "distancia_km": 0.01,
-      "minutos_activos": 1,
-      "calorias_dia": 276.32,
-      "fc_reposo": 54.0,
-      "sueno_total_min": 126,
-      "sueno_profundo_min": 21,
-      "sueno_ligero_min": 70,
-      "sueno_rem_min": 35,
-      "actividadesFitbit": []
+      "pasos": 9819,
+      "distancia_km": 7.3,
+      "minutos_activos": 273,
+      "calorias_dia": 1778.56,
+      "fc_reposo": 52.0,
+      "actividadesFitbit": [
+        {
+          "id": "4491604748961261392",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-18T09:12:06.800Z",
+          "fin": "2026-11-18T09:53:21.800Z",
+          "duracion_min": 41,
+          "calorias": 386,
+          "fc_media": 109,
+          "fc_max": null
+        },
+        {
+          "id": "1617307538961452856",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-18T08:38:31.800Z",
+          "fin": "2026-11-18T09:03:41.800Z",
+          "duracion_min": 25,
+          "calorias": 209,
+          "fc_media": 92,
+          "fc_max": null
+        }
+      ],
+      "hrv": 37.9,
+      "spo2": 93.8,
+      "fr_respiratoria": 13.4,
+      "sueno_total_min": 483,
+      "sueno_profundo_min": 82,
+      "sueno_ligero_min": 273,
+      "sueno_rem_min": 128
     }
   }
 }

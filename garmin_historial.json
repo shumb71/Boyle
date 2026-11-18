@@ -4307,6 +4307,14 @@
       "estres_medio": 46,
       "actividades": [
         {
+          "nombre": "Fuerza",
+          "tipo": "strength_training",
+          "duracion_min": 69,
+          "calorias": 383.0,
+          "fc_media": 105.0,
+          "fc_max": 159.0
+        },
+        {
           "nombre": "Marbella Senderismo",
           "tipo": "hiking",
           "duracion_min": 82,
@@ -4314,7 +4322,15 @@
           "fc_media": 102.0,
           "fc_max": 145.0
         }
-      ]
+      ],
+      "fuerza": {
+        "nombre": "Fuerza",
+        "tipo": "strength_training",
+        "duracion_min": 69,
+        "calorias": 383.0,
+        "fc_media": 105.0,
+        "fc_max": 159.0
+      }
     }
   },
   "actualizado": "2026-11-18"

@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_043', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_044', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -3287,6 +3287,13 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
   // Resto de fases: 3 series todas las semanas
   function E3(nombre,r1,r2,r3,nota,salto){ r2=(r2===undefined?r1:r2); r3=(r3===undefined?r2:r3); return E(nombre,S(3,r1),S(3,r2),S(3,r3),nota,salto); }
 
+  // [vEXT_044] Prehab opcional al final de cada día: solo se marca como hecho (el libro no da series ni repeticiones en 3 días)
+  var N_PREHAB='Opcional: no está en las tablas 13.8-13.10; es el prehab del libro (programa de 4 días y capítulo de prehab).';
+  function PREHAB(){ return B('PREHAB (opcional)','triset',60,[
+    E('Flexión de cadera sentado (iso)','solo marcar','solo marcar','solo marcar',N_PREHAB),
+    E('Aro Pilates — aductores','solo marcar','solo marcar','solo marcar',N_PREHAB),
+    E('Band pull-aparts','solo marcar','solo marcar','solo marcar',N_PREHAB),
+    E('Rotación ext/int de hombro (banda)','solo marcar','solo marcar','solo marcar',N_PREHAB)]); }
   var HC_ALT='Alternativas del libro: Trap Bar Jump, DB Snatch o swing con mancuerna (en ⚙ Variantes).';
   var HC_P2='Posición 2: la barra arranca por encima de las rodillas. '+HC_ALT;
   var N_CHIN='Apunta el tamaño y la posición de la banda (si usas).';
@@ -3305,6 +3312,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Tracción + Core','par',90,[
         E1('DB Row',[8,8,10]),
         E1('Half-kneeling Lift',[8,8,10])]),
+      PREHAB(),
     ]},
     D2:{bloques:[
       B('PAR 1 — Potencia + Core','par',90,[
@@ -3317,6 +3325,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Empuje + Core','par',90,[
         E1('Dumbbell Incline Bench',[8,8,10]),
         E1('Half-kneeling Chop',['8/lado','8/lado','10/lado'])]),
+      PREHAB(),
     ]},
     D3:{bloques:[
       B('PAR 1 — Potencia + Core','par',90,[
@@ -3329,6 +3338,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Core + Isquios','par',90,[
         E1('Press-out antirrotación (tall-kneeling)',[8,8,10]),
         E1('Slide Board Leg Curl',[8,8,10],'Regresión del libro: leg curl excéntrico.')]),
+      PREHAB(),
     ]},
     D4:{bloques:[]},
   }};
@@ -3346,6 +3356,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Tracción + Core','par',90,[
         E3('DB Row',5,5,5),
         E3('Standing Static Lift',8,9,10)]),
+      PREHAB(),
     ]},
     D2:{bloques:[
       B('PAR 1 — Potencia + Core','par',90,[
@@ -3358,6 +3369,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Empuje + Core','par',90,[
         E('Dumbbell Incline Bench','5,5+,5','5,5+,5','5,5+,5','La serie con «+» es a tope: ese número o más.'),
         E3('Half-kneeling Chop','8/lado','9/lado','10/lado')]),
+      PREHAB(),
     ]},
     D3:{bloques:[
       B('PAR 1 — Potencia + Core','par',90,[
@@ -3370,6 +3382,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Core + Isquios','par',90,[
         E3('Press-out antirrotación (half-kneeling)',8,9,10),
         E3('Isométrico de isquios (3 s)',4,5,6,'Cada repetición son 3 s aguantando. Regresión del libro: Slide Board Leg Curl.')]),
+      PREHAB(),
     ]},
     D4:{bloques:[]},
   }}; }
@@ -3386,6 +3399,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Tracción + Core','par',90,[
         E3('DB Row',5,5,5),
         E3('Dynamic Lift',8,9,10,'De pie.')]),
+      PREHAB(),
     ]},
     D2:{bloques:[
       B('PAR 1 — Potencia + Core','par',90,[
@@ -3398,6 +3412,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Empuje + Core','par',90,[
         E('Dumbbell Incline Bench','5,3+,3','5,3+,3','5,3+,3','La serie con «+» es a tope: ese número o más.'),
         E3('Dynamic Chop','8/lado','9/lado','10/lado','De pie.')]),
+      PREHAB(),
     ]},
     D3:{bloques:[
       B('PAR 1 — Potencia + Core','par',90,[
@@ -3410,6 +3425,7 @@ const PROGRAMA_BOYLE_2026_3D=(function(){
       B('PAR 3 — Core + Isquios','par',90,[
         E3('Press-out antirrotación (de pie)',8,9,10),
         E3('Eccentric Glute-Ham Raise',4,5,6,'Bajada de 3 s. Regresión del libro: Slide Board Leg Curl.')]),
+      PREHAB(),
     ]},
     D4:{bloques:[]},
   }};
@@ -3711,7 +3727,7 @@ function htmlTablaPrograma(){
           var info=EJ_INFO[ej]||{};
           var sem=[1,2,3].map(function(s){
             var o=calcObjetivoEj(ej,info,fase,s,dia,PROG[(fi*3+s-1)%12]);
-            return o.lista?o.rpsLabel:(o.numSer+'×'+o.rpsLabel);
+            return (o.lista||o.rpsLabel==='solo marcar')?o.rpsLabel:(o.numSer+'×'+o.rpsLabel);
           });
           var txt=(sem[0]===sem[1]&&sem[1]===sem[2])?sem[0]:sem.join('  /  ');
           var nota=getNotaProg(ej,fase,dia);
@@ -4767,7 +4783,7 @@ const renders={
           numSer=_obj.numSer; rpsLabel=_obj.rpsLabel;
           // [vEXT_039] prehab de Boyle 2026: solo se marca como hecho (sin series) mientras no tenga datos
           var soloChk=esProg2026()&&!!info.soloCheck&&!ss.filter(Boolean).length;
-          var _objTxt=_obj.lista?rpsLabel:(numSer+'x'+rpsLabel);
+          var _objTxt=(_obj.lista||rpsLabel==='solo marcar')?rpsLabel:(numSer+'x'+rpsLabel);
           if(soloChk) numSer=0;
           // [vEXT_023] Series extra por ejercicio (en pares/trisets cualquiera del bloque puede llevar alguna más)
           var baseSer=numSer;
@@ -10667,7 +10683,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_043';
+const APP_VERSION='vEXT_044';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

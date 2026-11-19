@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_042', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_043', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -3451,6 +3451,26 @@ function ajustarCalLibroNuevo(fases,lineal){
   }
   return out;
 }
+
+
+// [vEXT_043] Notas del libro nuevo sobre la cargada y las dominadas, en cada ejercicio (Boyle 2026, 3 y 4 días)
+(function(){
+  var NC='Cargada: la usa con alternativas (trap bar jump, DB snatch, swing). Para adultos que no compiten dice que el riesgo no compensa.';
+  var ND='Dominadas: no siempre son buena idea para adultos. Propone agarre neutro, con banda, X-pull-down y remo en anillas.';
+  [PROGRAMA_BOYLE_2026,PROGRAMA_BOYLE_2026_3D].forEach(function(prog){
+    Object.keys(prog.fases).forEach(function(f){
+      var dias=prog.fases[f].dias;
+      Object.keys(dias).forEach(function(d){
+        dias[d].bloques.forEach(function(b){
+          b.ejercicios.forEach(function(e){
+            var add=(e.nombre.indexOf('Hang Clean')===0)?NC:((e.nombre==='Chin-up / Pull-up')?ND:'');
+            if(add) e.nota=(e.nota?e.nota+' ':'')+add;
+          });
+        });
+      });
+    });
+  });
+})();
 
 // Textos del modo 3 días (sustituyen a META_2026 solo en ese modo)
 var META_2026_3D={
@@ -10647,7 +10667,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_042';
+const APP_VERSION='vEXT_043';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

@@ -610,7 +610,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       if(!_tuvoCtrl||_recargado) return;
       _recargado=true; location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=EXT_040', {scope: './', updateViaCache: 'none'})
+    navigator.serviceWorker.register('./sw.js?v=EXT_041', {scope: './', updateViaCache: 'none'})
       .then(function(reg){
         console.log('SW EXT_028 registrado:', reg.scope);
         try{ reg.update(); }catch(e){}
@@ -3519,12 +3519,20 @@ function aplicarProgramaActivo(){
   }
 }
 // Ejecuta fn con otro programa cargado en memoria y vuelve a dejar el activo (solo para consultar).
+// [vEXT_041] Clave del programa: '2016' | '2026-3' | '2026-4' (Boyle 2026 según 3 o 4 días)
+function progKeyActual(){ return (ST&&ST.programaActivo==='2026')?('2026-'+(ST.diasProg2026==='3'?'3':'4')):'2016'; }
+var PROGKEY_NOMBRES={'2016':'Boyle 2016','2026-4':'Boyle 2026 · 4 días','2026-3':'Boyle 2026 · 3 días'};
 function conProgramaTemporal(id,fn){
-  var act=ST.programaActivo||'2016';
-  if(id===act) return fn();
+  var key=(id==='2026')?'2026-'+(ST.diasProg2026==='3'?'3':'4'):id;
+  if(key===progKeyActual()) return fn();
+  var actP=ST.programaActivo||'2016', actD=ST.diasProg2026;
   var res='';
-  try{ ST.programaActivo=id; aplicarProgramaActivo(); res=fn(); }
-  finally{ ST.programaActivo=act; aplicarProgramaActivo(); }
+  try{
+    ST.programaActivo=(key==='2016')?'2016':'2026';
+    if(key!=='2016') ST.diasProg2026=key.slice(-1);
+    aplicarProgramaActivo(); res=fn();
+  }
+  finally{ ST.programaActivo=actP; ST.diasProg2026=actD; aplicarProgramaActivo(); }
   return res;
 }
 // Cambiar el programa activo (desde Config). El historial no se toca.
@@ -3675,10 +3683,10 @@ function pcSetVista(id){ _pcVista=id; renderProgramaCompleto(); }
 function renderPcSelector(vista,act){
   var el=document.getElementById('pc-selector');
   if(!el) return;
-  el.innerHTML='<div style="display:flex;gap:6px;margin-bottom:.75rem">'+['2016','2026'].map(function(id){
+  el.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem">'+['2016','2026-3','2026-4'].map(function(id){
     var on=id===vista;
-    return '<button onclick="pcSetVista(\''+id+'\')" style="flex:1;border:none;border-radius:20px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'
-      +PROG_NOMBRES[id]+(id===act?' · activo':'')+'</button>';
+    return '<button onclick="pcSetVista(\''+id+'\')" style="flex:1;min-width:30%;border:none;border-radius:20px;padding:7px 8px;font-size:12px;font-weight:700;cursor:pointer;background:'+(on?'var(--blue)':'var(--bg3)')+';color:'+(on?'#fff':'var(--text2)')+'">'
+      +PROGKEY_NOMBRES[id]+(id===act?' · activo':'')+'</button>';
   }).join('')+'</div>';
 }
 
@@ -5140,7 +5148,7 @@ function crearSesionManual(fecha){
       diaCiclo:pos, fase:(getFaseActual(ST.sem)||''), semana:(ST.sem||1), semEnFase:null,
       diaBoyleProg:dBProg||null, diaBoyleReal:dB,
       variacion:false, ejsSustituidos:[], ejerciciosRealizados:[],
-      completado:true, manual:true, timestamp:Date.now()
+      completado:true, manual:true, timestamp:Date.now(), prog:progKeyActual()
     };
     save();
     try{ var sc=document.getElementById('s-cal'); if(sc&&sc.classList.contains('active')) renders.cal(); }catch(e){}
@@ -5798,7 +5806,8 @@ function autoRegistrarFecha(){
       diaCiclo:ST.dia, fase:fase, semana:ST.sem, semEnFase:semEnFase,
       diaBoyleProg:dBProg||null, diaBoyleReal:dB, variacion:variacion,
       ejsSustituidos:ejsSustituidos, ejerciciosRealizados:ejsRealizados,
-      completado:true, nota:(ST.notaDia&&ST.notaDia[hoy])||(prev&&prev.nota)||''
+      completado:true, nota:(ST.notaDia&&ST.notaDia[hoy])||(prev&&prev.nota)||'',
+      prog:(prev&&prev.prog)||progKeyActual()
     });
     if(!prev){ rec.auto=true; }
     rec.timestamp=Date.now(); // siempre actualizar timestamp al registrar sets
@@ -5857,7 +5866,8 @@ function recuperarEntrenosPasados(){
       diaCiclo:pos,
       diaBoyleProg:dBProg||null,
       diaBoyleReal:dBReal||null,
-      completado:true, recuperado:true
+      completado:true, recuperado:true,
+      prog:(prev&&prev.prog)||progKeyActual()
     });
     if(detalle.length && (!rec.ejerciciosRealizados || !rec.ejerciciosRealizados.length)){
       rec.ejerciciosRealizados=detalle; conDetalle++;
@@ -6073,6 +6083,7 @@ function getHistorialPorSemana(){
   Object.keys(ST.historialFechas).forEach(function(fecha){
     var ses=ST.historialFechas[fecha];
     if(!ses||!ses.completado||!ses.semana) return;
+    if((ses.prog||'2016')!==progKeyActual()) return; // [vEXT_041] solo lo hecho con el programa que se está viendo
     (out[ses.semana]=out[ses.semana]||[]).push({
       fecha:fecha,
       semana:ses.semana,
@@ -6088,13 +6099,13 @@ function renderProgramaCompleto(){
   var el=document.getElementById('pc-list');
   if(!el) return;
   // [vEXT_039] conmutador: el programa activo (proyección de siempre) o consulta del otro, sin cambiar nada
-  var _act=ST.programaActivo||'2016', _vista=_pcVista||_act;
+  var _act=progKeyActual(), _vista=_pcVista||_act;
   renderPcSelector(_vista,_act);
   var _cab=document.getElementById('pc-cab');
   if(_cab) _cab.style.display=(_vista===_act)?'':'none';
   if(_vista!==_act){
     el.innerHTML='<div style="font-size:12px;color:var(--orange-text);background:var(--orange-bg);border-radius:var(--rs);padding:.5rem .75rem;margin-bottom:.75rem;line-height:1.45">'
-      +'Estás consultando <strong>'+PROG_NOMBRES[_vista]+'</strong>. Tu programa activo sigue siendo <strong>'+PROG_NOMBRES[_act]+'</strong>; se cambia en Config → Programa activo.</div>'
+      +'Estás consultando <strong>'+PROGKEY_NOMBRES[_vista]+'</strong>. Tu programa activo sigue siendo <strong>'+PROGKEY_NOMBRES[_act]+'</strong>; se cambia en Config → Programa activo.</div>'
       +conProgramaTemporal(_vista,htmlTablaPrograma);
     return;
   }
@@ -7662,6 +7673,7 @@ function finalizarSesion(){
     ejerciciosRealizados:ejsRealizados,
     completado:true,
     confirmado:true,
+    prog:progKeyActual(),
     lockTimestamp:lockTs,
     manual:true,
     nota:(ST.notaDia&&ST.notaDia[hoy])||'',
@@ -10601,7 +10613,7 @@ function cSem(d){
 
 // DRIVE
 const GDRIVE_CLIENT_ID='906920921997-av6s253ivqb13i6jqtn5opkkdd983qgg.apps.googleusercontent.com';
-const APP_VERSION='vEXT_040';
+const APP_VERSION='vEXT_041';
 const GDRIVE_SCOPE='https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
 function exportarJSON(){

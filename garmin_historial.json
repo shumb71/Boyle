@@ -4351,7 +4351,17 @@
           "fc_max": 156.0
         }
       ]
+    },
+    "2026-11-20": {
+      "fecha": "2026-11-20",
+      "pasos": null,
+      "calorias_dia": null,
+      "calorias_activas": null,
+      "distancia_km": 0.0,
+      "minutos_activos": null,
+      "fc_reposo": null,
+      "estres_medio": null
     }
   },
-  "actualizado": "2026-11-19"
+  "actualizado": "2026-11-20"
 }

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-21T10:44:29.708457+00:00",
+  "actualizado": "2026-11-21T18:49:11.533159+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -3072,7 +3072,7 @@
     "2026-11-17": {
       "pasos": 12331,
       "distancia_km": 9.19,
-      "minutos_activos": 524,
+      "minutos_activos": 412,
       "calorias_dia": 2961.62,
       "fc_reposo": 52.0,
       "hrv": 36.15,
@@ -3225,10 +3225,10 @@
       "sueno_rem_min": 78
     },
     "2026-11-21": {
-      "pasos": 3259,
-      "distancia_km": 2.42,
-      "minutos_activos": 167,
-      "calorias_dia": 1276.97,
+      "pasos": 8980,
+      "distancia_km": 6.69,
+      "minutos_activos": 427,
+      "calorias_dia": 2570.44,
       "fc_reposo": 53.0,
       "hrv": 35.8,
       "fr_respiratoria": 14.8,

@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-22T10:50:34.517109+00:00",
+  "actualizado": "2026-11-22T19:11:05.339992+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -3111,7 +3111,7 @@
     "2026-11-18": {
       "pasos": 15120,
       "distancia_km": 11.22,
-      "minutos_activos": 563,
+      "minutos_activos": 192,
       "calorias_dia": 3485.61,
       "fc_reposo": 52.0,
       "actividadesFitbit": [
@@ -3263,11 +3263,34 @@
       "sueno_rem_min": 102
     },
     "2026-11-22": {
-      "pasos": 1308,
-      "calorias_dia": 1172.71,
-      "actividadesFitbit": [],
-      "distancia_km": 0.98,
-      "minutos_activos": 123,
+      "pasos": 15683,
+      "calorias_dia": 3060.11,
+      "actividadesFitbit": [
+        {
+          "id": "1158537350885378632",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-22T17:28:01.200Z",
+          "fin": "2026-11-22T18:06:26.200Z",
+          "duracion_min": 38,
+          "calorias": 238,
+          "fc_media": 78,
+          "fc_max": null
+        },
+        {
+          "id": "4007123683464148552",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-22T14:59:44.400Z",
+          "fin": "2026-11-22T16:58:14.400Z",
+          "duracion_min": 118,
+          "calorias": 703,
+          "fc_media": 83,
+          "fc_max": null
+        }
+      ],
+      "distancia_km": 11.67,
+      "minutos_activos": 670,
       "fc_reposo": 53.0,
       "hrv": 36.4,
       "spo2": 94.9,

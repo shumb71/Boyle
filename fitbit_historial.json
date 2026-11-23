@@ -1,13 +1,13 @@
 {
-  "actualizado": "2026-11-23T01:26:45.301373+00:00",
+  "actualizado": "2026-11-23T11:56:33.234551+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
     "ultimo_dato": {
-      "pasos": "2026-11-22",
-      "fc_reposo": "2026-11-22",
-      "hrv": "2026-11-22",
-      "sueno_total_min": "2026-11-22",
+      "pasos": "2026-11-23",
+      "fc_reposo": "2026-11-23",
+      "hrv": "2026-11-23",
+      "sueno_total_min": "2026-11-23",
       "calorias_dia": "2026-11-23",
       "peso_kg": "2026-11-19"
     }
@@ -3172,7 +3172,7 @@
     "2026-11-19": {
       "pasos": 11217,
       "distancia_km": 8.38,
-      "minutos_activos": 394,
+      "minutos_activos": 94,
       "calorias_dia": 3048.43,
       "actividadesFitbit": [
         {
@@ -3264,7 +3264,7 @@
     },
     "2026-11-22": {
       "pasos": 15728,
-      "calorias_dia": 3343.9,
+      "calorias_dia": 3344.26,
       "actividadesFitbit": [
         {
           "id": "1158537350885378632",
@@ -3301,8 +3301,53 @@
       "sueno_rem_min": 39
     },
     "2026-11-23": {
-      "calorias_dia": 176.99,
-      "actividadesFitbit": []
+      "calorias_dia": 1611.81,
+      "actividadesFitbit": [
+        {
+          "id": "7842056172614252256",
+          "tipo": "BIKING",
+          "nombre": "Ciclismo",
+          "inicio": "2026-11-23T09:42:43.200Z",
+          "fin": "2026-11-23T09:53:43.200Z",
+          "duracion_min": 11,
+          "calorias": 102,
+          "fc_media": 103,
+          "fc_max": null
+        },
+        {
+          "id": "8145395881351222808",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-23T09:16:10.800Z",
+          "fin": "2026-11-23T09:37:20.800Z",
+          "duracion_min": 21,
+          "calorias": 143,
+          "fc_media": 80,
+          "fc_max": null
+        },
+        {
+          "id": "7692464844363272288",
+          "tipo": "STRENGTH_TRAINING",
+          "nombre": "Fortalecimiento muscular",
+          "inicio": "2026-11-23T07:58:19.200Z",
+          "fin": "2026-11-23T08:17:36.200Z",
+          "duracion_min": 19,
+          "calorias": 90,
+          "fc_media": 88,
+          "fc_max": null
+        }
+      ],
+      "pasos": 4347,
+      "distancia_km": 3.24,
+      "minutos_activos": 185,
+      "fc_reposo": 52.0,
+      "hrv": 38.5,
+      "spo2": 93.9,
+      "fr_respiratoria": 14,
+      "sueno_total_min": 448,
+      "sueno_profundo_min": 87,
+      "sueno_ligero_min": 285,
+      "sueno_rem_min": 76
     }
   }
 }

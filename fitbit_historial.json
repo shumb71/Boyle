@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-24T08:54:32.044642+00:00",
+  "actualizado": "2026-11-24T19:59:59.836941+00:00",
   "takeout_importado": "2026-10-25",
   "takeout_hasta": "2026-10-24",
   "sync_resumen": {
@@ -3227,7 +3227,7 @@
     "2026-11-21": {
       "pasos": 14430,
       "distancia_km": 10.74,
-      "minutos_activos": 672,
+      "minutos_activos": 594,
       "calorias_dia": 3471.04,
       "fc_reposo": 53.0,
       "hrv": 35.8,
@@ -3350,19 +3350,75 @@
       "sueno_rem_min": 76
     },
     "2026-11-24": {
-      "pasos": 2340,
-      "distancia_km": 1.74,
-      "minutos_activos": 40,
-      "calorias_dia": 898.91,
-      "fc_reposo": 52.0,
+      "pasos": 23633,
+      "distancia_km": 17.58,
+      "minutos_activos": 612,
+      "calorias_dia": 3236.14,
+      "fc_reposo": 51.0,
       "hrv": 38.4,
       "spo2": 95.9,
       "fr_respiratoria": 15.6,
+      "actividadesFitbit": [
+        {
+          "id": "3506729047976342712",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-24T17:30:03Z",
+          "fin": "2026-11-24T17:51:03Z",
+          "duracion_min": 21,
+          "calorias": 155,
+          "fc_media": 83,
+          "fc_max": null
+        },
+        {
+          "id": "6152481004776082288",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-24T16:56:48Z",
+          "fin": "2026-11-24T17:15:58Z",
+          "duracion_min": 19,
+          "calorias": 144,
+          "fc_media": 82,
+          "fc_max": null
+        },
+        {
+          "id": "1803329052818026400",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-24T12:18:07.200Z",
+          "fin": "2026-11-24T12:59:27.200Z",
+          "duracion_min": 41,
+          "calorias": 319,
+          "fc_media": 79,
+          "fc_max": null
+        },
+        {
+          "id": "5501675570982883616",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-24T09:30:14Z",
+          "fin": "2026-11-24T10:55:54Z",
+          "duracion_min": 86,
+          "calorias": 551,
+          "fc_media": 75,
+          "fc_max": null
+        },
+        {
+          "id": "5779062415867718280",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-24T08:26:54Z",
+          "fin": "2026-11-24T09:23:49Z",
+          "duracion_min": 57,
+          "calorias": 398,
+          "fc_media": 78,
+          "fc_max": null
+        }
+      ],
       "sueno_total_min": 489,
       "sueno_profundo_min": 97,
       "sueno_ligero_min": 270,
-      "sueno_rem_min": 122,
-      "actividadesFitbit": []
+      "sueno_rem_min": 122
     }
   }
 }

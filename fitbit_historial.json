@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-26T11:59:14.582680+00:00",
+  "actualizado": "2026-11-26T21:23:24.603564+00:00",
   "takeout_importado": "2026-11-25",
   "takeout_hasta": "2026-11-24",
   "sync_resumen": {
@@ -3588,7 +3588,7 @@
         }
       ],
       "distancia_km": 11.71,
-      "minutos_activos": 458,
+      "minutos_activos": 272,
       "fc_reposo": 53.0,
       "hrv": 36.4,
       "spo2": 94.9,
@@ -3809,8 +3809,52 @@
       "sueno_rem_min": 127
     },
     "2026-11-26": {
-      "calorias_dia": 1895.71,
+      "calorias_dia": 3441.06,
       "actividadesFitbit": [
+        {
+          "id": "6941565484897793816",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-26T18:46:35.200Z",
+          "fin": "2026-11-26T19:22:30.200Z",
+          "duracion_min": 36,
+          "calorias": 236,
+          "fc_media": 68,
+          "fc_max": null
+        },
+        {
+          "id": "2632875729852666224",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-26T18:20:01.200Z",
+          "fin": "2026-11-26T18:36:37.200Z",
+          "duracion_min": 17,
+          "calorias": 108,
+          "fc_media": 68,
+          "fc_max": null
+        },
+        {
+          "id": "5314322611478252264",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-26T14:12:15.600Z",
+          "fin": "2026-11-26T14:36:15.600Z",
+          "duracion_min": 24,
+          "calorias": 161,
+          "fc_media": 79,
+          "fc_max": null
+        },
+        {
+          "id": "1857166915360267696",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-26T10:32:50.400Z",
+          "fin": "2026-11-26T13:02:50.400Z",
+          "duracion_min": 150,
+          "calorias": 956,
+          "fc_media": 73,
+          "fc_max": null
+        },
         {
           "id": "986900162068208344",
           "tipo": "WALKING",
@@ -3834,9 +3878,9 @@
           "fc_max": null
         }
       ],
-      "pasos": 11612,
-      "distancia_km": 8.65,
-      "minutos_activos": 313,
+      "pasos": 25089,
+      "distancia_km": 18.7,
+      "minutos_activos": 674,
       "fc_reposo": 50.0,
       "hrv": 38.9,
       "spo2": 95,

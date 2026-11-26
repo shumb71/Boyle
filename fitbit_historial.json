@@ -1,13 +1,13 @@
 {
-  "actualizado": "2026-11-26T01:39:50.105137+00:00",
+  "actualizado": "2026-11-26T11:59:14.582680+00:00",
   "takeout_importado": "2026-11-25",
   "takeout_hasta": "2026-11-24",
   "sync_resumen": {
     "ultimo_dato": {
-      "pasos": "2026-11-25",
-      "fc_reposo": "2026-11-25",
-      "hrv": "2026-11-25",
-      "sueno_total_min": "2026-11-25",
+      "pasos": "2026-11-26",
+      "fc_reposo": "2026-11-26",
+      "hrv": "2026-11-26",
+      "sueno_total_min": "2026-11-26",
       "calorias_dia": "2026-11-26",
       "peso_kg": "2026-11-19"
     }
@@ -3588,7 +3588,7 @@
         }
       ],
       "distancia_km": 11.71,
-      "minutos_activos": 672,
+      "minutos_activos": 458,
       "fc_reposo": 53.0,
       "hrv": 36.4,
       "spo2": 94.9,
@@ -3752,7 +3752,7 @@
       "pasos": 13937,
       "distancia_km": 10.34,
       "minutos_activos": 424,
-      "calorias_dia": 2911.06,
+      "calorias_dia": 2911.18,
       "fc_reposo": 51.0,
       "hrv": 40.6,
       "spo2": 94.2,
@@ -3809,8 +3809,42 @@
       "sueno_rem_min": 127
     },
     "2026-11-26": {
-      "calorias_dia": 192.64,
-      "actividadesFitbit": []
+      "calorias_dia": 1895.71,
+      "actividadesFitbit": [
+        {
+          "id": "986900162068208344",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-26T09:25:31.200Z",
+          "fin": "2026-11-26T10:01:01.200Z",
+          "duracion_min": 36,
+          "calorias": 211,
+          "fc_media": 67,
+          "fc_max": null
+        },
+        {
+          "id": "2236378258009767848",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-26T08:38:18Z",
+          "fin": "2026-11-26T09:11:18Z",
+          "duracion_min": 33,
+          "calorias": 242,
+          "fc_media": 75,
+          "fc_max": null
+        }
+      ],
+      "pasos": 11612,
+      "distancia_km": 8.65,
+      "minutos_activos": 313,
+      "fc_reposo": 50.0,
+      "hrv": 38.9,
+      "spo2": 95,
+      "fr_respiratoria": 15.8,
+      "sueno_total_min": 407,
+      "sueno_profundo_min": 26,
+      "sueno_ligero_min": 290,
+      "sueno_rem_min": 91
     }
   }
 }

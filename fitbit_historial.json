@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-25T16:55:13.932487+00:00",
+  "actualizado": "2026-11-26T01:39:50.105137+00:00",
   "takeout_importado": "2026-11-25",
   "takeout_hasta": "2026-11-24",
   "sync_resumen": {
@@ -8,7 +8,7 @@
       "fc_reposo": "2026-11-25",
       "hrv": "2026-11-25",
       "sueno_total_min": "2026-11-25",
-      "calorias_dia": "2026-11-25",
+      "calorias_dia": "2026-11-26",
       "peso_kg": "2026-11-19"
     }
   },
@@ -3420,10 +3420,6 @@
       "spo2": 93.8,
       "fr_respiratoria": 13.4,
       "peso_kg": 87.0,
-      "sueno_total_min": 483,
-      "sueno_profundo_min": 82,
-      "sueno_ligero_min": 273,
-      "sueno_rem_min": 128,
       "readiness": 52,
       "acwr": 1.23,
       "acwr_etiqueta": "OPTIMAL_TRAINING",
@@ -3434,7 +3430,11 @@
       "zona_ligera_min": 1104,
       "zona_moderada_min": 105,
       "zona_vigorosa_min": 26,
-      "zona_pico_min": 1
+      "zona_pico_min": 1,
+      "sueno_total_min": 483,
+      "sueno_profundo_min": 82,
+      "sueno_ligero_min": 273,
+      "sueno_rem_min": 128
     },
     "2026-11-19": {
       "pasos": 11217,
@@ -3459,10 +3459,6 @@
       "spo2": 93.6,
       "fr_respiratoria": 14.2,
       "peso_kg": 86.3,
-      "sueno_total_min": 478,
-      "sueno_profundo_min": 105,
-      "sueno_ligero_min": 248,
-      "sueno_rem_min": 125,
       "readiness": 43,
       "acwr": 1.19,
       "acwr_etiqueta": "OPTIMAL_TRAINING",
@@ -3473,7 +3469,11 @@
       "zona_ligera_min": 1374,
       "zona_moderada_min": 40,
       "zona_vigorosa_min": 23,
-      "zona_pico_min": 3
+      "zona_pico_min": 3,
+      "sueno_total_min": 478,
+      "sueno_profundo_min": 105,
+      "sueno_ligero_min": 248,
+      "sueno_rem_min": 125
     },
     "2026-11-20": {
       "pasos": 9871,
@@ -3497,10 +3497,6 @@
       "hrv": 37.9,
       "spo2": 94.1,
       "fr_respiratoria": 14.4,
-      "sueno_total_min": 486,
-      "sueno_profundo_min": 86,
-      "sueno_ligero_min": 322,
-      "sueno_rem_min": 78,
       "readiness": 53,
       "acwr": 1.28,
       "acwr_etiqueta": "OPTIMAL_TRAINING",
@@ -3510,12 +3506,16 @@
       "zona_ligera_min": 1366,
       "zona_moderada_min": 33,
       "zona_vigorosa_min": 41,
-      "zona_pico_min": 0
+      "zona_pico_min": 0,
+      "sueno_total_min": 486,
+      "sueno_profundo_min": 86,
+      "sueno_ligero_min": 322,
+      "sueno_rem_min": 78
     },
     "2026-11-21": {
       "pasos": 14430,
       "distancia_km": 10.74,
-      "minutos_activos": 198,
+      "minutos_activos": 143,
       "calorias_dia": 3471.04,
       "fc_reposo": 53.0,
       "hrv": 35.8,
@@ -3545,10 +3545,6 @@
         }
       ],
       "spo2": 94,
-      "sueno_total_min": 485,
-      "sueno_profundo_min": 100,
-      "sueno_ligero_min": 283,
-      "sueno_rem_min": 102,
       "readiness": 50,
       "acwr": 1.3,
       "acwr_etiqueta": "OVER_TRAINING",
@@ -3558,7 +3554,11 @@
       "zona_ligera_min": 1424,
       "zona_moderada_min": 15,
       "zona_vigorosa_min": 1,
-      "zona_pico_min": 0
+      "zona_pico_min": 0,
+      "sueno_total_min": 485,
+      "sueno_profundo_min": 100,
+      "sueno_ligero_min": 283,
+      "sueno_rem_min": 102
     },
     "2026-11-22": {
       "pasos": 15728,
@@ -3593,10 +3593,6 @@
       "hrv": 36.4,
       "spo2": 94.9,
       "fr_respiratoria": 13.4,
-      "sueno_total_min": 413,
-      "sueno_profundo_min": 61,
-      "sueno_ligero_min": 313,
-      "sueno_rem_min": 39,
       "readiness": 46,
       "acwr": 1.22,
       "acwr_etiqueta": "OPTIMAL_TRAINING",
@@ -3606,7 +3602,11 @@
       "zona_ligera_min": 1438,
       "zona_moderada_min": 2,
       "zona_vigorosa_min": 0,
-      "zona_pico_min": 0
+      "zona_pico_min": 0,
+      "sueno_total_min": 413,
+      "sueno_profundo_min": 61,
+      "sueno_ligero_min": 313,
+      "sueno_rem_min": 39
     },
     "2026-11-23": {
       "calorias_dia": 3016.05,
@@ -3652,10 +3652,6 @@
       "hrv": 38.5,
       "spo2": 93.9,
       "fr_respiratoria": 14,
-      "sueno_total_min": 448,
-      "sueno_profundo_min": 87,
-      "sueno_ligero_min": 285,
-      "sueno_rem_min": 76,
       "readiness": 49,
       "acwr": 1.22,
       "acwr_etiqueta": "OPTIMAL_TRAINING",
@@ -3665,7 +3661,11 @@
       "zona_ligera_min": 1397,
       "zona_moderada_min": 33,
       "zona_vigorosa_min": 10,
-      "zona_pico_min": 0
+      "zona_pico_min": 0,
+      "sueno_total_min": 448,
+      "sueno_profundo_min": 87,
+      "sueno_ligero_min": 285,
+      "sueno_rem_min": 76
     },
     "2026-11-24": {
       "pasos": 23638,
@@ -3733,10 +3733,6 @@
           "fc_max": null
         }
       ],
-      "sueno_total_min": 489,
-      "sueno_profundo_min": 97,
-      "sueno_ligero_min": 270,
-      "sueno_rem_min": 122,
       "readiness": 55,
       "acwr": 1.16,
       "acwr_etiqueta": "OPTIMAL_TRAINING",
@@ -3746,18 +3742,33 @@
       "zona_ligera_min": 1406,
       "zona_moderada_min": 1,
       "zona_vigorosa_min": 0,
-      "zona_pico_min": 0
+      "zona_pico_min": 0,
+      "sueno_total_min": 489,
+      "sueno_profundo_min": 97,
+      "sueno_ligero_min": 270,
+      "sueno_rem_min": 122
     },
     "2026-11-25": {
-      "pasos": 9037,
-      "distancia_km": 6.71,
-      "minutos_activos": 286,
-      "calorias_dia": 2091.73,
+      "pasos": 13937,
+      "distancia_km": 10.34,
+      "minutos_activos": 424,
+      "calorias_dia": 2911.06,
       "fc_reposo": 51.0,
       "hrv": 40.6,
       "spo2": 94.2,
       "fr_respiratoria": 13.6,
       "actividadesFitbit": [
+        {
+          "id": "6479549949270612936",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-25T18:19:54Z",
+          "fin": "2026-11-25T19:11:34Z",
+          "duracion_min": 52,
+          "calorias": 356,
+          "fc_media": 85,
+          "fc_max": null
+        },
         {
           "id": "4016339101964022848",
           "tipo": "WALKING",
@@ -3796,6 +3807,10 @@
       "sueno_profundo_min": 94,
       "sueno_ligero_min": 286,
       "sueno_rem_min": 127
+    },
+    "2026-11-26": {
+      "calorias_dia": 192.64,
+      "actividadesFitbit": []
     }
   }
 }

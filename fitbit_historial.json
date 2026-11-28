@@ -1,5 +1,5 @@
 {
-  "actualizado": "2026-11-27T18:43:57.391315+00:00",
+  "actualizado": "2026-11-28T03:08:08.986054+00:00",
   "takeout_importado": "2026-11-25",
   "takeout_hasta": "2026-11-24",
   "sync_resumen": {
@@ -8,7 +8,7 @@
       "fc_reposo": "2026-11-27",
       "hrv": "2026-11-27",
       "sueno_total_min": "2026-11-27",
-      "calorias_dia": "2026-11-27",
+      "calorias_dia": "2026-11-28",
       "peso_kg": "2026-11-19"
     }
   },
@@ -3647,7 +3647,7 @@
       ],
       "pasos": 8659,
       "distancia_km": 6.46,
-      "minutos_activos": 181,
+      "minutos_activos": 152,
       "fc_reposo": 52.0,
       "hrv": 38.5,
       "spo2": 93.9,
@@ -3891,14 +3891,47 @@
       "sueno_rem_min": 91
     },
     "2026-11-27": {
-      "pasos": 10865,
-      "distancia_km": 8.07,
-      "minutos_activos": 362,
-      "calorias_dia": 2381.65,
-      "fc_reposo": 49.0,
+      "pasos": 14566,
+      "distancia_km": 10.82,
+      "minutos_activos": 500,
+      "calorias_dia": 2966.68,
+      "fc_reposo": 50.0,
       "hrv": 45.4,
       "fr_respiratoria": 14.6,
       "actividadesFitbit": [
+        {
+          "id": "9078101326594125480",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-27T19:53:22.800Z",
+          "fin": "2026-11-27T20:08:56.800Z",
+          "duracion_min": 16,
+          "calorias": 110,
+          "fc_media": 81,
+          "fc_max": null
+        },
+        {
+          "id": "6799235084115618040",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-27T18:49:25.200Z",
+          "fin": "2026-11-27T19:15:08.200Z",
+          "duracion_min": 26,
+          "calorias": 150,
+          "fc_media": 72,
+          "fc_max": null
+        },
+        {
+          "id": "5987467891963939936",
+          "tipo": "WALKING",
+          "nombre": "Caminar",
+          "inicio": "2026-11-27T18:06:55.800Z",
+          "fin": "2026-11-27T18:26:15.800Z",
+          "duracion_min": 19,
+          "calorias": 135,
+          "fc_media": 75,
+          "fc_max": null
+        },
         {
           "id": "1797265060664062264",
           "tipo": "WALKING",
@@ -3927,6 +3960,10 @@
       "sueno_profundo_min": 83,
       "sueno_ligero_min": 286,
       "sueno_rem_min": 101
+    },
+    "2026-11-28": {
+      "calorias_dia": 299.8,
+      "actividadesFitbit": []
     }
   }
 }
